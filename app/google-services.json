@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "963683107808",
+    "project_id": "psira-4c983",
+    "storage_bucket": "psira-4c983.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:963683107808:android:347992171c063627a0a185",
+        "android_client_info": {
+          "package_name": "com.project1.psira"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7Y5gWDrhZqEPFC1d0ISzOatwzr4AUKPU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
