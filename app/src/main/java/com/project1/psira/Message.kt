@@ -1,4 +1,7 @@
-package com.yourname.psira // Keep your actual package name here!
+package com.project1.psira
 
-// This is a simple blueprint for our database
-data class Message(val sender: String = "", val content: String = "")
+class Message(
+    val sender: String? = null,
+    val content: String? = null,
+    val id: String? = null
+)
