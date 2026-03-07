@@ -15,6 +15,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PsiRa">
 
+
         <activity
             android:name=".SplashActivity"
             android:exported="true">
