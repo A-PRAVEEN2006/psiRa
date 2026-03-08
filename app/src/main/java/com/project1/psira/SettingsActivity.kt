@@ -41,7 +41,7 @@ class SettingsActivity : AppCompatActivity() {
                 .show()
         }
 
-        // --- 2. THEME TOGGLE ---
+        // --- 2. THEME TOGGLE --
         // Check current theme state
         switchTheme.isChecked = AppCompatDelegate.getDefaultNightMode() != AppCompatDelegate.MODE_NIGHT_NO
 
