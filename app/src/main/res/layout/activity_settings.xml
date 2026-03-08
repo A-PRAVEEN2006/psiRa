@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#0D0D0D"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="System Settings"
+        android:textColor="#00FF00"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="30dp"
+        android:gravity="center" />
+
+    <Button
+        android:id="@+id/btnChangePasscode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Change Vault Passcode"
+        android:backgroundTint="#1A1A1A"
+        android:textColor="#00FF00"
+        android:layout_marginBottom="16dp"/>
+
+    <Switch
+        android:id="@+id/switchTheme"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Hacker Dark Mode"
+        android:textColor="#00FF00"
+        android:textSize="16sp"
+        android:layout_marginBottom="24dp"
+        android:checked="true"
+        android:padding="8dp"/>
+
+    <Button
+        android:id="@+id/btnAbout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="About PsiRa"
+        android:backgroundTint="#1A1A1A"
+        android:textColor="#00FF00" />
+
+</LinearLayout>

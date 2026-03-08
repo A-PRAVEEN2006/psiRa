@@ -64,6 +64,12 @@ class ChatActivity : AppCompatActivity() {
             val intent = Intent(this, LearningActivity::class.java)
             startActivity(intent)
         }
+        // Open Settings Menu
+        val btnSettings = findViewById<ImageButton>(R.id.btnSettings)
+        btnSettings.setOnClickListener {
+            val intent = Intent(this, SettingsActivity::class.java)
+            startActivity(intent)
+        }
         // The Glowing Pulse Animation
         val secureStatusText = findViewById<android.widget.TextView>(R.id.secureStatusText)
         val pulseAnimation = android.view.animation.AlphaAnimation(0.2f, 1.0f)

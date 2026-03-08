@@ -7,6 +7,32 @@
     android:fitsSystemWindows="true"
     android:background="#0D0D0D">
 
+    <ImageButton
+        android:id="@+id/btnSettings"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_margin="16dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@android:drawable/ic_menu_preferences"
+        android:contentDescription="Settings"
+        app:tint="#00FF00"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:elevation="5dp" />
+
+    <ImageButton
+        android:id="@+id/btnLearningPage"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_margin="16dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@android:drawable/ic_menu_sort_alphabetically"
+        android:contentDescription="Alphabet Learning"
+        app:tint="#00FF00"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btnSettings"
+        android:elevation="5dp" />
+
     <TextView
         android:id="@+id/secureStatusText"
         android:layout_width="wrap_content"
@@ -23,19 +49,6 @@
         android:shadowDx="0"
         android:shadowDy="0"
         android:shadowRadius="15" />
-
-    <ImageButton
-        android:id="@+id/btnLearningPage"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_margin="16dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:src="@android:drawable/ic_menu_sort_alphabetically"
-        android:contentDescription="Alphabet Learning"
-        app:tint="#00FF00"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:elevation="5dp" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
