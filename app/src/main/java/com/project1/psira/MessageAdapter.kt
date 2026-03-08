@@ -4,9 +4,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.RecyclerView
-import com.yourname.psira.AESEncryption
-import com.yourname.psira.PsiRaConverter
+import com.google.firebase.database.FirebaseDatabase
 
 class MessageAdapter(private val messageList: List<Message>) : RecyclerView.Adapter<MessageAdapter.MessageViewHolder>() {
 
@@ -15,36 +16,51 @@ class MessageAdapter(private val messageList: List<Message>) : RecyclerView.Adap
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MessageViewHolder {
-        // This grabs your item_message.xml bubble design!
+        // This inflates your item_message.xml bubble design
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_message, parent, false)
         return MessageViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: MessageViewHolder, position: Int) {
         val message = messageList[position]
-        val messageId = message.id // Used for deleting
+
+        // Use the Firebase key (id) for deletion
+        val messageId = message.id
 
         try {
-            // THE REVERSE SECURITY CHAIN: AES Decrypt -> Reverse psiRa Symbols
-            // We call the classes directly so there are no import errors
+            // THE REVERSE SECURITY CHAIN:
+            // 1. AES Decrypt the raw Firebase data
             val decryptedPsiRa = AESEncryption.decrypt(message.content!!)
+
+            // 2. Decode the PsiRa Symbols back into English/Numbers
             val plainText = PsiRaConverter.decode(decryptedPsiRa)
+
             holder.textMessage.text = plainText
         } catch (e: Exception) {
-            holder.textMessage.text = "Encrypted message..."
+            // If it fails (e.g. old messages using a different key), show the raw content
+            holder.textMessage.text = message.content
         }
 
-        // LONG PRESS TO DELETE
+        // --- LONG PRESS TO DELETE FEATURE ---
         holder.itemView.setOnLongClickListener {
             val context = holder.itemView.context
-            val builder = android.app.AlertDialog.Builder(context)
-            builder.setTitle("Delete Message")
-            builder.setMessage("Are you sure you want to delete this secret?")
+            val builder = AlertDialog.Builder(context)
+            builder.setTitle("Erase Evidence?")
+            builder.setMessage("This will permanently delete this message from the secure vault.")
 
             builder.setPositiveButton("Delete") { _, _ ->
-                val db = com.google.firebase.database.FirebaseDatabase.getInstance().getReference("messages")
-                messageId?.let {
-                    db.child(it).removeValue()
+                val db = FirebaseDatabase.getInstance().getReference("messages")
+
+                if (messageId != null) {
+                    db.child(messageId).removeValue()
+                        .addOnSuccessListener {
+                            Toast.makeText(context, "Message deleted", Toast.LENGTH_SHORT).show()
+                        }
+                        .addOnFailureListener {
+                            Toast.makeText(context, "Delete failed", Toast.LENGTH_SHORT).show()
+                        }
+                } else {
+                    Toast.makeText(context, "Error: Message ID not found", Toast.LENGTH_SHORT).show()
                 }
             }
 

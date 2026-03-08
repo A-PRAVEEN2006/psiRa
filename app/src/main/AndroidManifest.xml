@@ -34,7 +34,9 @@
             android:name=".ChatActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize|stateHidden" />
-
+        <activity
+            android:name=".LearningActivity"
+            android:exported="false" />
     </application>
 
 </manifest>
