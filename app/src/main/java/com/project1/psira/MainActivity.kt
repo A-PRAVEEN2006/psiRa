@@ -80,8 +80,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun enterVault() {
+        // 1. The Haptic "Buzz"
+        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            vibrator.vibrate(android.os.VibrationEffect.createOneShot(150, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+        } else {
+            vibrator.vibrate(150) // Fallback for older phones
+        }
+
+        // 2. Open the Vault
         val intent = Intent(this, ChatActivity::class.java)
         startActivity(intent)
-        // We don't use finish() so the user can go back to the calculator later
+
+        // 3. The Smooth Fade Animation (Removes the clunky default Android slide)
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+
+        // Optional: Clear the calculator screen so the passcode isn't sitting there if they minimize the app
+        findViewById<android.widget.EditText>(R.id.calcDisplay).setText("")
     }
 }
