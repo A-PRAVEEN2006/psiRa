@@ -25,7 +25,7 @@ class SettingsActivity : AppCompatActivity() {
         btnChangePasscode.setOnClickListener {
             val input = EditText(this)
             input.hint = "Enter New Passcode"
-            input.inputType = android.text.InputType.TYPE_CLASS_TEXT
+            input.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
 
             AlertDialog.Builder(this)
                 .setTitle("Update Security Key")
