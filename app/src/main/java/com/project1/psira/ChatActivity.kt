@@ -64,6 +64,13 @@ class ChatActivity : AppCompatActivity() {
             val intent = Intent(this, LearningActivity::class.java)
             startActivity(intent)
         }
+        // The Glowing Pulse Animation
+        val secureStatusText = findViewById<android.widget.TextView>(R.id.secureStatusText)
+        val pulseAnimation = android.view.animation.AlphaAnimation(0.2f, 1.0f)
+        pulseAnimation.duration = 1000 // 1 second fade
+        pulseAnimation.repeatMode = android.view.animation.Animation.REVERSE
+        pulseAnimation.repeatCount = android.view.animation.Animation.INFINITE
+        secureStatusText.startAnimation(pulseAnimation)
 
         // 4. Send Message Logic (Plain English + AES Encryption)
         btnSend.setOnClickListener {
