@@ -80,22 +80,23 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun enterVault() {
-        // 1. The Haptic "Buzz"
+        // 1. The Haptic "Buzz" (Keep this for the tactile feel!)
         val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             vibrator.vibrate(android.os.VibrationEffect.createOneShot(150, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
         } else {
-            vibrator.vibrate(150) // Fallback for older phones
+            vibrator.vibrate(150)
         }
 
-        // 2. Open the Vault
-        val intent = Intent(this, ChatActivity::class.java)
+        // 2. OPEN THE LOGIN PAGE (This is the change!)
+        // Instead of ChatActivity, we now go to LoginActivity
+        val intent = Intent(this, LoginActivity::class.java)
         startActivity(intent)
 
-        // 3. The Smooth Fade Animation (Removes the clunky default Android slide)
+        // 3. Smooth Fade Animation
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
 
-        // Optional: Clear the calculator screen so the passcode isn't sitting there if they minimize the app
+        // Clear the calculator display for safety
         findViewById<android.widget.EditText>(R.id.calcDisplay).setText("")
     }
 }

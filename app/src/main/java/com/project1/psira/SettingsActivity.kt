@@ -16,6 +16,7 @@ class SettingsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_settings)
 
         val btnChangePasscode = findViewById<Button>(R.id.btnChangePasscode)
+        val btnSetChannel = findViewById<Button>(R.id.btnSetChannel) // NEW: The Channel Button
         val switchTheme = findViewById<Switch>(R.id.switchTheme)
         val btnAbout = findViewById<Button>(R.id.btnAbout)
 
@@ -41,7 +42,28 @@ class SettingsActivity : AppCompatActivity() {
                 .show()
         }
 
-        // --- 2. THEME TOGGLE --
+        // --- 2. SECURE CHANNEL PROTOCOL (NEW) ---
+        btnSetChannel.setOnClickListener {
+            val input = EditText(this)
+            input.hint = "Enter Channel Name (e.g. Alpha)"
+            input.inputType = android.text.InputType.TYPE_CLASS_TEXT
+
+            AlertDialog.Builder(this)
+                .setTitle("Tune Secure Channel")
+                .setMessage("You will only see messages from users in this exact channel.")
+                .setView(input)
+                .setPositiveButton("Connect") { _, _ ->
+                    val newChannel = input.text.toString().trim()
+                    if (newChannel.isNotEmpty()) {
+                        sharedPref.edit().putString("SECURE_CHANNEL", newChannel).apply()
+                        Toast.makeText(this, "Tuned to Channel: $newChannel", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+
+        // --- 3. THEME TOGGLE --
         // Check current theme state
         switchTheme.isChecked = AppCompatDelegate.getDefaultNightMode() != AppCompatDelegate.MODE_NIGHT_NO
 
@@ -53,7 +75,7 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
-        // --- 3. ABOUT PSIRA ---
+        // --- 4. ABOUT PSIRA ---
         btnAbout.setOnClickListener {
             AlertDialog.Builder(this)
                 .setTitle("About PsiRa")

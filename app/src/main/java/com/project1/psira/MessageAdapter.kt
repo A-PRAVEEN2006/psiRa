@@ -1,5 +1,6 @@
 package com.project1.psira
 
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -22,6 +23,7 @@ class MessageAdapter(private val messageList: List<Message>) : RecyclerView.Adap
     }
 
     override fun onBindViewHolder(holder: MessageViewHolder, position: Int) {
+        val context = holder.itemView.context
         val message = messageList[position]
 
         // Use the Firebase key (id) for deletion
@@ -42,30 +44,31 @@ class MessageAdapter(private val messageList: List<Message>) : RecyclerView.Adap
         }
 
         // --- LONG PRESS TO DELETE FEATURE ---
+        // Inside onBindViewHolder in MessageAdapter.kt
         holder.itemView.setOnLongClickListener {
-            val context = holder.itemView.context
-            val builder = AlertDialog.Builder(context)
-            builder.setTitle("Erase Evidence?")
-            builder.setMessage("This will permanently delete this message from the secure vault.")
+            val messageId = messageList[position].id
 
-            builder.setPositiveButton("Delete") { _, _ ->
-                val db = FirebaseDatabase.getInstance().getReference("messages")
+            if (messageId != null) {
+                val builder = AlertDialog.Builder(context)
+                builder.setTitle("Delete Message")
+                builder.setMessage("Permanently erase this data from the vault?")
 
-                if (messageId != null) {
-                    db.child(messageId).removeValue()
-                        .addOnSuccessListener {
-                            Toast.makeText(context, "Message deleted", Toast.LENGTH_SHORT).show()
-                        }
-                        .addOnFailureListener {
-                            Toast.makeText(context, "Delete failed", Toast.LENGTH_SHORT).show()
-                        }
-                } else {
-                    Toast.makeText(context, "Error: Message ID not found", Toast.LENGTH_SHORT).show()
+                builder.setPositiveButton("Delete") { _, _ ->
+                    // Use the shared channel name to find the right database folder
+                    val sharedPref = context.getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
+                    val channelName = sharedPref.getString("SECURE_CHANNEL", "messages") ?: "messages"
+
+                    val db = FirebaseDatabase.getInstance().getReference(channelName)
+                    db.child(messageId).removeValue().addOnSuccessListener {
+                        Toast.makeText(context, "Message Erased", Toast.LENGTH_SHORT).show()
+                    }
                 }
-            }
 
-            builder.setNegativeButton("Cancel", null)
-            builder.show()
+                builder.setNegativeButton("Cancel", null)
+                builder.show()
+            } else {
+                Toast.makeText(context, "Error: Message ID missing", Toast.LENGTH_SHORT).show()
+            }
             true
         }
     }

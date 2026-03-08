@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#0D0D0D"
+    android:gravity="center"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="PROTOCOL SELECT"
+        android:textColor="#00FF00"
+        android:textSize="20sp"
+        android:layout_marginBottom="40dp" />
+
+    <Button
+        android:id="@+id/btnGlobal"
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:text="🌍 GLOBAL PROTOCOL (Public)"
+        android:backgroundTint="#1A1A1A"
+        android:textColor="#00FF00"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
+        android:id="@+id/btnWalkie"
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:text="📻 WALKIE-TALKIE (7-Digit)"
+        android:backgroundTint="#1A1A1A"
+        android:textColor="#00FF00"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
+        android:id="@+id/btnPrivate"
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:text="🔒 GHOST VAULT (Private)"
+        android:backgroundTint="#1A1A1A"
+        android:textColor="#00FF00" />
+
+</LinearLayout>

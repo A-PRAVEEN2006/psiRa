@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="System Settings"
-        android:textColor="#00FF00"
+        android:textColor="#2FA29C"
         android:textSize="24sp"
         android:textStyle="bold"
         android:layout_marginBottom="30dp"
@@ -42,6 +42,14 @@
         android:layout_height="wrap_content"
         android:text="About PsiRa"
         android:backgroundTint="#1A1A1A"
-        android:textColor="#00FF00" />
+        android:textColor="#2429C7" />
+    <Button
+        android:id="@+id/btnSetChannel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Set Secure Channel (Room)"
+        android:backgroundTint="#1A1A1A"
+        android:textColor="#D72012"
+        android:layout_marginBottom="16dp"/>
 
 </LinearLayout>

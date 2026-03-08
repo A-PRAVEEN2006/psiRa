@@ -45,6 +45,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     implementation("com.google.firebase:firebase-database-ktx:20.3.0")
+    implementation("com.google.firebase:firebase-auth:22.3.1")
     implementation("androidx.biometric:biometric:1.2.0-alpha05")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
 }
