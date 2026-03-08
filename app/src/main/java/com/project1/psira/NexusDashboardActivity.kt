@@ -5,26 +5,54 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView // Import for the Name Label
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.auth.FirebaseAuth
 
 class NexusDashboardActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_nexus_dashboard)
 
+        // 1. IDENTITY DISPLAY: Shows "AGENT: Praveen" at the top
+        val tvAgentName = findViewById<TextView>(R.id.tvAgentName)
+        val user = FirebaseAuth.getInstance().currentUser
+        tvAgentName.text = "AGENT: ${user?.displayName ?: "Unknown"}"
+
+        // 2. BUTTON REFERENCES
         val btnGlobal = findViewById<Button>(R.id.btnGlobal)
         val btnWalkie = findViewById<Button>(R.id.btnWalkie)
         val btnPrivate = findViewById<Button>(R.id.btnPrivate)
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
 
-        // 🌍 1. GLOBAL MODE: Sets channel to "global" for everyone
+        // --- ADD THE LOGOUT LOGIC HERE ---
+        val tvLogout = findViewById<TextView>(R.id.tvLogout)
+        tvLogout.setOnClickListener {
+            // 1. Sign out from Firebase
+            FirebaseAuth.getInstance().signOut()
+
+            // 2. Head back to the Login screen
+            val intent = Intent(this, LoginActivity::class.java)
+            startActivity(intent)
+
+            // 3. Destroy this dashboard so they can't click 'back' to get in
+            finish()
+
+            Toast.makeText(this, "Agent Session Terminated", Toast.LENGTH_SHORT).show()
+        }
+        // ---------------------------------
+
+        // ... (Rest of your 🌍 GLOBAL, 📻 WALKIE-TALKIE, and 🔒 PRIVATE listeners)
+
+        // 🌍 GLOBAL MODE: Public channel for everyone
         btnGlobal.setOnClickListener {
             sharedPref.edit().putString("SECURE_CHANNEL", "global_protocol").apply()
             startActivity(Intent(this, ChatActivity::class.java))
         }
 
-        // 📻 2. WALKIE-TALKIE MODE: Asks for 7-digit code
+        // 📻 WALKIE-TALKIE MODE: 7-digit frequency match
         btnWalkie.setOnClickListener {
             val input = EditText(this)
             input.hint = "7-Digit Frequency (e.g. 1234567)"
@@ -40,16 +68,16 @@ class NexusDashboardActivity : AppCompatActivity() {
                         sharedPref.edit().putString("SECURE_CHANNEL", "freq_$freq").apply()
                         startActivity(Intent(this, ChatActivity::class.java))
                     } else {
-                        android.widget.Toast.makeText(this, "Must be 7 digits!", android.widget.Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Must be 7 digits!", Toast.LENGTH_SHORT).show()
                     }
                 }
                 .setNegativeButton("Cancel", null)
                 .show()
         }
 
-        // 🔒 3. PRIVATE MODE: Personal vault using your unique User ID
+        // 🔒 PRIVATE MODE: Your own UID-locked vault
         btnPrivate.setOnClickListener {
-            val userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: "anonymous"
+            val userId = user?.uid ?: "anonymous"
             sharedPref.edit().putString("SECURE_CHANNEL", "private_$userId").apply()
             startActivity(Intent(this, ChatActivity::class.java))
         }

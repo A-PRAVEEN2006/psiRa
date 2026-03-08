@@ -85,9 +85,14 @@ class ChatActivity : AppCompatActivity() {
         btnSend.setOnClickListener {
             val text = editMessage.text.toString()
             if (text.isNotEmpty()) {
+                // Grab the Display Name (Praveen) instead of the Email
+                val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+                val senderName = user?.displayName ?: "Unknown Agent"
+
                 try {
                     val encrypted = AESEncryption.encrypt(text)
-                    db.push().setValue(Message(null, "User", encrypted))
+                    // Send the message with the NAME
+                    db.push().setValue(Message(null, senderName, encrypted))
                     editMessage.setText("")
                 } catch (e: Exception) {
                     e.printStackTrace()
