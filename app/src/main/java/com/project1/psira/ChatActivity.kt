@@ -71,7 +71,28 @@ class ChatActivity : AppCompatActivity() {
         pulseAnimation.repeatMode = android.view.animation.Animation.REVERSE
         pulseAnimation.repeatCount = android.view.animation.Animation.INFINITE
         secureStatusText.startAnimation(pulseAnimation)
+        // THE STEALTH WIPE PROTOCOL: Long-press the pulsing text to wipe the vault
+        secureStatusText.setOnLongClickListener {
+            val builder = android.app.AlertDialog.Builder(this)
+            builder.setTitle("⚠️ WIPE VAULT?")
+            builder.setMessage("Initiate emergency wipe? This will permanently delete ALL messages in the database. This action cannot be undone.")
 
+            builder.setPositiveButton("WIPE") { _, _ ->
+                // This line nukes the entire "messages" branch in Firebase
+                db.removeValue().addOnSuccessListener {
+                    android.widget.Toast.makeText(this, "Vault Wiped Clean", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            builder.setNegativeButton("CANCEL", null)
+
+            // Make the pop-up look dangerous (optional)
+            val dialog = builder.create()
+            dialog.show()
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setTextColor(android.graphics.Color.RED)
+
+            true // Tells Android the long-press was handled
+        }
         // 4. Send Message Logic (Plain English + AES Encryption)
         btnSend.setOnClickListener {
             val text = editMessage.text.toString()
