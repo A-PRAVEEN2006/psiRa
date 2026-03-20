@@ -3,100 +3,118 @@ package com.project1.psira
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.view.View
-import android.view.WindowManager
 import android.widget.Button
 import android.widget.EditText
-import android.widget.GridLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
+    private lateinit var calcDisplay: EditText
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Stealth Mode: Block screenshots
-        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         setContentView(R.layout.activity_main)
 
-        val display = findViewById<EditText>(R.id.calcDisplay)
+        calcDisplay = findViewById(R.id.calcDisplay)
+        calcDisplay.showSoftInputOnFocus = false // Keep phone keyboard hidden
+
+        setNumberListeners()
+        setOperatorListeners()
+
+        // --- THE ENGINE ---
         val btnEqual = findViewById<Button>(R.id.btnEqual)
-
-        // This finds the "grid" that holds all your buttons
-        val gridLayout = findViewById<GridLayout>(R.id.mainGrid)
-        val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
-
-        // 1. This is the logic for ALL number and operator buttons
-        val listener = View.OnClickListener { v ->
-            val b = v as Button
-            val text = b.text.toString()
-
-            when (text) {
-                "C" -> display.setText("")
-                "Del" -> {
-                    val currentText = display.text.toString()
-                    if (currentText.isNotEmpty()) {
-                        display.setText(currentText.substring(0, currentText.length - 1))
-                    }
-                }
-                "=" -> {
-                    // We handle the Equals button separately below
-                }
-                else -> {
-                    // For numbers 0-9 and +, -, *, /
-                    display.append(text)
-                }
-            }
-        }
-
-        // This loop automatically attaches that logic to every button in the grid
-        for (i in 0 until gridLayout.childCount) {
-            val child = gridLayout.getChildAt(i)
-            if (child is Button) {
-                child.setOnClickListener(listener)
-            }
-        }
-
-        // 2. The Secret Vault Logic (The Equal Button)
         btnEqual.setOnClickListener {
-            val inputText = display.text.toString()
-            val savedPasscode = sharedPref.getString("SECRET_PASSCODE", null)
+            val currentText = calcDisplay.text.toString().trim()
+            val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
 
-            if (savedPasscode == null) {
-                // First Time Setup: Save the code they just typed
-                if (inputText.isNotEmpty()) {
-                    sharedPref.edit().putString("SECRET_PASSCODE", inputText).apply()
-                    Toast.makeText(this, "Passcode Set!", Toast.LENGTH_SHORT).show()
+            // Check if a password exists. If it's the first time, this is null.
+            val savedPassword = sharedPref.getString("VAULT_PASS", null)
+
+            if (savedPassword == null) {
+                // 1. FIRST TIME SETUP: Whatever you type becomes the password
+                if (currentText.isNotEmpty()) {
+                    sharedPref.edit().putString("VAULT_PASS", currentText).apply()
+                    Toast.makeText(this, "Secret Code Set!", Toast.LENGTH_SHORT).show()
                     enterVault()
                 }
             } else {
-                // Unlock Check: Does it match the secret code?
-                if (inputText == savedPasscode) {
+                // 2. NORMAL MODE: Check if it matches the saved password
+                if (currentText == savedPassword) {
                     enterVault()
-                } else {
-                    display.setText("") // Clear the screen if wrong (Decoy mode)
                 }
+                // 3. DO MATH: If it's the wrong code, just act like a calculator
+                else if (currentText.isNotEmpty()) {
+                    val mathResult = evaluateMath(currentText)
+                    calcDisplay.setText(mathResult)
+                }
+            }
+        }
+
+        // Clear (C)
+        findViewById<Button>(R.id.btnClear).setOnClickListener {
+            calcDisplay.setText("")
+        }
+
+        // Delete (Del)
+        findViewById<Button>(R.id.btnDel).setOnClickListener {
+            val text = calcDisplay.text.toString()
+            if (text.isNotEmpty()) {
+                calcDisplay.setText(text.substring(0, text.length - 1))
+            }
+        }
+    }
+
+    // Logic to handle real math results
+    private fun evaluateMath(expression: String): String {
+        return try {
+            val parts = expression.split(Regex("(?<=[-+*/])|(?=[-+*/])"))
+            if (parts.size < 3) return expression
+
+            val num1 = parts[0].trim().toDouble()
+            val op = parts[1].trim()
+            val num2 = parts[2].trim().toDouble()
+
+            val res = when (op) {
+                "+" -> num1 + num2
+                "-" -> num1 - num2
+                "*" -> num1 * num2
+                "/" -> if (num2 != 0.0) num1 / num2 else 0.0
+                else -> 0.0
+            }
+            // Drop the .0 if it's a clean number
+            if (res % 1 == 0.0) res.toInt().toString() else res.toString()
+        } catch (e: Exception) {
+            "Error"
+        }
+    }
+
+    private fun setNumberListeners() {
+        val ids = arrayOf(R.id.btn0, R.id.btn1, R.id.btn2, R.id.btn3, R.id.btn4, R.id.btn5, R.id.btn6, R.id.btn7, R.id.btn8, R.id.btn9)
+        for (id in ids) {
+            findViewById<Button>(id).setOnClickListener {
+                calcDisplay.append((it as Button).text)
+            }
+        }
+    }
+
+    private fun setOperatorListeners() {
+        val ids = arrayOf(R.id.btnAdd, R.id.btnSubtract, R.id.btnMultiply, R.id.btnDivide)
+        for (id in ids) {
+            findViewById<Button>(id).setOnClickListener {
+                calcDisplay.append((it as Button).text)
             }
         }
     }
 
     private fun enterVault() {
-        // 1. The Haptic "Buzz" (Keep this for the tactile feel!)
         val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             vibrator.vibrate(android.os.VibrationEffect.createOneShot(150, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
         } else {
             vibrator.vibrate(150)
         }
-
-        // 2. OPEN THE LOGIN PAGE (This is the change!)
-        // Instead of ChatActivity, we now go to LoginActivity
-        val intent = Intent(this, LoginActivity::class.java)
-        startActivity(intent)
-
-        // 3. Smooth Fade Animation
+        startActivity(Intent(this, LoginActivity::class.java))
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-
-        // Clear the calculator display for safety
-        findViewById<android.widget.EditText>(R.id.calcDisplay).setText("")
+        calcDisplay.setText("")
     }
 }
