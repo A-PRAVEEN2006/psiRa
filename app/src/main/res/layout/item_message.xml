@@ -19,4 +19,16 @@
         android:elevation="4dp"
         android:layout_gravity="end" />
 
+    <TextView
+        android:id="@+id/tvBurnIcon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🔥 self-destructs in 10s"
+        android:textSize="10sp"
+        android:textColor="?attr/colorError"
+        android:visibility="gone"
+        android:layout_gravity="end"
+        android:layout_marginTop="2dp"
+        android:paddingEnd="16dp" />
+
 </LinearLayout>

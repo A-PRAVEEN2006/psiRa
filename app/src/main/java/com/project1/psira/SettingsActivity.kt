@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatDelegate
 class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE, android.view.WindowManager.LayoutParams.FLAG_SECURE)
         setContentView(R.layout.activity_settings)
 
         val btnChangePasscode = findViewById<Button>(R.id.btnChangePasscode)
@@ -34,8 +35,30 @@ class SettingsActivity : AppCompatActivity() {
                 .setPositiveButton("Save") { _, _ ->
                     val newCode = input.text.toString()
                     if (newCode.isNotEmpty()) {
-                        sharedPref.edit().putString("SECRET_PASSCODE", newCode).apply()
+                        sharedPref.edit().putString("VAULT_PASS", newCode).apply()
                         Toast.makeText(this, "Passcode Updated!", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+
+        // --- 1.5. SET PANIC PIN ---
+        val btnSetPanicCode = findViewById<Button>(R.id.btnSetPanicCode)
+        btnSetPanicCode.setOnClickListener {
+            val input = EditText(this)
+            input.hint = "Enter Emergency Panic PIN"
+            input.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+
+            AlertDialog.Builder(this)
+                .setTitle("🚨 Set EMP Panic PIN")
+                .setMessage("Entering this on the calculator will wipe all local data and log out your account immediately.")
+                .setView(input)
+                .setPositiveButton("Set Trigger") { _, _ ->
+                    val newCode = input.text.toString()
+                    if (newCode.isNotEmpty()) {
+                        sharedPref.edit().putString("PANIC_PASSCODE", newCode).apply()
+                        Toast.makeText(this, "Panic PIN Activated!", Toast.LENGTH_SHORT).show()
                     }
                 }
                 .setNegativeButton("Cancel", null)

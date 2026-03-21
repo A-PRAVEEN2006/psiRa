@@ -14,6 +14,7 @@ class MessageAdapter(private val messageList: List<Message>) : RecyclerView.Adap
 
     class MessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val textMessage: TextView = itemView.findViewById(R.id.textMessage)
+        val tvBurnIcon: TextView? = itemView.findViewById(R.id.tvBurnIcon)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MessageViewHolder {
@@ -41,6 +42,21 @@ class MessageAdapter(private val messageList: List<Message>) : RecyclerView.Adap
         } catch (e: Exception) {
             // If it fails (e.g. old messages using a different key), show the raw content
             holder.textMessage.text = message.content
+        }
+
+        // --- SELF-DESTRUCT LOGIC ---
+        holder.tvBurnIcon?.visibility = if (message.isBurnable) View.VISIBLE else View.GONE
+        
+        // If this is a burnable message AND we are the receiver (not the sender)
+        if (message.isBurnable && message.sender != com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.displayName) {
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                val messageIdToDelete = message.id
+                if (messageIdToDelete != null) {
+                    val sharedPref = context.getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
+                    val channelName = sharedPref.getString("SECURE_CHANNEL", "messages") ?: "messages"
+                    FirebaseDatabase.getInstance().getReference(channelName).child(messageIdToDelete).removeValue()
+                }
+            }, 10000) // 10 seconds
         }
 
         // --- LONG PRESS TO DELETE FEATURE ---

@@ -27,6 +27,16 @@
         android:layout_marginBottom="16dp"/>
 
     <Button
+        android:id="@+id/btnSetPanicCode"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="Set EMP Panic Code"
+        android:backgroundTint="?attr/colorError"
+        android:textColor="?attr/colorSurface"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
         android:id="@+id/btnSetChannel"
         android:layout_width="match_parent"
         android:layout_height="60dp"

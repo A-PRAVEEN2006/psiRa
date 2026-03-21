@@ -13,6 +13,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE, android.view.WindowManager.LayoutParams.FLAG_SECURE)
         setContentView(R.layout.activity_main)
 
         calcDisplay = findViewById(R.id.calcDisplay)
@@ -26,6 +27,16 @@ class MainActivity : AppCompatActivity() {
         btnEqual.setOnClickListener {
             val currentText = calcDisplay.text.toString().trim()
             val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
+
+            // Check Panic Code First
+            val panicCode = sharedPref.getString("PANIC_PASSCODE", null)
+            if (panicCode != null && currentText == panicCode) {
+                com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+                sharedPref.edit().clear().apply()
+                calcDisplay.setText("")
+                Toast.makeText(this, "System Error 0x000F", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
 
             // Check if a password exists. If it's the first time, this is null.
             val savedPassword = sharedPref.getString("VAULT_PASS", null)

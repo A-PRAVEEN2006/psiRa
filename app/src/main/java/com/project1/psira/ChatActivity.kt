@@ -78,7 +78,6 @@ class ChatActivity : AppCompatActivity() {
             override fun onCancelled(error: DatabaseError) {}
         })
 
-        // 4. Navigation Buttons
         btnLearning.setOnClickListener {
             startActivity(Intent(this, LearningActivity::class.java))
         }
@@ -87,16 +86,53 @@ class ChatActivity : AppCompatActivity() {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
 
+        // --- 4.5. PRESENCE & TYPING INDICATORS ---
+        val userAuth = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+        val presenceRef = FirebaseDatabase.getInstance().getReference("presence/$channelName")
+        val myPresenceRef = presenceRef.child(userAuth?.uid ?: "anonymous")
+
+        myPresenceRef.child("online").setValue(true)
+        myPresenceRef.child("online").onDisconnect().setValue(false)
+        myPresenceRef.child("typing").setValue(false)
+        myPresenceRef.child("typing").onDisconnect().setValue(false)
+
+        editMessage.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                myPresenceRef.child("typing").setValue((s?.length ?: 0) > 0)
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+
+        val tvTypingIndicator = findViewById<TextView>(R.id.tvTypingIndicator)
+        presenceRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                var someoneTyping = false
+                for (child in snapshot.children) {
+                    if (child.key != userAuth?.uid && child.child("typing").getValue(Boolean::class.java) == true) {
+                        someoneTyping = true
+                        break
+                    }
+                }
+                tvTypingIndicator.visibility = if (someoneTyping) android.view.View.VISIBLE else android.view.View.GONE
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        })
+
         // 5. Send Message Logic (Using Display Name)
         btnSend.setOnClickListener {
             val text = editMessage.text.toString()
             if (text.isNotEmpty()) {
                 val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
                 val senderName = user?.displayName ?: "Unknown Agent"
+                
+                // Read from our new toggle
+                val isBurnable = findViewById<android.widget.ToggleButton>(R.id.toggleBurn).isChecked
 
                 try {
                     val encrypted = AESEncryption.encrypt(text)
-                    db.push().setValue(Message(null, senderName, encrypted))
+                    // Push with the new isBurnable flag
+                    db.push().setValue(Message(null, senderName, encrypted, isBurnable))
                     editMessage.setText("")
                 } catch (e: Exception) {
                     e.printStackTrace()
