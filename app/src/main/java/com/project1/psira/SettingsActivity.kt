@@ -27,7 +27,7 @@ class SettingsActivity : AppCompatActivity() {
         btnChangePasscode.setOnClickListener {
             val input = EditText(this)
             input.hint = "Enter New Passcode"
-            input.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+            input.inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
 
             AlertDialog.Builder(this)
                 .setTitle("Update Security Key")
@@ -48,7 +48,7 @@ class SettingsActivity : AppCompatActivity() {
         btnSetPanicCode.setOnClickListener {
             val input = EditText(this)
             input.hint = "Enter Emergency Panic PIN"
-            input.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+            input.inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
 
             AlertDialog.Builder(this)
                 .setTitle("🚨 Set EMP Panic PIN")
