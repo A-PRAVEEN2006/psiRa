@@ -17,12 +17,25 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 
 class NexusDashboardActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE, android.view.WindowManager.LayoutParams.FLAG_SECURE)
         setContentView(R.layout.activity_nexus_dashboard)
+        
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        if (currentUser != null) {
+            FirebaseDatabase.getInstance().getReference("users").child(currentUser.uid).child("banned").get().addOnSuccessListener {
+                if(it.value == true) {
+                    FirebaseAuth.getInstance().signOut()
+                    getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE).edit().clear().apply()
+                    startActivity(Intent(this, LoginActivity::class.java))
+                    finish()
+                }
+            }
+        }
 
         val mainContainer = findViewById<View>(R.id.mainContentContainer)
 
@@ -142,6 +155,11 @@ class NexusDashboardActivity : AppCompatActivity() {
                         .build()
 
                     biometricPrompt.authenticate(promptInfo)
+                    false
+                }
+                R.id.nav_chats -> {
+                    startActivity(Intent(this@NexusDashboardActivity, ChatsActivity::class.java))
+                    bottomNav.selectedItemId = R.id.nav_home
                     false
                 }
                 R.id.nav_groups -> {

@@ -82,6 +82,11 @@ class GroupsActivity : AppCompatActivity() {
                     finish()
                     false
                 }
+                R.id.nav_chats -> {
+                    startActivity(Intent(this@GroupsActivity, ChatsActivity::class.java))
+                    finish()
+                    true
+                }
                 R.id.nav_groups -> {
                     true
                 }

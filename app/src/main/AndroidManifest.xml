@@ -43,6 +43,9 @@
         <activity android:name=".LoginActivity" android:exported="false" />
         <activity android:name=".NexusDashboardActivity" android:exported="false" />
         <activity android:name=".GroupsActivity" android:exported="false" />
+        <activity android:name=".ChatsActivity" android:exported="false" />
+        <activity android:name=".DirectChatActivity" android:exported="false" />
+        <activity android:name=".GodDashboardActivity" android:exported="false" />
         <service
             android:name=".PsiraMessagingService"
             android:exported="false">

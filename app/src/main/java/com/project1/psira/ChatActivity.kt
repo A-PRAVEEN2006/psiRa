@@ -91,18 +91,28 @@ class ChatActivity : AppCompatActivity() {
         val presenceRef = FirebaseDatabase.getInstance().getReference("presence/$channelName")
         val myPresenceRef = presenceRef.child(userAuth?.uid ?: "anonymous")
 
-        myPresenceRef.child("online").setValue(true)
-        myPresenceRef.child("online").onDisconnect().setValue(false)
-        myPresenceRef.child("typing").setValue(false)
-        myPresenceRef.child("typing").onDisconnect().setValue(false)
+        val isGhostMode = intent.getBooleanExtra("IS_GHOST_MODE", false)
 
-        editMessage.addTextChangedListener(object : android.text.TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                myPresenceRef.child("typing").setValue((s?.length ?: 0) > 0)
-            }
-            override fun afterTextChanged(s: android.text.Editable?) {}
-        })
+        if (isGhostMode) {
+            btnSend.isEnabled = false
+            btnSend.text = "GHOST"
+            editMessage.isEnabled = false
+            editMessage.hint = "Wiretap Active. Read-Only Mode."
+            Toast.makeText(this, "Ghost Wiretap engaged. You are invisible.", Toast.LENGTH_LONG).show()
+        } else {
+            myPresenceRef.child("online").setValue(true)
+            myPresenceRef.child("online").onDisconnect().setValue(false)
+            myPresenceRef.child("typing").setValue(false)
+            myPresenceRef.child("typing").onDisconnect().setValue(false)
+
+            editMessage.addTextChangedListener(object : android.text.TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    myPresenceRef.child("typing").setValue((s?.length ?: 0) > 0)
+                }
+                override fun afterTextChanged(s: android.text.Editable?) {}
+            })
+        }
 
         val tvTypingIndicator = findViewById<TextView>(R.id.tvTypingIndicator)
         presenceRef.addValueEventListener(object : ValueEventListener {
@@ -124,7 +134,8 @@ class ChatActivity : AppCompatActivity() {
             val text = editMessage.text.toString()
             if (text.isNotEmpty()) {
                 val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
-                val senderName = user?.displayName ?: "Unknown Agent"
+                val impersonatingName = sharedPref.getString("IMPERSONATING_NAME", null)
+                val senderName = impersonatingName ?: user?.displayName ?: "Unknown Agent"
                 
                 // Read from our new toggle
                 val isBurnable = findViewById<android.widget.ToggleButton>(R.id.toggleBurn).isChecked

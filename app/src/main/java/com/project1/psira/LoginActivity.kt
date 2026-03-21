@@ -63,7 +63,7 @@ class LoginActivity : AppCompatActivity() {
 
             if (email.isNotEmpty() && pass.isNotEmpty()) {
                 val nameInput = EditText(this)
-                nameInput.hint = "Agent Name (e.g., Praveen)"
+                nameInput.hint = "Agent Name (e.g., Ravana)"
 
                 AlertDialog.Builder(this)
                     .setTitle("New Agent Profile")
@@ -109,13 +109,11 @@ class LoginActivity : AppCompatActivity() {
                         setDisplayName(displayName)
                     }
                     user?.updateProfile(profileUpdates)?.addOnCompleteListener {
-                        if (user != null) {
-                            ensureAgentId(user.uid) {
-                                FirebaseDatabase.getInstance().getReference("users").child(user.uid).child("name").setValue(displayName)
-                                Toast.makeText(this, "Profile Updated: $displayName", Toast.LENGTH_SHORT).show()
-                                startActivity(Intent(this, NexusDashboardActivity::class.java))
-                                finish()
-                            }
+                        ensureAgentId(user.uid) {
+                            FirebaseDatabase.getInstance().getReference("users").child(user.uid).child("name").setValue(displayName)
+                            Toast.makeText(this, "Profile Updated: $displayName", Toast.LENGTH_SHORT).show()
+                            startActivity(Intent(this, NexusDashboardActivity::class.java))
+                            finish()
                         }
                     }
                 } else {
