@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- A flat, stealthy circular calculator base -->
+    <path
+        android:pathData="M54,14 C31.9,14 14,31.9 14,54 C14,76.1 31.9,94 54,94 C76.1,94 94,76.1 94,54 C94,31.9 76.1,14 54,14 Z"
+        android:fillColor="#1e293b" />
+
+    <!-- Calculator Display Screen -->
+    <path
+        android:pathData="M 30,30 L 78,30 C 80,30 82,32 82,34 L 82,44 C 82,46 80,48 78,48 L 30,48 C 28,48 26,46 26,44 L 26,34 C 26,32 28,30 30,30 Z"
+        android:fillColor="#10b981" />
+
+    <!-- Button Row 1 -->
+    <path android:fillColor="#94a3b8" android:pathData="M30,56 l8,0 l0,8 l-8,0 z"/>
+    <path android:fillColor="#94a3b8" android:pathData="M50,56 l8,0 l0,8 l-8,0 z"/>
+    <path android:fillColor="#ef4444" android:pathData="M70,56 l8,0 l0,8 l-8,0 z"/>
+
+    <!-- Button Row 2 -->
+    <path android:fillColor="#94a3b8" android:pathData="M30,72 l8,0 l0,8 l-8,0 z"/>
+    <path android:fillColor="#94a3b8" android:pathData="M50,72 l8,0 l0,8 l-8,0 z"/>
+    <path android:fillColor="#3b82f6" android:pathData="M70,72 l8,0 l0,8 l-8,0 z"/>
+
+</vector>
