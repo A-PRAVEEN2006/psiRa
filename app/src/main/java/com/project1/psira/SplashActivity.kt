@@ -21,6 +21,17 @@ class SplashActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_splash)
 
+        val splashTitle = findViewById<android.widget.TextView>(R.id.splashTitle)
+        val animator = android.animation.ObjectAnimator.ofPropertyValuesHolder(
+            splashTitle,
+            android.animation.PropertyValuesHolder.ofFloat("alpha", 0f, 1f),
+            android.animation.PropertyValuesHolder.ofFloat("scaleX", 0.8f, 1f),
+            android.animation.PropertyValuesHolder.ofFloat("scaleY", 0.8f, 1f)
+        )
+        animator.duration = 1200
+        animator.interpolator = android.view.animation.DecelerateInterpolator()
+        animator.start()
+
         // Wait for 2000ms (2 seconds) then go to MainActivity
         Handler(Looper.getMainLooper()).postDelayed({
             startActivity(Intent(this, MainActivity::class.java))

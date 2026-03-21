@@ -1,14 +1,19 @@
 package com.project1.psira
 
+import android.animation.ObjectAnimator
+import android.animation.PropertyValuesHolder
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
+import android.view.animation.DecelerateInterpolator
 import android.widget.Button
 import android.widget.EditText
-import android.widget.TextView // Import for the Name Label
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.auth.FirebaseAuth
 
 class NexusDashboardActivity : AppCompatActivity() {
@@ -16,7 +21,19 @@ class NexusDashboardActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_nexus_dashboard)
 
-        // 1. IDENTITY DISPLAY: Shows "AGENT: Praveen" at the top
+        val mainContainer = findViewById<View>(R.id.mainContentContainer)
+
+        // Intro Animation
+        val scaleDown = ObjectAnimator.ofPropertyValuesHolder(
+            mainContainer,
+            PropertyValuesHolder.ofFloat("alpha", 0f, 1f),
+            PropertyValuesHolder.ofFloat("translationY", 100f, 0f)
+        )
+        scaleDown.duration = 800
+        scaleDown.interpolator = DecelerateInterpolator()
+        scaleDown.start()
+
+        // 1. IDENTITY DISPLAY
         val tvAgentName = findViewById<TextView>(R.id.tvAgentName)
         val user = FirebaseAuth.getInstance().currentUser
         tvAgentName.text = "AGENT: ${user?.displayName ?: "Unknown"}"
@@ -24,35 +41,24 @@ class NexusDashboardActivity : AppCompatActivity() {
         // 2. BUTTON REFERENCES
         val btnGlobal = findViewById<Button>(R.id.btnGlobal)
         val btnWalkie = findViewById<Button>(R.id.btnWalkie)
-        val btnPrivate = findViewById<Button>(R.id.btnPrivate)
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
 
-        // --- ADD THE LOGOUT LOGIC HERE ---
+        // 3. LOGOUT LOGIC
         val tvLogout = findViewById<TextView>(R.id.tvLogout)
         tvLogout.setOnClickListener {
-            // 1. Sign out from Firebase
             FirebaseAuth.getInstance().signOut()
-
-            // 2. Head back to the Login screen
-            val intent = Intent(this, LoginActivity::class.java)
-            startActivity(intent)
-
-            // 3. Destroy this dashboard so they can't click 'back' to get in
+            startActivity(Intent(this, LoginActivity::class.java))
             finish()
-
             Toast.makeText(this, "Agent Session Terminated", Toast.LENGTH_SHORT).show()
         }
-        // ---------------------------------
 
-        // ... (Rest of your 🌍 GLOBAL, 📻 WALKIE-TALKIE, and 🔒 PRIVATE listeners)
-
-        // 🌍 GLOBAL MODE: Public channel for everyone
+        // 4. PUBLIC CHANNEL (Old Global)
         btnGlobal.setOnClickListener {
             sharedPref.edit().putString("SECURE_CHANNEL", "global_protocol").apply()
             startActivity(Intent(this, ChatActivity::class.java))
         }
 
-        // 📻 WALKIE-TALKIE MODE: 7-digit frequency match
+        // 5. ONE TO ONE (Old Walkie-Talkie)
         btnWalkie.setOnClickListener {
             val input = EditText(this)
             input.hint = "7-Digit Frequency (e.g. 1234567)"
@@ -75,11 +81,32 @@ class NexusDashboardActivity : AppCompatActivity() {
                 .show()
         }
 
-        // 🔒 PRIVATE MODE: Your own UID-locked vault
-        btnPrivate.setOnClickListener {
-            val userId = user?.uid ?: "anonymous"
-            sharedPref.edit().putString("SECURE_CHANNEL", "private_$userId").apply()
-            startActivity(Intent(this, ChatActivity::class.java))
+        // 6. BOTTOM NAVIGATION (Replaces Ghost Vault)
+        val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNav)
+        bottomNav.selectedItemId = R.id.nav_home
+
+        bottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_home -> {
+                    // Already here
+                    true
+                }
+                R.id.nav_death_note -> {
+                    // Execute Private Vault Logic
+                    val userId = user?.uid ?: "anonymous"
+                    sharedPref.edit().putString("SECURE_CHANNEL", "private_$userId").apply()
+                    startActivity(Intent(this, ChatActivity::class.java))
+                    // Ensure the selection stays on home when returning
+                    bottomNav.selectedItemId = R.id.nav_home
+                    false
+                }
+                R.id.nav_settings -> {
+                    startActivity(Intent(this, SettingsActivity::class.java))
+                    bottomNav.selectedItemId = R.id.nav_home
+                    false
+                }
+                else -> false
+            }
         }
     }
 }
