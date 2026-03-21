@@ -28,16 +28,24 @@ class DirectChatActivity : AppCompatActivity() {
         targetUid = intent.getStringExtra("TARGET_UID")
         targetName = intent.getStringExtra("TARGET_NAME")
 
+        // Load local nickname if exists
+        val myUid = FirebaseAuth.getInstance().currentUser!!.uid
+        val sharedPrefNick = getSharedPreferences("PsiRaNicknames", android.content.Context.MODE_PRIVATE)
+        val personalNickname = sharedPrefNick.getString(targetUid, null)
+        val displayName = personalNickname ?: targetName ?: "Unknown Agent"
+
         recyclerView = findViewById(R.id.recyclerView)
         val btnSend = findViewById<Button>(R.id.btnSend)
         val editMessage = findViewById<EditText>(R.id.editMessage)
         val secureStatusText = findViewById<TextView>(R.id.secureStatusText)
         
+        findViewById<android.view.View>(R.id.chatBg).setBackgroundColor(android.graphics.Color.parseColor("#1A1A2E"))
+        
         findViewById<ImageButton>(R.id.btnLearningPage).visibility = android.view.View.GONE
         findViewById<ImageButton>(R.id.btnSettings).visibility = android.view.View.GONE
 
-        secureStatusText.text = "🔒 DIRECT LINK: $targetName"
-        secureStatusText.setTextColor(android.graphics.Color.GREEN)
+        secureStatusText.text = "🔒 DIRECT LINK: $displayName"
+        secureStatusText.setTextColor(android.graphics.Color.parseColor("#7B61FF"))
 
         val layoutManager = LinearLayoutManager(this)
         layoutManager.stackFromEnd = true
@@ -47,8 +55,6 @@ class DirectChatActivity : AppCompatActivity() {
         messageAdapter = MessageAdapter(messageList)
         recyclerView.adapter = messageAdapter
 
-        val myUid = FirebaseAuth.getInstance().currentUser!!.uid
-        
         val channelName = if (myUid < targetUid!!) "${myUid}_$targetUid" else "${targetUid}_${myUid}"
         
         db = FirebaseDatabase.getInstance().getReference("direct_messages/$channelName")

@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import com.google.firebase.database.FirebaseDatabase
 
 class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,7 +36,8 @@ class SettingsActivity : AppCompatActivity() {
             input.hint = "Enter New Agent Alias"
 
             AlertDialog.Builder(this)
-                .setTitle("Update Identity")
+                .setTitle("Update Public Signal")
+                .setMessage("This name will reflect on outgoing messages for all agents you contact.")
                 .setView(input)
                 .setPositiveButton("Update") { _, _ ->
                     val newName = input.text.toString().trim()
