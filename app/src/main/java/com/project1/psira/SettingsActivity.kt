@@ -19,12 +19,44 @@ class SettingsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_settings)
 
         val tvSettingsTitle = findViewById<TextView>(R.id.tvSettingsTitle)
+        val btnChangeName = findViewById<Button>(R.id.btnChangeName)
         val btnChangePasscode = findViewById<Button>(R.id.btnChangePasscode)
         val btnWipeLocal = findViewById<Button>(R.id.btnWipeLocal)
         val switchTheme = findViewById<Switch>(R.id.switchTheme)
         val btnAbout = findViewById<Button>(R.id.btnAbout)
 
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
+
+        // --- 0. CHANGE NAME ---
+        btnChangeName.setOnClickListener {
+            val input = EditText(this)
+            val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+            input.setText(user?.displayName ?: "")
+            input.hint = "Enter New Agent Alias"
+
+            AlertDialog.Builder(this)
+                .setTitle("Update Identity")
+                .setView(input)
+                .setPositiveButton("Update") { _, _ ->
+                    val newName = input.text.toString().trim()
+                    if (newName.isNotEmpty()) {
+                        val profileUpdates = com.google.firebase.auth.userProfileChangeRequest {
+                            displayName = newName
+                        }
+                        user?.updateProfile(profileUpdates)?.addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                // Sync to database so others see it
+                                FirebaseDatabase.getInstance().getReference("users")
+                                    .child(user.uid).child("name").setValue(newName)
+                                
+                                Toast.makeText(this, "Agent Alias Synchronized!", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
 
         // --- 1. CHANGE PASSCODE ---
         btnChangePasscode.setOnClickListener {

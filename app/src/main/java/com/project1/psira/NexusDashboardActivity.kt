@@ -69,9 +69,7 @@ class NexusDashboardActivity : AppCompatActivity() {
                 }
         }
 
-        // 2. BUTTON REFERENCES
-        val btnGlobal = findViewById<Button>(R.id.btnGlobal)
-        val btnWalkie = findViewById<Button>(R.id.btnWalkie)
+        // 2. LOGOUT LOGIC
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
 
         // 3. LOGOUT LOGIC
@@ -81,35 +79,6 @@ class NexusDashboardActivity : AppCompatActivity() {
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
             Toast.makeText(this, "Agent Session Terminated", Toast.LENGTH_SHORT).show()
-        }
-
-        // 4. PUBLIC CHANNEL (Old Global)
-        btnGlobal.setOnClickListener {
-            sharedPref.edit().putString("SECURE_CHANNEL", "global_protocol").apply()
-            startActivity(Intent(this, ChatActivity::class.java))
-        }
-
-        // 5. ONE TO ONE (Old Walkie-Talkie)
-        btnWalkie.setOnClickListener {
-            val input = EditText(this)
-            input.hint = "7-Digit Frequency (e.g. 1234567)"
-            input.inputType = android.text.InputType.TYPE_CLASS_NUMBER
-
-            AlertDialog.Builder(this)
-                .setTitle("📻 Tune Frequency")
-                .setMessage("Enter the 7-digit code to connect with your partner.")
-                .setView(input)
-                .setPositiveButton("Connect") { _, _ ->
-                    val freq = input.text.toString()
-                    if (freq.length == 7) {
-                        sharedPref.edit().putString("SECURE_CHANNEL", "freq_$freq").apply()
-                        startActivity(Intent(this, ChatActivity::class.java))
-                    } else {
-                        Toast.makeText(this, "Must be 7 digits!", Toast.LENGTH_SHORT).show()
-                    }
-                }
-                .setNegativeButton("Cancel", null)
-                .show()
         }
 
         // 6. BOTTOM NAVIGATION (Replaces Ghost Vault)
@@ -150,7 +119,7 @@ class NexusDashboardActivity : AppCompatActivity() {
 
                     val promptInfo = BiometricPrompt.PromptInfo.Builder()
                         .setTitle("Vault Biometric Lock")
-                        .setSubtitle("Authenticate to access the Death Note")
+                        .setSubtitle("Authenticate to access the Secure Vault")
                         .setNegativeButtonText("Cancel")
                         .build()
 

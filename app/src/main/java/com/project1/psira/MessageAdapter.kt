@@ -12,14 +12,30 @@ import com.google.firebase.database.FirebaseDatabase
 
 class MessageAdapter(private val messageList: List<Message>) : RecyclerView.Adapter<MessageAdapter.MessageViewHolder>() {
 
+    private val VIEW_TYPE_SENT = 1
+    private val VIEW_TYPE_RECEIVED = 2
+
     class MessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val textMessage: TextView = itemView.findViewById(R.id.textMessage)
         val tvBurnIcon: TextView? = itemView.findViewById(R.id.tvBurnIcon)
     }
 
+    override fun getItemViewType(position: Int): Int {
+        val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+        return if (messageList[position].sender == currentUser?.displayName) {
+            VIEW_TYPE_SENT
+        } else {
+            VIEW_TYPE_RECEIVED
+        }
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MessageViewHolder {
-        // This inflates your item_message.xml bubble design
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_message, parent, false)
+        val layout = if (viewType == VIEW_TYPE_SENT) {
+            R.layout.item_message_sent
+        } else {
+            R.layout.item_message_received
+        }
+        val view = LayoutInflater.from(parent.context).inflate(layout, parent, false)
         return MessageViewHolder(view)
     }
 

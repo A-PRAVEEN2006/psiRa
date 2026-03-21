@@ -71,27 +71,24 @@
             android:layout_marginTop="20dp"
             android:layout_marginBottom="60dp" />
 
-        <Button
-            android:id="@+id/btnGlobal"
+        <TextView
             android:layout_width="match_parent"
-            android:layout_height="75dp"
-            android:text="Public Channel"
-            android:background="@drawable/bg_rounded_primary"
-            android:textColor="?attr/colorOnPrimary"
-            android:textSize="18sp"
+            android:layout_height="wrap_content"
+            android:text="AGENT STATUS: ACTIVE"
+            android:textColor="#00FF00"
+            android:textSize="14sp"
             android:textStyle="bold"
-            android:layout_marginBottom="24dp" />
+            android:gravity="center"
+            android:layout_marginBottom="16dp" />
 
-        <Button
-            android:id="@+id/btnWalkie"
+        <TextView
             android:layout_width="match_parent"
-            android:layout_height="75dp"
-            android:text="One to One"
-            android:backgroundTint="?attr/colorSurface"
-            android:textColor="?attr/colorAccent"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:elevation="4dp" />
+            android:layout_height="wrap_content"
+            android:text="All systems operational. Personal encryption nodes established. Secure Vault is locked."
+            android:textColor="?attr/colorOnBackground"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:alpha="0.7" />
 
     </LinearLayout>
 
