@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Light Mode (Feel Good Colors) -->
+    <color name="colorPrimary">#4A90E2</color>
+    <color name="colorOnPrimary">#FFFFFF</color>
+    <color name="colorBackground">#F5F7FA</color>
+    <color name="colorOnBackground">#333333</color>
+    <color name="colorSurface">#FFFFFF</color>
+    <color name="colorOnSurface">#333333</color>
+    <color name="colorAccent">#2FA29C</color>
+    <color name="colorError">#E74C3C</color>
+    <color name="colorCalcKeyBg">#E1E8EE</color>
+    <color name="colorCalcKeyText">#333333</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 </resources>

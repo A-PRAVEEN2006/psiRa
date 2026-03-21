@@ -3,72 +3,72 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#0D0D0D"
+    android:background="?android:attr/colorBackground"
     android:gravity="center"
-    android:padding="30dp">
+    android:padding="32dp">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="PsiRa NEXUS"
-        android:textColor="#00FF00"
-        android:textSize="32sp"
+        android:textColor="?attr/colorPrimary"
+        android:textSize="36sp"
         android:textStyle="bold"
-        android:letterSpacing="0.1"
-        android:layout_marginBottom="10dp"
-        android:shadowColor="#00FF00"
-        android:shadowDx="0"
-        android:shadowDy="0"
-        android:shadowRadius="20" />
+        android:letterSpacing="0.05"
+        android:layout_marginBottom="8dp" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="AGENT AUTHENTICATION REQUIRED"
-        android:textColor="#808080"
-        android:textSize="12sp"
-        android:layout_marginBottom="40dp" />
+        android:textColor="?attr/colorAccent"
+        android:textSize="14sp"
+        android:layout_marginBottom="48dp" />
 
     <EditText
         android:id="@+id/editEmail"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:background="#1A1A1A"
+        android:layout_height="56dp"
+        android:background="@drawable/bg_rounded_input"
         android:hint="Agent ID (Email)"
-        android:textColorHint="#4D4D4D"
-        android:textColor="#FFFFFF"
-        android:padding="12dp"
+        android:textColorHint="?attr/colorOnBackground"
+        android:textColor="?attr/colorOnBackground"
+        android:padding="16dp"
         android:inputType="textEmailAddress"
-        android:layout_marginBottom="16dp"/>
+        android:layout_marginBottom="20dp"
+        android:elevation="2dp" />
 
     <EditText
         android:id="@+id/editPassword"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:background="#1A1A1A"
+        android:layout_height="56dp"
+        android:background="@drawable/bg_rounded_input"
         android:hint="Passphrase"
-        android:textColorHint="#4D4D4D"
-        android:textColor="#FFFFFF"
-        android:padding="12dp"
+        android:textColorHint="?attr/colorOnBackground"
+        android:textColor="?attr/colorOnBackground"
+        android:padding="16dp"
         android:inputType="textPassword"
-        android:layout_marginBottom="30dp"/>
+        android:layout_marginBottom="40dp"
+        android:elevation="2dp" />
 
     <Button
         android:id="@+id/btnLogin"
         android:layout_width="match_parent"
-        android:layout_height="55dp"
+        android:layout_height="60dp"
         android:text="INITIALIZE CONNECTION"
-        android:textColor="#000000"
+        android:textColor="?attr/colorOnPrimary"
+        android:textSize="16sp"
         android:textStyle="bold"
-        android:backgroundTint="#00FF00"
-        android:layout_marginBottom="16dp"/>
+        android:background="@drawable/bg_rounded_primary"
+        android:layout_marginBottom="20dp"/>
 
     <Button
         android:id="@+id/btnRegister"
         android:layout_width="match_parent"
-        android:layout_height="55dp"
+        android:layout_height="60dp"
         android:text="REGISTER NEW AGENT"
-        android:textColor="#00FF00"
-        android:backgroundTint="#1A1A1A" />
+        android:textColor="?attr/colorPrimary"
+        android:textSize="16sp"
+        android:backgroundTint="?attr/colorSurface" />
 
 </LinearLayout>

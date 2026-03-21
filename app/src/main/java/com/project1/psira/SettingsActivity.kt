@@ -65,9 +65,11 @@ class SettingsActivity : AppCompatActivity() {
 
         // --- 3. THEME TOGGLE --
         // Check current theme state
-        switchTheme.isChecked = AppCompatDelegate.getDefaultNightMode() != AppCompatDelegate.MODE_NIGHT_NO
+        val isNight = sharedPref.getBoolean("IS_DARK_MODE", true)
+        switchTheme.isChecked = isNight
 
         switchTheme.setOnCheckedChangeListener { _, isChecked ->
+            sharedPref.edit().putBoolean("IS_DARK_MODE", isChecked).apply()
             if (isChecked) {
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
             } else {
