@@ -9,6 +9,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.userProfileChangeRequest
+import com.google.firebase.database.FirebaseDatabase
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
@@ -42,9 +43,11 @@ class LoginActivity : AppCompatActivity() {
                             showNamePopup()
                         } else {
                             // If name exists, proceed to Dashboard
-                            Toast.makeText(this, "Welcome back, ${user?.displayName}!", Toast.LENGTH_SHORT).show()
-                            startActivity(Intent(this, NexusDashboardActivity::class.java))
-                            finish()
+                            ensureAgentId(user!!.uid) {
+                                Toast.makeText(this, "Welcome back, ${user.displayName}!", Toast.LENGTH_SHORT).show()
+                                startActivity(Intent(this, NexusDashboardActivity::class.java))
+                                finish()
+                            }
                         }
                     } else {
                         Toast.makeText(this, "Error: ${task.exception?.message}", Toast.LENGTH_LONG).show()
@@ -106,9 +109,14 @@ class LoginActivity : AppCompatActivity() {
                         setDisplayName(displayName)
                     }
                     user?.updateProfile(profileUpdates)?.addOnCompleteListener {
-                        Toast.makeText(this, "Profile Updated: $displayName", Toast.LENGTH_SHORT).show()
-                        startActivity(Intent(this, NexusDashboardActivity::class.java))
-                        finish()
+                        if (user != null) {
+                            ensureAgentId(user.uid) {
+                                FirebaseDatabase.getInstance().getReference("users").child(user.uid).child("name").setValue(displayName)
+                                Toast.makeText(this, "Profile Updated: $displayName", Toast.LENGTH_SHORT).show()
+                                startActivity(Intent(this, NexusDashboardActivity::class.java))
+                                finish()
+                            }
+                        }
                     }
                 } else {
                     Toast.makeText(this, "Name cannot be empty!", Toast.LENGTH_SHORT).show()
@@ -116,5 +124,22 @@ class LoginActivity : AppCompatActivity() {
                 }
             }
             .show()
+    }
+
+    private fun ensureAgentId(uid: String, onComplete: () -> Unit) {
+        val usersRef = FirebaseDatabase.getInstance().getReference("users").child(uid)
+        usersRef.child("agentId").get().addOnSuccessListener { snapshot ->
+            if (!snapshot.exists() || snapshot.value == null) {
+                // Generate 5 digit ID
+                val newId = (10000..99999).random().toString()
+                usersRef.child("agentId").setValue(newId).addOnCompleteListener {
+                    onComplete()
+                }
+            } else {
+                onComplete()
+            }
+        }.addOnFailureListener {
+            onComplete()
+        }
     }
 }

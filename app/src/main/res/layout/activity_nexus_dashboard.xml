@@ -20,15 +20,31 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="40dp">
 
-            <TextView
-                android:id="@+id/tvAgentName"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="AGENT: LOADING..."
-                android:textColor="?attr/colorOnBackground"
-                android:textSize="12sp"
-                android:letterSpacing="0.05"
-                android:layout_alignParentStart="true" />
+                android:orientation="vertical"
+                android:layout_alignParentStart="true">
+                
+                <TextView
+                    android:id="@+id/tvAgentName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="AGENT: LOADING..."
+                    android:textColor="?attr/colorOnBackground"
+                    android:textSize="12sp"
+                    android:letterSpacing="0.05" />
+                    
+                <TextView
+                    android:id="@+id/tvAgentId"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="ID: [FETCHING...]"
+                    android:textColor="?attr/colorAccent"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.1" />
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/tvLogout"

@@ -38,8 +38,23 @@ class NexusDashboardActivity : AppCompatActivity() {
 
         // 1. IDENTITY DISPLAY
         val tvAgentName = findViewById<TextView>(R.id.tvAgentName)
+        val tvAgentId = findViewById<TextView>(R.id.tvAgentId)
         val user = FirebaseAuth.getInstance().currentUser
         tvAgentName.text = "AGENT: ${user?.displayName ?: "Unknown"}"
+
+        if (user != null) {
+            com.google.firebase.database.FirebaseDatabase.getInstance().getReference("users").child(user.uid).child("agentId")
+                .get().addOnSuccessListener { snapshot ->
+                    val agentId = snapshot.getValue(String::class.java)
+                    if (agentId != null) {
+                        tvAgentId.text = "ID: $agentId"
+                    } else {
+                        tvAgentId.text = "ID: UNKNOWN"
+                    }
+                }.addOnFailureListener {
+                    tvAgentId.text = "ID: ERROR"
+                }
+        }
 
         // 2. BUTTON REFERENCES
         val btnGlobal = findViewById<Button>(R.id.btnGlobal)
@@ -129,8 +144,13 @@ class NexusDashboardActivity : AppCompatActivity() {
                     biometricPrompt.authenticate(promptInfo)
                     false
                 }
+                R.id.nav_groups -> {
+                    startActivity(Intent(this@NexusDashboardActivity, GroupsActivity::class.java))
+                    bottomNav.selectedItemId = R.id.nav_home
+                    false
+                }
                 R.id.nav_settings -> {
-                    startActivity(Intent(this, SettingsActivity::class.java))
+                    startActivity(Intent(this@NexusDashboardActivity, SettingsActivity::class.java))
                     bottomNav.selectedItemId = R.id.nav_home
                     false
                 }
