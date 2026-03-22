@@ -1,73 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#000000"
-    android:padding="16dp">
+    android:background="#0A0A0A">
 
-    <TextView
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="OVEREER DASHBOARD"
-        android:textColor="#FF0000"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:textAlignment="center"
-        android:letterSpacing="0.1"
-        android:layout_marginBottom="16dp" />
+        android:padding="16dp"
+        android:background="#16213E">
+
+        <TextView
+            android:id="@+id/tvGodTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="OVERSEER TERMINAL"
+            android:textColor="#BC13FE"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.2" />
+
+        <ImageButton
+            android:id="@+id/btnRestoreIdentity"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_alignParentEnd="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_revert"
+            app:tint="#BC13FE"
+            android:contentDescription="Restore ID" />
+    </RelativeLayout>
+
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/godTabLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#1B1B1B"
+        app:tabIndicatorColor="#BC13FE"
+        app:tabSelectedTextColor="#BC13FE"
+        app:tabTextColor="#88FFFFFF"
+        app:tabMode="fixed"
+        app:tabGravity="fill" />
+
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/godViewPager"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
     <Button
         android:id="@+id/btnGlobalBroadcast"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="SEND GLOBAL BROADCAST"
-        android:backgroundTint="#FF0000"
+        android:layout_height="56dp"
+        android:text="📡 GLOBAL SIGNAL OVERRIDE"
+        android:backgroundTint="#BC13FE"
         android:textColor="#FFFFFF"
         android:textStyle="bold"
-        android:layout_marginBottom="8dp" />
-
-    <Button
-        android:id="@+id/btnRestoreIdentity"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="RESTORE TRUE IDENTITY"
-        android:backgroundTint="#0000FF"
-        android:textColor="#FFFFFF"
-        android:textStyle="bold"
-        android:layout_marginBottom="16dp" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Global Registration Roster"
-        android:textColor="#00FF00"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="8dp" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvGodUsers"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:background="#111111"
-        android:layout_marginBottom="16dp" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Global Server Enclaves"
-        android:textColor="#00FF00"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="8dp" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvGodGroups"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:background="#111111" />
+        android:layout_margin="8dp" />
 
 </LinearLayout>

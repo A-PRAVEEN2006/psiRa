@@ -1,128 +1,84 @@
 package com.project1.psira
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
+import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
 
 class GodDashboardActivity : AppCompatActivity() {
-
-    private lateinit var userList: ArrayList<User>
-    private lateinit var userAdapter: GodUserAdapter
-    
-    private lateinit var groupList: ArrayList<Group>
-    private lateinit var groupAdapter: GodGroupAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_god_dashboard)
 
-        val rvGodUsers: RecyclerView = findViewById(R.id.rvGodUsers)
-        rvGodUsers.layoutManager = LinearLayoutManager(this)
-        userList = ArrayList()
-        userAdapter = GodUserAdapter(userList)
-        rvGodUsers.adapter = userAdapter
+        val tabLayout: TabLayout = findViewById(R.id.godTabLayout)
+        val viewPager: ViewPager2 = findViewById(R.id.godViewPager)
+        val btnBroadcast: Button = findViewById(R.id.btnGlobalBroadcast)
+        val btnRestoreId: ImageButton = findViewById(R.id.btnRestoreIdentity)
 
-        val rvGodGroups: RecyclerView = findViewById(R.id.rvGodGroups)
-        rvGodGroups.layoutManager = LinearLayoutManager(this)
-        groupList = ArrayList()
-        groupAdapter = GodGroupAdapter(groupList)
-        rvGodGroups.adapter = groupAdapter
+        val adapter = GodPagerAdapter(this)
+        viewPager.adapter = adapter
 
-        val db = FirebaseDatabase.getInstance()
-
-        // 1. Hook All Users Locally
-        db.getReference("users").addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                userList.clear()
-                for (child in snapshot.children) {
-                    val user = child.getValue(User::class.java)
-                    // If the user's uid acts as the key but isn't stored, we attach it manually:
-                    if (user != null) {
-                        val fullUser = User(
-                            uid = child.key,
-                            email = user.email,
-                            name = user.name,
-                            agentId = user.agentId,
-                            banned = user.banned
-                        )
-                        userList.add(fullUser)
-                    }
-                }
-                userAdapter.notifyDataSetChanged()
+        TabLayoutMediator(tabLayout, viewPager) { tab, position ->
+            tab.text = when (position) {
+                0 -> "AGENTS"
+                1 -> "ENCLAVES"
+                2 -> "DIRECT LINKS"
+                3 -> "VAULTS"
+                else -> null
             }
-            override fun onCancelled(error: DatabaseError) {}
-        })
+        }.attach()
 
-        // 2. Hook All Groups Globally
-        db.getReference("groups").addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                groupList.clear()
-                for (child in snapshot.children) {
-                    val group = child.getValue(Group::class.java)
-                    if (group != null) {
-                        groupList.add(group)
-                    }
-                }
-                groupAdapter.notifyDataSetChanged()
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        })
-
-        // 3. Global Broadcast Action
-        val btnGlobalBroadcast: Button = findViewById(R.id.btnGlobalBroadcast)
-        btnGlobalBroadcast.setOnClickListener {
-            val input = EditText(this)
-            input.hint = "Enter System Message"
-
-            AlertDialog.Builder(this)
-                .setTitle("VOICE OF GOD")
-                .setMessage("Submit an override message to completely broadcast across every enclave channel simultaneously.")
-                .setView(input)
-                .setPositiveButton("SEND") { _, _ ->
-                    val text = input.text.toString().trim()
-                    if (text.isNotEmpty()) {
-                        sendGlobalBroadcast(text)
-                    }
-                }
-                .setNegativeButton("ABORT", null)
-                .show()
+        btnBroadcast.setOnClickListener {
+            showBroadcastDialog()
         }
 
-        // 4. Restore Identity
-        val btnRestoreIdentity: Button = findViewById(R.id.btnRestoreIdentity)
-        btnRestoreIdentity.setOnClickListener {
+        btnRestoreId.setOnClickListener {
             getSharedPreferences("PsiRaPrefs", android.content.Context.MODE_PRIVATE).edit()
                 .remove("IMPERSONATING_NAME")
                 .remove("IMPERSONATING_ID")
                 .apply()
-            Toast.makeText(this, "Original creator identity restored.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Creator status restored.", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun sendGlobalBroadcast(text: String) {
+    private fun showBroadcastDialog() {
+        val input = EditText(this)
+        input.hint = "System Override Message"
+        AlertDialog.Builder(this)
+            .setTitle("VOICE OF GOD")
+            .setMessage("Inject a priority message into every single group enclave simultaneously.")
+            .setView(input)
+            .setPositiveButton("EXECUTE") { _, _ ->
+                val msg = input.text.toString().trim()
+                if (msg.isNotEmpty()) injectBroadcast(msg)
+            }
+            .setNegativeButton("ABORT", null)
+            .show()
+    }
+
+    private fun injectBroadcast(text: String) {
         val db = FirebaseDatabase.getInstance()
-        val godMessage = Message(
-            id = "GOD_MODE_OVERRIDE",
-            sender = "OVERSEER",
-            content = "SYSTEM BROADCAST: $text",
-            isBurnable = false
-        )
+        val godMsg = Message(id = "GOD_OVERRIDE", sender = "OVERSEER", content = "SYSTEM BROADCAST: $text")
         
-        var count = 0
-        for (group in groupList) {
-            val channelName = "group_${group.id}"
-            db.getReference("messages").child(channelName).push().setValue(godMessage)
-            count++
+        db.getReference("groups").get().addOnSuccessListener { snapshot ->
+            for (child in snapshot.children) {
+                val groupId = child.key
+                if (groupId != null) {
+                    db.getReference("messages").child("group_$groupId").push().setValue(godMsg)
+                }
+            }
+            // Also inject into Global
+            db.getReference("messages").child("global_chat").push().setValue(godMsg)
+            Toast.makeText(this, "Broadcast signal frequency synchronized.", Toast.LENGTH_SHORT).show()
         }
-        Toast.makeText(this, "Injected into $count secured enclaves.", Toast.LENGTH_LONG).show()
     }
 }
