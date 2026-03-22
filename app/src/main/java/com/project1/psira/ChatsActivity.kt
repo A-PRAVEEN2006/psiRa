@@ -35,6 +35,11 @@ class ChatsActivity : AppCompatActivity() {
                     finish()
                     true
                 }
+                R.id.nav_death_note -> {
+                    startActivity(Intent(this@ChatsActivity, VaultActivity::class.java))
+                    finish()
+                    true
+                }
                 R.id.nav_chats -> true
                 R.id.nav_groups -> {
                     startActivity(Intent(this, GroupsActivity::class.java))

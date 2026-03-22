@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#1A1A2E"
+    android:padding="24dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp">
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_revert"
+            android:contentDescription="Back"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:tint="#7B61FF" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="EDIT ENCRYPTED NOTE"
+            android:textColor="#7B61FF"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.2"
+            android:layout_centerInParent="true" />
+
+        <ImageButton
+            android:id="@+id/btnDeleteNote"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_delete"
+            android:contentDescription="Delete"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:tint="#FF5252"
+            android:visibility="gone" />
+    </RelativeLayout>
+
+    <EditText
+        android:id="@+id/editNoteTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Note Title"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#44FFFFFF"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:background="@android:color/transparent"
+        android:layout_marginBottom="16dp" />
+
+    <EditText
+        android:id="@+id/editNoteContent"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:hint="Write your secure thoughts here..."
+        android:textColor="#BBFFFFFF"
+        android:textColorHint="#33FFFFFF"
+        android:textSize="18sp"
+        android:background="@android:color/transparent"
+        android:gravity="top"
+        android:importantForAutofill="no" />
+
+    <Button
+        android:id="@+id/btnSaveNote"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="SAVE TO VAULT"
+        android:backgroundTint="#7B61FF"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp" />
+
+</LinearLayout>

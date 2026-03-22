@@ -136,8 +136,7 @@ class NexusDashboardActivity : AppCompatActivity() {
                             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                                 super.onAuthenticationSucceeded(result)
                                 val userId = user?.uid ?: "anonymous"
-                                sharedPref.edit().putString("SECURE_CHANNEL", "private_$userId").apply()
-                                startActivity(Intent(this@NexusDashboardActivity, ChatActivity::class.java))
+                                startActivity(Intent(this@NexusDashboardActivity, VaultActivity::class.java))
                                 bottomNav.selectedItemId = R.id.nav_home
                             }
 
