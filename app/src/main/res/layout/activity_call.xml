@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0F0F1B">
+
+    <!-- Blurred Background or Gradient -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_god_gradient"
+        android:alpha="0.3" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="100dp"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/ivCallerAvatar"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:padding="4dp"
+            android:scaleType="centerCrop"
+            android:src="@android:drawable/sym_def_app_icon"
+            style="@style/Widget.MaterialComponents.ShapeableImageView" />
+
+        <TextView
+            android:id="@+id/tvCallerName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="AGENT X"
+            android:textColor="#FFFFFF"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvCallStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ENCRYPTING NODE..."
+            android:textColor="#7B61FF"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="80dp"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/btnMute"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_marginEnd="40dp"
+            android:background="@drawable/bg_circle_dark"
+            android:src="@android:drawable/ic_btn_speak_now"
+            android:tint="#FFFFFF" />
+
+        <ImageButton
+            android:id="@+id/btnAcceptCall"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_marginEnd="40dp"
+            android:background="@drawable/bg_circle_green"
+            android:src="@android:drawable/ic_btn_speak_now"
+            android:tint="#FFFFFF"
+            android:visibility="gone" />
+
+        <ImageButton
+            android:id="@+id/btnEndCall"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:background="@drawable/bg_circle_red"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:tint="#FFFFFF" />
+
+        <ImageButton
+            android:id="@+id/btnSpeaker"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_marginStart="40dp"
+            android:background="@drawable/bg_circle_dark"
+            android:src="@android:drawable/ic_lock_silent_mode_off"
+            android:tint="#FFFFFF" />
+    </LinearLayout>
+
+</RelativeLayout>

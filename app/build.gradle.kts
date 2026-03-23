@@ -12,10 +12,11 @@ android {
 
     defaultConfig {
         applicationId = "com.project1.psira"
-        minSdk = 24
-        targetSdk = 36
+        minSdk = 26
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+        multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -49,4 +50,6 @@ dependencies {
     implementation("androidx.biometric:biometric:1.2.0-alpha05")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("com.google.firebase:firebase-messaging-ktx:23.4.1")
+    implementation("com.google.firebase:firebase-storage-ktx:20.3.0")
+    implementation("io.getstream:stream-webrtc-android:1.1.2")
 }

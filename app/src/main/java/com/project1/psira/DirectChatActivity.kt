@@ -1,16 +1,25 @@
 package com.project1.psira
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.media.MediaRecorder
+import android.net.Uri
 import android.os.Bundle
+import android.view.MotionEvent
 import android.view.WindowManager
-import android.widget.Button
-import android.widget.EditText
-import android.widget.ImageButton
-import android.widget.TextView
+import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
+import com.google.firebase.storage.FirebaseStorage
+import java.io.File
+import java.util.*
+import kotlin.collections.ArrayList
 
 class DirectChatActivity : AppCompatActivity() {
     private lateinit var db: DatabaseReference
@@ -47,6 +56,7 @@ class DirectChatActivity : AppCompatActivity() {
         secureStatusText.text = "🔒 DIRECT LINK: $displayName"
         secureStatusText.setTextColor(android.graphics.Color.parseColor("#7B61FF"))
 
+
         val layoutManager = LinearLayoutManager(this)
         layoutManager.stackFromEnd = true
         recyclerView.layoutManager = layoutManager
@@ -54,6 +64,24 @@ class DirectChatActivity : AppCompatActivity() {
         messageList = ArrayList()
         messageAdapter = MessageAdapter(messageList)
         recyclerView.adapter = messageAdapter
+
+        val btnVoiceCall = findViewById<ImageButton>(R.id.btnVoiceCall)
+
+        // 3. Call Buttons Logic
+        btnVoiceCall.setOnClickListener {
+            val callRef = FirebaseDatabase.getInstance().getReference("calls").child(targetUid!!)
+            val callData = mapOf(
+                "callerUid" to myUid,
+                "callerName" to (FirebaseAuth.getInstance().currentUser?.displayName ?: "Unknown Agent"),
+                "status" to "calling"
+            )
+            callRef.setValue(callData)
+            val intent = Intent(this, CallActivity::class.java)
+            intent.putExtra("TARGET_NAME", displayName)
+            intent.putExtra("TARGET_UID", targetUid)
+            intent.putExtra("CALL_MODE", "OUTGOING")
+            startActivity(intent)
+        }
 
         val channelName = if (myUid < targetUid!!) "${myUid}_$targetUid" else "${targetUid}_${myUid}"
         
@@ -83,18 +111,33 @@ class DirectChatActivity : AppCompatActivity() {
                 val user = FirebaseAuth.getInstance().currentUser
                 val senderName = user?.displayName ?: "Unknown Agent"
                 val isBurnable = findViewById<android.widget.ToggleButton>(R.id.toggleBurn).isChecked
-
-                try {
-                    val encrypted = AESEncryption.encrypt(text)
-                    db.push().setValue(Message(null, senderName, encrypted, isBurnable))
-                    editMessage.setText("")
-                    
-                    FirebaseDatabase.getInstance().getReference("user_direct_chats").child(myUid).child(targetUid!!).setValue(true)
-                    FirebaseDatabase.getInstance().getReference("user_direct_chats").child(targetUid!!).child(myUid).setValue(true)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
+                sendMessage(text, "text", isBurnable, senderName, myUid)
+                editMessage.setText("")
             }
         }
+    }
+
+
+    private fun sendMessage(content: String, type: String, isBurnable: Boolean, senderName: String, myUid: String) {
+        try {
+            val encrypted = if (type == "text") AESEncryption.encrypt(content) else content
+            db.push().setValue(Message(null, senderName, encrypted, isBurnable, type)).addOnFailureListener {
+                Toast.makeText(this, "Signal sync failed.", Toast.LENGTH_SHORT).show()
+            }
+            FirebaseDatabase.getInstance().getReference("user_direct_chats").child(myUid).child(targetUid!!).setValue(true)
+            FirebaseDatabase.getInstance().getReference("user_direct_chats").child(targetUid!!).child(myUid).setValue(true)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        CallManager.listenForIncomingCalls(this)
+        CallManager.updateContext(this)
+    }
+
+    override fun onStop() {
+        super.onStop()
     }
 }

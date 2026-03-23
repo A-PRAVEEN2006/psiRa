@@ -12,28 +12,43 @@ import com.google.firebase.database.FirebaseDatabase
 
 class MessageAdapter(private val messageList: List<Message>) : RecyclerView.Adapter<MessageAdapter.MessageViewHolder>() {
 
-    private val VIEW_TYPE_SENT = 1
-    private val VIEW_TYPE_RECEIVED = 2
+    private val VIEW_TYPE_SENT_TEXT = 1
+    private val VIEW_TYPE_RECEIVED_TEXT = 2
+    private val VIEW_TYPE_SENT_VOICE = 3
+    private val VIEW_TYPE_RECEIVED_VOICE = 4
+    private val VIEW_TYPE_SENT_MEDIA = 5
+    private val VIEW_TYPE_RECEIVED_MEDIA = 6
 
     class MessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val textMessage: TextView = itemView.findViewById(R.id.textMessage)
+        val textMessage: TextView? = itemView.findViewById(R.id.textMessage)
         val tvBurnIcon: TextView? = itemView.findViewById(R.id.tvBurnIcon)
+        val btnPlayVoice: android.widget.ImageButton? = itemView.findViewById(R.id.btnPlayVoice)
+        val tvVoiceDuration: TextView? = itemView.findViewById(R.id.tvVoiceDuration)
+        val ivMessageMedia: android.widget.ImageView? = itemView.findViewById(R.id.ivMessageMedia)
+        val tvFileName: TextView? = itemView.findViewById(R.id.tvFileName)
     }
 
     override fun getItemViewType(position: Int): Int {
         val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
-        return if (messageList[position].sender == currentUser?.displayName) {
-            VIEW_TYPE_SENT
-        } else {
-            VIEW_TYPE_RECEIVED
+        val message = messageList[position]
+        val isMe = message.sender == currentUser?.displayName
+
+        return when (message.type) {
+            "voice" -> if (isMe) VIEW_TYPE_SENT_VOICE else VIEW_TYPE_RECEIVED_VOICE
+            "image", "doc" -> if (isMe) VIEW_TYPE_SENT_MEDIA else VIEW_TYPE_RECEIVED_MEDIA
+            else -> if (isMe) VIEW_TYPE_SENT_TEXT else VIEW_TYPE_RECEIVED_TEXT
         }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MessageViewHolder {
-        val layout = if (viewType == VIEW_TYPE_SENT) {
-            R.layout.item_message_sent
-        } else {
-            R.layout.item_message_received
+        val layout = when (viewType) {
+            VIEW_TYPE_SENT_TEXT -> R.layout.item_message_sent
+            VIEW_TYPE_RECEIVED_TEXT -> R.layout.item_message_received
+            VIEW_TYPE_SENT_VOICE -> R.layout.item_message_voice_sent
+            VIEW_TYPE_RECEIVED_VOICE -> R.layout.item_message_voice_received
+            VIEW_TYPE_SENT_MEDIA -> R.layout.item_message_media_sent
+            VIEW_TYPE_RECEIVED_MEDIA -> R.layout.item_message_media_received
+            else -> R.layout.item_message_sent
         }
         val view = LayoutInflater.from(parent.context).inflate(layout, parent, false)
         return MessageViewHolder(view)
@@ -46,18 +61,33 @@ class MessageAdapter(private val messageList: List<Message>) : RecyclerView.Adap
         // Use the Firebase key (id) for deletion
         val messageId = message.id
 
-        try {
-            // THE REVERSE SECURITY CHAIN:
-            // 1. AES Decrypt the raw Firebase data
-            val decryptedPsiRa = AESEncryption.decrypt(message.content!!)
-
-            // 2. Decode the PsiRa Symbols back into English/Numbers
-            val plainText = PsiRaConverter.decode(decryptedPsiRa)
-
-            holder.textMessage.text = plainText
-        } catch (e: Exception) {
-            // If it fails (e.g. old messages using a different key), show the raw content
-            holder.textMessage.text = message.content
+        when (message.type) {
+            "text" -> {
+                try {
+                    val decryptedPsiRa = AESEncryption.decrypt(message.content!!)
+                    val plainText = PsiRaConverter.decode(decryptedPsiRa)
+                    holder.textMessage?.text = plainText
+                } catch (e: Exception) {
+                    holder.textMessage?.text = message.content
+                }
+            }
+            "voice" -> {
+                holder.tvVoiceDuration?.text = "Voice Note (Encrypted)"
+                holder.btnPlayVoice?.setOnClickListener {
+                    // Start simple playback (URL from message.content)
+                    playAudio(context, message.content ?: "")
+                }
+            }
+            "image" -> {
+                holder.ivMessageMedia?.visibility = View.VISIBLE
+                holder.tvFileName?.visibility = View.GONE
+                // Using a placeholder as loading from URL requires Glide/Picasso usually
+                holder.ivMessageMedia?.setImageResource(android.R.drawable.ic_menu_gallery)
+            }
+            "doc" -> {
+                holder.ivMessageMedia?.visibility = View.GONE
+                holder.tvFileName?.text = "Encrypted Doc: ${message.content?.takeLast(10)}"
+            }
         }
 
         // --- SELF-DESTRUCT LOGIC ---
@@ -82,26 +112,70 @@ class MessageAdapter(private val messageList: List<Message>) : RecyclerView.Adap
 
             if (messageId != null) {
                 val builder = AlertDialog.Builder(context)
-                builder.setTitle("Delete Message")
-                builder.setMessage("Permanently erase this data from the vault?")
-
-                builder.setPositiveButton("Delete") { _, _ ->
-                    // Use the shared channel name to find the right database folder
-                    val sharedPref = context.getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
-                    val channelName = sharedPref.getString("SECURE_CHANNEL", "messages") ?: "messages"
-
-                    val db = FirebaseDatabase.getInstance().getReference(channelName)
-                    db.child(messageId).removeValue().addOnSuccessListener {
-                        Toast.makeText(context, "Message Erased", Toast.LENGTH_SHORT).show()
+                builder.setTitle("Message Options")
+                
+                val options = mutableListOf("Delete")
+                val type = messageList[position].type
+                if (type in listOf("image", "doc", "voice")) {
+                    options.add(0, "Save to Device")
+                }
+                
+                builder.setItems(options.toTypedArray()) { _, which ->
+                    val selectedOption = options[which]
+                    if (selectedOption == "Save to Device") {
+                        val ext = when(type) {
+                            "image" -> "jpg"
+                            "doc" -> "pdf"
+                            "voice" -> "m4a"
+                            else -> "file"
+                        }
+                        saveFileToLocal(context, messageList[position].content ?: "", "${type}_${System.currentTimeMillis()}.$ext")
+                    } else if (selectedOption == "Delete") {
+                        val sharedPref = context.getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
+                        val channelName = sharedPref.getString("SECURE_CHANNEL", "messages") ?: "messages"
+                        val db = FirebaseDatabase.getInstance().getReference(channelName)
+                        db.child(messageId).removeValue().addOnSuccessListener {
+                            Toast.makeText(context, "Message Erased", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
-
                 builder.setNegativeButton("Cancel", null)
                 builder.show()
             } else {
                 Toast.makeText(context, "Error: Message ID missing", Toast.LENGTH_SHORT).show()
             }
             true
+        }
+    }
+
+    private fun playAudio(context: Context, url: String) {
+        try {
+            val mediaPlayer = android.media.MediaPlayer()
+            mediaPlayer.setDataSource(url)
+            mediaPlayer.prepareAsync()
+            mediaPlayer.setOnPreparedListener { it.start() }
+            Toast.makeText(context, "Initializing secure audio stream...", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(context, "Audio playback failed.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun saveFileToLocal(context: Context, url: String, fileName: String) {
+        try {
+            val request = android.app.DownloadManager.Request(android.net.Uri.parse(url))
+                .setTitle("PsiRa Secure Download")
+                .setDescription("Downloading encrypted asset...")
+                .setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                .setDestinationInExternalPublicDir(android.os.Environment.DIRECTORY_DOWNLOADS, "PsiRa_$fileName")
+                .setAllowedOverMetered(true)
+                .setAllowedOverRoaming(true)
+
+            val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as android.app.DownloadManager
+            downloadManager.enqueue(request)
+            Toast.makeText(context, "Encryption bypass successful. Saving to Downloads/PsiRa...", Toast.LENGTH_LONG).show()
+        } catch (e: Exception) {
+            Toast.makeText(context, "Save failed. Check storage permissions.", Toast.LENGTH_SHORT).show()
+            e.printStackTrace()
         }
     }
 

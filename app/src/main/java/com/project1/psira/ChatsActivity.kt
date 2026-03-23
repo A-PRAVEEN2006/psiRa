@@ -110,6 +110,12 @@ class ChatsActivity : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        CallManager.listenForIncomingCalls(this)
+        CallManager.updateContext(this)
+    }
+
     private fun findAgentAndChat(agentId: String) {
         val db = FirebaseDatabase.getInstance().getReference("users")
         db.orderByChild("agentId").equalTo(agentId).addListenerForSingleValueEvent(object : ValueEventListener {
