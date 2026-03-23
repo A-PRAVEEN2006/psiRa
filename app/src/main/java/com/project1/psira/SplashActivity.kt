@@ -9,6 +9,10 @@ import androidx.appcompat.app.AppCompatActivity
 class SplashActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (!isTaskRoot) {
+            finish()
+            return
+        }
         window.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE, android.view.WindowManager.LayoutParams.FLAG_SECURE)
 
         // Ensure Dark Mode is restored before any UI renders

@@ -28,6 +28,16 @@
         android:layout_marginBottom="16dp"/>
 
     <Button
+        android:id="@+id/btnChangeClockPasscode"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="Change Stealth Clock Time"
+        android:backgroundTint="?attr/colorAccent"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
         android:id="@+id/btnChangePasscode"
         android:layout_width="match_parent"
         android:layout_height="60dp"

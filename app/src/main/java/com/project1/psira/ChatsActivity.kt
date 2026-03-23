@@ -36,9 +36,8 @@ class ChatsActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_death_note -> {
-                    startActivity(Intent(this@ChatsActivity, VaultActivity::class.java))
-                    finish()
-                    true
+                    VaultAuthHelper.authenticateAndLaunch(this@ChatsActivity, bottomNav, R.id.nav_chats)
+                    false
                 }
                 R.id.nav_chats -> true
                 R.id.nav_groups -> {

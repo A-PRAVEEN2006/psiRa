@@ -115,9 +115,8 @@ class GroupsActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_death_note -> {
-                    startActivity(Intent(this@GroupsActivity, VaultActivity::class.java))
-                    finish()
-                    true
+                    VaultAuthHelper.authenticateAndLaunch(this@GroupsActivity, bottomNav, R.id.nav_groups)
+                    false
                 }
                 R.id.nav_settings -> {
                     startActivity(Intent(this, SettingsActivity::class.java))

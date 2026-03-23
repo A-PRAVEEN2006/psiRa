@@ -60,6 +60,30 @@ class SettingsActivity : AppCompatActivity() {
                 .show()
         }
 
+        // --- 0.5 CHANGE CLOCK PASSCODE ---
+        val btnChangeClockPasscode = findViewById<Button>(R.id.btnChangeClockPasscode)
+        btnChangeClockPasscode.setOnClickListener {
+            val input = EditText(this)
+            input.hint = "Enter Time (e.g. 02:35 or 14:35)"
+            input.inputType = android.text.InputType.TYPE_CLASS_DATETIME or android.text.InputType.TYPE_DATETIME_VARIATION_TIME
+
+            AlertDialog.Builder(this)
+                .setTitle("Update Stealth Clock Trigger")
+                .setMessage("Enter the exact time format (HH:MM). Drag hands to this time on the clock to unlock.")
+                .setView(input)
+                .setPositiveButton("Save") { _, _ ->
+                    val newTime = input.text.toString().trim()
+                    if (newTime.matches(Regex("^([0-1]?[0-9]|2[0-3]):[0-5][0-9]\$"))) {
+                        sharedPref.edit().putString("CLOCK_SECRET", newTime).apply()
+                        Toast.makeText(this, "Clock Bypass Set to $newTime", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this, "Invalid Format! Must be HH:MM.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+
         // --- 1. CHANGE PASSCODE ---
         btnChangePasscode.setOnClickListener {
             val input = EditText(this)

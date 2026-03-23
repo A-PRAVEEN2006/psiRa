@@ -123,37 +123,7 @@ class NexusDashboardActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_death_note -> {
-                    // Biometric Authentication for Private Vault
-                    val executor = ContextCompat.getMainExecutor(this)
-                    val biometricPrompt = BiometricPrompt(this, executor,
-                        object : BiometricPrompt.AuthenticationCallback() {
-                            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                                super.onAuthenticationError(errorCode, errString)
-                                Toast.makeText(applicationContext, "Auth Error: $errString", Toast.LENGTH_SHORT).show()
-                                bottomNav.selectedItemId = R.id.nav_home
-                            }
-
-                            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                                super.onAuthenticationSucceeded(result)
-                                val userId = user?.uid ?: "anonymous"
-                                startActivity(Intent(this@NexusDashboardActivity, VaultActivity::class.java))
-                                bottomNav.selectedItemId = R.id.nav_home
-                            }
-
-                            override fun onAuthenticationFailed() {
-                                super.onAuthenticationFailed()
-                                Toast.makeText(applicationContext, "Auth Failed", Toast.LENGTH_SHORT).show()
-                                bottomNav.selectedItemId = R.id.nav_home
-                            }
-                        })
-
-                    val promptInfo = BiometricPrompt.PromptInfo.Builder()
-                        .setTitle("Vault Biometric Lock")
-                        .setSubtitle("Authenticate to access the Secure Vault")
-                        .setNegativeButtonText("Cancel")
-                        .build()
-
-                    biometricPrompt.authenticate(promptInfo)
+                    VaultAuthHelper.authenticateAndLaunch(this@NexusDashboardActivity, bottomNav, R.id.nav_home)
                     false
                 }
                 R.id.nav_chats -> {

@@ -35,6 +35,9 @@ class CallActivity : AppCompatActivity() {
 
         findViewById<TextView>(R.id.tvCallerName).text = targetName
         
+        val tvCallerInitial = findViewById<TextView>(R.id.tvCallerInitial)
+        tvCallerInitial.text = targetName.take(1).uppercase()
+        
         val btnAccept = findViewById<ImageButton>(R.id.btnAcceptCall)
         val btnEnd = findViewById<ImageButton>(R.id.btnEndCall)
         tvStatus = findViewById(R.id.tvCallStatus)
