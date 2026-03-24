@@ -33,110 +33,115 @@ class SettingsActivity : AppCompatActivity() {
             val input = EditText(this)
             val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
             input.setText(user?.displayName ?: "")
-            input.hint = "Enter New Agent Alias"
+            input.hint = "Agent Alias"
+            input.setTextColor(android.graphics.Color.WHITE)
+            input.setHintTextColor(android.graphics.Color.GRAY)
 
-            AlertDialog.Builder(this)
-                .setTitle("Update Public Signal")
-                .setMessage("This name will reflect on outgoing messages for all agents you contact.")
-                .setView(input)
-                .setPositiveButton("Update") { _, _ ->
-                    val newName = input.text.toString().trim()
-                    if (newName.isNotEmpty()) {
-                        val profileUpdates = com.google.firebase.auth.userProfileChangeRequest {
-                            displayName = newName
-                        }
-                        user?.updateProfile(profileUpdates)?.addOnCompleteListener { task ->
-                            if (task.isSuccessful) {
-                                // Sync to database so others see it
-                                FirebaseDatabase.getInstance().getReference("users")
-                                    .child(user.uid).child("name").setValue(newName)
-                                
-                                Toast.makeText(this, "Agent Alias Synchronized!", Toast.LENGTH_SHORT).show()
-                            }
+            PsiRaDialogs.showDeleteSheet(
+                this,
+                "UPDATE ALIAS",
+                "This name will be broadcast to all contacts in the encrypted network.",
+                "SYNCHRONIZE",
+                input
+            ) {
+                val newName = input.text.toString().trim()
+                if (newName.isNotEmpty()) {
+                    val profileUpdates = com.google.firebase.auth.userProfileChangeRequest {
+                        displayName = newName
+                    }
+                    user?.updateProfile(profileUpdates)?.addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            FirebaseDatabase.getInstance().getReference("users")
+                                .child(user.uid).child("name").setValue(newName)
+                            Toast.makeText(this, "Signal Synchronized", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
-                .setNegativeButton("Cancel", null)
-                .show()
+            }
         }
 
-        // --- 0.5 CHANGE CLOCK PASSCODE ---
         val btnChangeClockPasscode = findViewById<Button>(R.id.btnChangeClockPasscode)
         btnChangeClockPasscode.setOnClickListener {
             val input = EditText(this)
-            input.hint = "Enter Time (e.g. 02:35 or 14:35)"
+            input.hint = "HH:MM (e.g. 02:35)"
+            input.setTextColor(android.graphics.Color.WHITE)
+            input.setHintTextColor(android.graphics.Color.GRAY)
             input.inputType = android.text.InputType.TYPE_CLASS_DATETIME or android.text.InputType.TYPE_DATETIME_VARIATION_TIME
 
-            AlertDialog.Builder(this)
-                .setTitle("Update Stealth Clock Trigger")
-                .setMessage("Enter the exact time format (HH:MM). Drag hands to this time on the clock to unlock.")
-                .setView(input)
-                .setPositiveButton("Save") { _, _ ->
-                    val newTime = input.text.toString().trim()
-                    if (newTime.matches(Regex("^([0-1]?[0-9]|2[0-3]):[0-5][0-9]\$"))) {
-                        sharedPref.edit().putString("CLOCK_SECRET", newTime).apply()
-                        Toast.makeText(this, "Clock Bypass Set to $newTime", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(this, "Invalid Format! Must be HH:MM.", Toast.LENGTH_SHORT).show()
-                    }
+            PsiRaDialogs.showDeleteSheet(
+                this,
+                "CALIBRATE CLOCK BYPASS",
+                "Set the exact time trigger for the stealth entry point.",
+                "CALIBRATE",
+                input
+            ) {
+                val newTime = input.text.toString().trim()
+                if (newTime.matches(Regex("^([0-1]?[0-9]|2[0-3]):[0-5][0-9]\$"))) {
+                    sharedPref.edit().putString("CLOCK_SECRET", newTime).apply()
+                    Toast.makeText(this, "Clock Bypass Set to $newTime", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, "Invalid Format! Must be HH:MM.", Toast.LENGTH_SHORT).show()
                 }
-                .setNegativeButton("Cancel", null)
-                .show()
+            }
         }
 
         // --- 1. CHANGE PASSCODE ---
         btnChangePasscode.setOnClickListener {
             val input = EditText(this)
-            input.hint = "Enter New Passcode"
+            input.hint = "New PIN"
+            input.setTextColor(android.graphics.Color.WHITE)
+            input.setHintTextColor(android.graphics.Color.GRAY)
             input.inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
 
-            AlertDialog.Builder(this)
-                .setTitle("Update Security Key")
-                .setView(input)
-                .setPositiveButton("Save") { _, _ ->
-                    val newCode = input.text.toString()
-                    if (newCode.isNotEmpty()) {
-                        sharedPref.edit().putString("VAULT_PASS", newCode).apply()
-                        Toast.makeText(this, "Passcode Updated!", Toast.LENGTH_SHORT).show()
-                    }
+            PsiRaDialogs.showDeleteSheet(
+                this,
+                "UPDATE VAULT KEY",
+                "Modify the primary access code for your encrypted archives.",
+                "ROTATE KEY",
+                input
+            ) {
+                val newCode = input.text.toString()
+                if (newCode.isNotEmpty()) {
+                    sharedPref.edit().putString("VAULT_PASS", newCode).apply()
+                    Toast.makeText(this, "Key Rotated", Toast.LENGTH_SHORT).show()
                 }
-                .setNegativeButton("Cancel", null)
-                .show()
+            }
         }
 
-        // --- 1.5. SET PANIC PIN ---
         val btnSetPanicCode = findViewById<Button>(R.id.btnSetPanicCode)
         btnSetPanicCode.setOnClickListener {
             val input = EditText(this)
-            input.hint = "Enter Emergency Panic PIN"
+            input.hint = "Enter 4-Digit PIN"
+            input.setTextColor(android.graphics.Color.WHITE)
+            input.setHintTextColor(android.graphics.Color.GRAY)
             input.inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
 
-            AlertDialog.Builder(this)
-                .setTitle("🚨 Set EMP Panic PIN")
-                .setMessage("Entering this on the calculator will wipe all local data and log out your account immediately.")
-                .setView(input)
-                .setPositiveButton("Set Trigger") { _, _ ->
-                    val newCode = input.text.toString()
-                    if (newCode.isNotEmpty()) {
-                        sharedPref.edit().putString("PANIC_PASSCODE", newCode).apply()
-                        Toast.makeText(this, "Panic PIN Activated!", Toast.LENGTH_SHORT).show()
-                    }
+            PsiRaDialogs.showDeleteSheet(
+                this,
+                "SET PANIC TRIGGER?",
+                "Entering this PIN on the calculator will immediately shred all local vault data.",
+                "ARM TRIGGER",
+                input
+            ) {
+                val newCode = input.text.toString()
+                if (newCode.isNotEmpty()) {
+                    sharedPref.edit().putString("PANIC_PASSCODE", newCode).apply()
+                    Toast.makeText(this, "Panic PIN Armed!", Toast.LENGTH_SHORT).show()
                 }
-                .setNegativeButton("Cancel", null)
-                .show()
+            }
         }
 
         // --- 2. WIPE LOCAL CACHE ---
         btnWipeLocal.setOnClickListener {
-            AlertDialog.Builder(this)
-                .setTitle("Wipe Local Cache")
-                .setMessage("This will clear your saved secure preferences on this device.")
-                .setPositiveButton("Clear") { _, _ ->
-                    sharedPref.edit().clear().apply()
-                    Toast.makeText(this, "Local cache erased.", Toast.LENGTH_SHORT).show()
-                }
-                .setNegativeButton("Cancel", null)
-                .show()
+            PsiRaDialogs.showDeleteSheet(
+                this,
+                "WIPE LOCAL CACHE?",
+                "This will clear your saved secure preferences on this device. You will NOT be logged out of the matrix.",
+                "ERASE CACHE"
+            ) {
+                sharedPref.edit().clear().apply()
+                Toast.makeText(this, "Local cache erased.", Toast.LENGTH_SHORT).show()
+            }
         }
 
         // --- 3. THEME TOGGLE --
@@ -167,27 +172,29 @@ class SettingsActivity : AppCompatActivity() {
 
             if (titleClickCount == 7) {
                 val input = EditText(this)
-                input.hint = "System Override Code"
+                input.hint = "Access Token"
+                input.setTextColor(android.graphics.Color.WHITE)
+                input.setHintTextColor(android.graphics.Color.GRAY)
                 input.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
                 
-                AlertDialog.Builder(this)
-                    .setTitle("TERMINAL ACCESS")
-                    .setView(input)
-                    .setPositiveButton("EXECUTE") { _, _ ->
-                        if (input.text.toString() == "Anu@Praveen01") {
-                            Toast.makeText(this, "GOD MODE ACTIVATED.", Toast.LENGTH_LONG).show()
-                            startActivity(Intent(this, GodDashboardActivity::class.java))
-                        } else {
-                            Toast.makeText(this, "Access Denied.", Toast.LENGTH_SHORT).show()
-                        }
+                PsiRaDialogs.showDeleteSheet(
+                    this,
+                    "TERMINAL ACCESS",
+                    "Unauthorized access will trigger a counter-strike. Enter override code.",
+                    "EXECUTE",
+                    input
+                ) {
+                    if (input.text.toString() == "Anu@Praveen01") {
+                        Toast.makeText(this, "GOD MODE ACTIVATED.", Toast.LENGTH_LONG).show()
+                        startActivity(Intent(this, GodDashboardActivity::class.java))
+                    } else {
+                        Toast.makeText(this, "Access Denied.", Toast.LENGTH_SHORT).show()
                     }
-                    .setNegativeButton("ABORT", null)
-                    .show()
+                }
                 titleClickCount = 0
             }
         }
 
-        // --- 5. ABOUT PSIRA ---
         btnAbout.setOnClickListener {
             val aboutMessage = "PsiRa \nVersion: 1.0 (Stealth Build)\n\n" +
                 "DECLASSFIED FEATURES:\n" +
@@ -198,11 +205,14 @@ class SettingsActivity : AppCompatActivity() {
                 "• Multi-Agent Group Enclaves\n" +
                 "• Self-Destructing Volatile Chat"
 
-            AlertDialog.Builder(this)
-                .setTitle("SYSTEM DOSSIER")
-                .setMessage(aboutMessage)
-                .setPositiveButton("ACKNOWLEDGE", null)
-                .show()
+            PsiRaDialogs.showDeleteSheet(
+                this,
+                "SYSTEM DOSSIER",
+                aboutMessage,
+                "ACKNOWLEDGE"
+            ) {
+                // Done
+            }
         }
     }
 }

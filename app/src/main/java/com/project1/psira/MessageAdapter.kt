@@ -11,6 +11,14 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.database.FirebaseDatabase
 
 class MessageAdapter(private val messageList: List<Message>) : RecyclerView.Adapter<MessageAdapter.MessageViewHolder>() {
+    
+    var chatDbRef: com.google.firebase.database.DatabaseReference? = null
+
+    var isMirrored: Boolean = false
+        set(value) {
+            field = value
+            notifyDataSetChanged()
+        }
 
     private val VIEW_TYPE_SENT_TEXT = 1
     private val VIEW_TYPE_RECEIVED_TEXT = 2
@@ -64,8 +72,7 @@ class MessageAdapter(private val messageList: List<Message>) : RecyclerView.Adap
         when (message.type) {
             "text" -> {
                 try {
-                    val decryptedPsiRa = AESEncryption.decrypt(message.content!!)
-                    val plainText = PsiRaConverter.decode(decryptedPsiRa)
+                    val plainText = AESEncryption.decrypt(message.content!!)
                     holder.textMessage?.text = plainText
                 } catch (e: Exception) {
                     holder.textMessage?.text = message.content
@@ -97,10 +104,8 @@ class MessageAdapter(private val messageList: List<Message>) : RecyclerView.Adap
         if (message.isBurnable && message.sender != com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.displayName) {
             android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                 val messageIdToDelete = message.id
-                if (messageIdToDelete != null) {
-                    val sharedPref = context.getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
-                    val channelName = sharedPref.getString("SECURE_CHANNEL", "messages") ?: "messages"
-                    FirebaseDatabase.getInstance().getReference(channelName).child(messageIdToDelete).removeValue()
+                if (messageIdToDelete != null && chatDbRef != null) {
+                    chatDbRef!!.child(messageIdToDelete).removeValue()
                 }
             }, 10000) // 10 seconds
         }
@@ -109,18 +114,14 @@ class MessageAdapter(private val messageList: List<Message>) : RecyclerView.Adap
         // Inside onBindViewHolder in MessageAdapter.kt
         holder.itemView.setOnLongClickListener {
             val messageId = messageList[position].id
-
             if (messageId != null) {
-                val builder = AlertDialog.Builder(context)
-                builder.setTitle("Message Options")
-                
+                val type = messageList[position].type ?: "text"
                 val options = mutableListOf("Delete")
-                val type = messageList[position].type
                 if (type in listOf("image", "doc", "voice")) {
                     options.add(0, "Save to Device")
                 }
-                
-                builder.setItems(options.toTypedArray()) { _, which ->
+
+                PsiRaDialogs.showOptionsSheet(context, "MESSAGE OPTIONS", options) { which ->
                     val selectedOption = options[which]
                     if (selectedOption == "Save to Device") {
                         val ext = when(type) {
@@ -131,16 +132,18 @@ class MessageAdapter(private val messageList: List<Message>) : RecyclerView.Adap
                         }
                         saveFileToLocal(context, messageList[position].content ?: "", "${type}_${System.currentTimeMillis()}.$ext")
                     } else if (selectedOption == "Delete") {
-                        val sharedPref = context.getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
-                        val channelName = sharedPref.getString("SECURE_CHANNEL", "messages") ?: "messages"
-                        val db = FirebaseDatabase.getInstance().getReference(channelName)
-                        db.child(messageId).removeValue().addOnSuccessListener {
-                            Toast.makeText(context, "Message Erased", Toast.LENGTH_SHORT).show()
+                        PsiRaDialogs.showDeleteSheet(
+                            context,
+                            "ERASE SIGNAL?",
+                            "This message will be purged from the encrypted logs forever.",
+                            "PURGE"
+                        ) {
+                            chatDbRef?.child(messageId)?.removeValue()?.addOnSuccessListener {
+                                Toast.makeText(context, "Message Erased", Toast.LENGTH_SHORT).show()
+                            }
                         }
                     }
                 }
-                builder.setNegativeButton("Cancel", null)
-                builder.show()
             } else {
                 Toast.makeText(context, "Error: Message ID missing", Toast.LENGTH_SHORT).show()
             }

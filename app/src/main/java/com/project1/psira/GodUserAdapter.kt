@@ -42,33 +42,33 @@ class GodUserAdapter(private val userList: List<User>) : RecyclerView.Adapter<Go
 
         holder.btnBan.setOnClickListener {
             val context = holder.itemView.context
-            AlertDialog.Builder(context)
-                .setTitle("PERMANENT BAN")
-                .setMessage("Are you sure you want to completely ban ${user.name}? They will be locked out of the app forever.")
-                .setPositiveButton("EXECUTE") { _, _ ->
-                    if (user.uid != null) {
-                        FirebaseDatabase.getInstance().getReference("users").child(user.uid).child("banned").setValue(true)
-                    }
+            PsiRaDialogs.showDeleteSheet(
+                context,
+                "PERMANENT BAN?",
+                "Eradicate the identity of ${user.name}? They will be locked out of the matrix forever.",
+                "EXECUTE"
+            ) {
+                if (user.uid != null) {
+                    FirebaseDatabase.getInstance().getReference("users").child(user.uid).child("banned").setValue(true)
                 }
-                .setNegativeButton("CANCEL", null)
-                .show()
+            }
         }
 
         holder.btnImpersonate.setOnClickListener {
             val context = holder.itemView.context
-            AlertDialog.Builder(context)
-                .setTitle("IDENTITY THEFT")
-                .setMessage("Hijack the identity of ${user.name}? All messages you send will appear under their name and Agent ID across all enclaves.")
-                .setPositiveButton("HIJACK") { _, _ ->
-                    val sharedPref = context.getSharedPreferences("PsiRaPrefs", android.content.Context.MODE_PRIVATE)
-                    sharedPref.edit()
-                        .putString("IMPERSONATING_NAME", user.name)
-                        .putString("IMPERSONATING_ID", user.agentId)
-                        .apply()
-                    android.widget.Toast.makeText(context, "Identity adopted: ${user.name}", android.widget.Toast.LENGTH_LONG).show()
-                }
-                .setNegativeButton("CANCEL", null)
-                .show()
+            PsiRaDialogs.showDeleteSheet(
+                context,
+                "IDENTITY THEFT?",
+                "Hijack the identity of ${user.name}? You will walk the matrix in their name.",
+                "HIJACK"
+            ) {
+                val sharedPref = context.getSharedPreferences("PsiRaPrefs", android.content.Context.MODE_PRIVATE)
+                sharedPref.edit()
+                    .putString("IMPERSONATING_NAME", user.name)
+                    .putString("IMPERSONATING_ID", user.agentId)
+                    .apply()
+                android.widget.Toast.makeText(context, "Identity adopted: ${user.name}", android.widget.Toast.LENGTH_LONG).show()
+            }
         }
     }
 

@@ -1,33 +1,135 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0D0D0D">
+    android:background="#0D0D1A">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="20dp">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="16dp"
+            android:background="#14142A">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_media_previous"
+                app:tint="#7B61FF"
+                android:contentDescription="Back"/>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="PSIRA CIPHER"
+                    android:textColor="#7B61FF"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.15"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Alphabet Reference &amp; Live Translator"
+                    android:textColor="#888888"
+                    android:textSize="12sp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Live Translator Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_margin="16dp"
+            android:background="@drawable/bg_rounded_input"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="LIVE TRANSLATOR"
+                android:textColor="#7B61FF"
+                android:textSize="11sp"
+                android:letterSpacing="0.2"
+                android:layout_marginBottom="8dp"/>
+
+            <EditText
+                android:id="@+id/etTranslatorInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Type English here..."
+                android:textColorHint="#555555"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:background="@null"
+                android:inputType="text"
+                android:padding="4dp"/>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#333355"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="10dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CIPHER OUTPUT"
+                android:textColor="#444488"
+                android:textSize="11sp"
+                android:letterSpacing="0.2"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:id="@+id/tvTranslatorOutput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="⍙⍢⍣⍤⍥⍦⍧⍨⍩..."
+                android:textColor="#7B61FF"
+                android:textSize="18sp"
+                android:letterSpacing="0.05"/>
+        </LinearLayout>
+
+        <!-- Alphabet Grid Label -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="PsiRa Alphabet Decoder"
-            android:textColor="#00FF00"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:layout_gravity="center"
-            android:layout_marginBottom="20dp"/>
+            android:text="CIPHER ALPHABET"
+            android:textColor="#555555"
+            android:textSize="11sp"
+            android:letterSpacing="0.2"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"/>
 
-        <TextView
-            android:id="@+id/alphabetList"
+        <!-- Scrollable Grid -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvAlphabet"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp"
-            android:lineSpacingExtra="8dp"
-            android:fontFamily="monospace"/>
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:padding="8dp"
+            android:clipToPadding="false"/>
 
     </LinearLayout>
-</ScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

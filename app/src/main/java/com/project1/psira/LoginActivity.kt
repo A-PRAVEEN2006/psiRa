@@ -63,65 +63,70 @@ class LoginActivity : AppCompatActivity() {
 
             if (email.isNotEmpty() && pass.isNotEmpty()) {
                 val nameInput = EditText(this)
-                nameInput.hint = "Agent Name (e.g., Ravana)"
+                nameInput.hint = "Agent Alias"
+                nameInput.setTextColor(android.graphics.Color.WHITE)
+                nameInput.setHintTextColor(android.graphics.Color.GRAY)
 
-                AlertDialog.Builder(this)
-                    .setTitle("New Agent Profile")
-                    .setMessage("Enter your display name for the vault.")
-                    .setView(nameInput)
-                    .setPositiveButton("Register") { _, _ ->
-                        val displayName = nameInput.text.toString().trim()
-                        if (displayName.isNotEmpty()) {
-                            auth.createUserWithEmailAndPassword(email, pass).addOnCompleteListener { task ->
-                                if (task.isSuccessful) {
-                                    val user = auth.currentUser
-                                    val profileUpdates = userProfileChangeRequest {
-                                        setDisplayName(displayName)
-                                    }
-                                    user?.updateProfile(profileUpdates)?.addOnCompleteListener {
-                                        Toast.makeText(this, "Agent $displayName Registered!", Toast.LENGTH_SHORT).show()
-                                    }
-                                } else {
-                                    Toast.makeText(this, "Reg Failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                PsiRaDialogs.showDeleteSheet(
+                    this,
+                    "NEW AGENT PROFILE",
+                    "Enter your public identifier for the encrypted network.",
+                    "INITIALIZE",
+                    nameInput
+                ) {
+                    val displayName = nameInput.text.toString().trim()
+                    if (displayName.isNotEmpty()) {
+                        auth.createUserWithEmailAndPassword(email, pass).addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                val user = auth.currentUser
+                                val profileUpdates = userProfileChangeRequest {
+                                    setDisplayName(displayName)
                                 }
+                                user?.updateProfile(profileUpdates)?.addOnCompleteListener {
+                                    Toast.makeText(this, "Agent $displayName Registered!", Toast.LENGTH_SHORT).show()
+                                }
+                            } else {
+                                Toast.makeText(this, "Reg Failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
                             }
                         }
                     }
-                    .setNegativeButton("Cancel", null)
-                    .show()
+                }
             }
         }
     }
     private fun showNamePopup() {
         val nameInput = EditText(this)
-        nameInput.hint = "Agent Name (e.g., Praveen)"
+        nameInput.hint = "Agent Alias"
+        nameInput.setTextColor(android.graphics.Color.WHITE)
+        nameInput.setHintTextColor(android.graphics.Color.GRAY)
 
-        AlertDialog.Builder(this)
-            .setTitle("Identity Required")
-            .setMessage("Your Agent Profile is incomplete. Please enter your name.")
-            .setView(nameInput)
-            .setCancelable(false) // User CANNOT skip this
-            .setPositiveButton("Save Profile") { _, _ ->
-                val displayName = nameInput.text.toString().trim()
-                if (displayName.isNotEmpty()) {
-                    val user = auth.currentUser
-                    val profileUpdates = userProfileChangeRequest {
-                        setDisplayName(displayName)
-                    }
-                    user?.updateProfile(profileUpdates)?.addOnCompleteListener {
-                        ensureAgentId(user.uid) {
-                            FirebaseDatabase.getInstance().getReference("users").child(user.uid).child("name").setValue(displayName)
-                            Toast.makeText(this, "Profile Updated: $displayName", Toast.LENGTH_SHORT).show()
-                            startActivity(Intent(this, NexusDashboardActivity::class.java))
-                            finish()
-                        }
-                    }
-                } else {
-                    Toast.makeText(this, "Name cannot be empty!", Toast.LENGTH_SHORT).show()
-                    showNamePopup() // Ask again if they left it blank
+        PsiRaDialogs.showDeleteSheet(
+            this,
+            "IDENTITY REQUIRED",
+            "Your Agent Profile is incomplete. Enter your Alias to proceed.",
+            "SYNCHRONIZE",
+            nameInput,
+            false // Not cancelable
+        ) {
+            val displayName = nameInput.text.toString().trim()
+            if (displayName.isNotEmpty()) {
+                val user = auth.currentUser
+                val profileUpdates = userProfileChangeRequest {
+                    setDisplayName(displayName)
                 }
+                user?.updateProfile(profileUpdates)?.addOnCompleteListener {
+                    ensureAgentId(user!!.uid) {
+                        FirebaseDatabase.getInstance().getReference("users").child(user.uid).child("name").setValue(displayName)
+                        Toast.makeText(this, "Profile Updated: $displayName", Toast.LENGTH_SHORT).show()
+                        startActivity(Intent(this, NexusDashboardActivity::class.java))
+                        finish()
+                    }
+                }
+            } else {
+                Toast.makeText(this, "Name cannot be empty!", Toast.LENGTH_SHORT).show()
+                showNamePopup()
             }
-            .show()
+        }
     }
 
     private fun ensureAgentId(uid: String, onComplete: () -> Unit) {

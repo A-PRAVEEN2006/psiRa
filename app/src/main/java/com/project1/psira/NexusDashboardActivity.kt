@@ -22,12 +22,25 @@ import com.google.firebase.database.FirebaseDatabase
 class NexusDashboardActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE, android.view.WindowManager.LayoutParams.FLAG_SECURE)
         setContentView(R.layout.activity_nexus_dashboard)
         
         val currentUser = FirebaseAuth.getInstance().currentUser
         if (currentUser != null) {
-            FirebaseDatabase.getInstance().getReference("users").child(currentUser.uid).child("banned").get().addOnSuccessListener {
+            val userRef = FirebaseDatabase.getInstance().getReference("users").child(currentUser.uid)
+            val isOnlineRef = userRef.child("isOnline")
+            FirebaseDatabase.getInstance().getReference(".info/connected")
+                .addValueEventListener(object : com.google.firebase.database.ValueEventListener {
+                    override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
+                        val connected = snapshot.getValue(Boolean::class.java) ?: false
+                        if (connected) {
+                            isOnlineRef.onDisconnect().setValue(false)
+                            isOnlineRef.setValue(true)
+                        }
+                    }
+                    override fun onCancelled(error: com.google.firebase.database.DatabaseError) {}
+                })
+
+            userRef.child("banned").get().addOnSuccessListener {
                 if(it.value == true) {
                     FirebaseAuth.getInstance().signOut()
                     getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE).edit().clear().apply()
@@ -92,24 +105,26 @@ class NexusDashboardActivity : AppCompatActivity() {
         // 5. FREQUENCY NODE
         btnWalkie.setOnClickListener {
             val input = EditText(this)
-            input.hint = "7-Digit Frequency (e.g. 1234567)"
+            input.hint = "7-Digit Frequency"
+            input.setTextColor(android.graphics.Color.WHITE)
+            input.setHintTextColor(android.graphics.Color.GRAY)
             input.inputType = android.text.InputType.TYPE_CLASS_NUMBER
 
-            AlertDialog.Builder(this)
-                .setTitle("📻 Tune Frequency")
-                .setMessage("Enter the 7-digit channel to enter a temporary, anonymous enclave.")
-                .setView(input)
-                .setPositiveButton("Connect") { _, _ ->
-                    val freq = input.text.toString()
-                    if (freq.length == 7) {
-                        sharedPref.edit().putString("SECURE_CHANNEL", "freq_$freq").apply()
-                        startActivity(Intent(this, ChatActivity::class.java))
-                    } else {
-                        Toast.makeText(this, "Must be 7 digits!", Toast.LENGTH_SHORT).show()
-                    }
+            PsiRaDialogs.showDeleteSheet(
+                this,
+                "TUNE FREQUENCY",
+                "Enter the 7-digit channel to enter a temporary, anonymous enclave.",
+                "CONNECT",
+                input
+            ) {
+                val freq = input.text.toString()
+                if (freq.length == 7) {
+                    sharedPref.edit().putString("SECURE_CHANNEL", "freq_$freq").apply()
+                    startActivity(Intent(this, ChatActivity::class.java))
+                } else {
+                    Toast.makeText(this, "Must be 7 digits!", Toast.LENGTH_SHORT).show()
                 }
-                .setNegativeButton("Cancel", null)
-                .show()
+            }
         }
 
         // 6. BOTTOM NAVIGATION (Replaces Ghost Vault)

@@ -64,21 +64,43 @@ class ChatsActivity : AppCompatActivity() {
         val db = FirebaseDatabase.getInstance()
 
         if (currentUser != null) {
+            val listenersMap = mutableMapOf<String, ValueEventListener>()
             db.getReference("user_direct_chats").child(currentUser.uid)
                 .addValueEventListener(object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
-                        chatList.clear()
-                        for (child in snapshot.children) {
-                            val targetUid = child.key
-                            if (targetUid != null) {
-                                db.getReference("users").child(targetUid).get().addOnSuccessListener { userSnap ->
-                                    val user = userSnap.getValue(User::class.java)
-                                    if (user != null) {
-                                        val fullUser = User(uid = targetUid, email = user.email, name = user.name, agentId = user.agentId)
-                                        chatList.add(fullUser)
-                                        chatAdapter.notifyDataSetChanged()
+                        val newUids = snapshot.children.mapNotNull { it.key }
+                        
+                        // Remove items that are no longer in the list
+                        val toRemove = listenersMap.keys.filter { it !in newUids }
+                        for (uid in toRemove) {
+                            val listener = listenersMap.remove(uid)
+                            if (listener != null) {
+                                db.getReference("users").child(uid).removeEventListener(listener)
+                            }
+                            chatList.removeAll { it.uid == uid }
+                        }
+                        chatAdapter.notifyDataSetChanged()
+                        
+                        for (targetUid in newUids) {
+                            if (!listenersMap.containsKey(targetUid)) {
+                                val listener = object : ValueEventListener {
+                                    override fun onDataChange(userSnap: DataSnapshot) {
+                                        val user = userSnap.getValue(User::class.java)
+                                        if (user != null) {
+                                            val fullUser = User(uid = targetUid, email = user.email, name = user.name, agentId = user.agentId, banned = user.banned, isOnline = user.isOnline)
+                                            val existingIndex = chatList.indexOfFirst { it.uid == targetUid }
+                                            if (existingIndex >= 0) {
+                                                chatList[existingIndex] = fullUser
+                                            } else {
+                                                chatList.add(fullUser)
+                                            }
+                                            chatAdapter.notifyDataSetChanged()
+                                        }
                                     }
+                                    override fun onCancelled(error: DatabaseError) {}
                                 }
+                                listenersMap[targetUid] = listener
+                                db.getReference("users").child(targetUid).addValueEventListener(listener)
                             }
                         }
                     }
@@ -89,23 +111,25 @@ class ChatsActivity : AppCompatActivity() {
         val fabNewChat: FloatingActionButton = findViewById(R.id.fabNewChat)
         fabNewChat.setOnClickListener {
             val input = EditText(this)
-            input.hint = "Enter 5-Digit Agent ID"
+            input.hint = "5-Digit Agent ID"
+            input.setTextColor(android.graphics.Color.WHITE)
+            input.setHintTextColor(android.graphics.Color.GRAY)
             input.inputType = android.text.InputType.TYPE_CLASS_NUMBER
 
-            AlertDialog.Builder(this)
-                .setTitle("Establish Secure Link")
-                .setMessage("Enter the 5-Digit Agent ID you wish to contact.")
-                .setView(input)
-                .setPositiveButton("CONNECT") { _, _ ->
-                    val targetId = input.text.toString().trim()
-                    if (targetId.length == 5) {
-                        findAgentAndChat(targetId)
-                    } else {
-                        Toast.makeText(this, "Invalid ID Format. Must be 5 digits.", Toast.LENGTH_SHORT).show()
-                    }
+            PsiRaDialogs.showDeleteSheet(
+                this,
+                "ESTABLISH SECURE LINK",
+                "Enter the unique 5-Digit identifier of the node you wish to contact.",
+                "CONNECT",
+                input
+            ) {
+                val targetId = input.text.toString().trim()
+                if (targetId.length == 5) {
+                    findAgentAndChat(targetId)
+                } else {
+                    Toast.makeText(this, "Invalid ID format.", Toast.LENGTH_SHORT).show()
                 }
-                .setNegativeButton("CANCEL", null)
-                .show()
+            }
         }
     }
 

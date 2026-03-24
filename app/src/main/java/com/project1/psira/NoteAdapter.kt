@@ -25,13 +25,14 @@ class NoteAdapter(private val noteList: List<Note>) : RecyclerView.Adapter<NoteA
     override fun onBindViewHolder(holder: NoteViewHolder, position: Int) {
         val note = noteList[position]
 
-        // Decrypt display data
+        // Decrypt and auto-detect old or new PsiRa symbols
         try {
-            val decryptedTitle = PsiRaConverter.decode(AESEncryption.decrypt(note.title ?: ""))
-            val decryptedContent = PsiRaConverter.decode(AESEncryption.decrypt(note.content ?: ""))
-            
-            holder.tvTitle.text = if (decryptedTitle.isEmpty()) "Untitled" else decryptedTitle
-            holder.tvPreview.text = decryptedContent
+            val rawTitle = AESEncryption.decrypt(note.title ?: "")
+            val rawContent = AESEncryption.decrypt(note.content ?: "")
+            val title = PsiRaConverter.decodeAny(rawTitle)
+            val content = PsiRaConverter.decodeAny(rawContent)
+            holder.tvTitle.text = if (title.isEmpty()) "Untitled" else title
+            holder.tvPreview.text = content
         } catch (e: Exception) {
             holder.tvTitle.text = "Locked Note"
             holder.tvPreview.text = "Error decoding vault data."

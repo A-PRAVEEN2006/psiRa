@@ -28,6 +28,13 @@ class DirectChatAdapter(private val chatList: List<User>) : RecyclerView.Adapter
 
         holder.tvName.text = personalNickname ?: user.name ?: "Unknown Agent"
         holder.tvId.text = "ID: #${user.agentId}"
+        
+        val presenceDot = holder.itemView.findViewById<View>(R.id.presenceDot)
+        if (user.isOnline) {
+            presenceDot.setBackgroundResource(R.drawable.presence_online)
+        } else {
+            presenceDot.setBackgroundResource(R.drawable.presence_offline)
+        }
 
         holder.itemView.setOnClickListener {
             val intent = Intent(holder.itemView.context, DirectChatActivity::class.java)
@@ -37,23 +44,47 @@ class DirectChatAdapter(private val chatList: List<User>) : RecyclerView.Adapter
         }
 
         holder.itemView.setOnLongClickListener {
-            val input = android.widget.EditText(context)
-            input.setText(personalNickname ?: user.name ?: "")
-            input.hint = "Enter Personal Nickname"
+            val options = listOf("Set Nickname", "Delete Secure Link")
+            PsiRaDialogs.showOptionsSheet(context, "LINK OPTIONS", options) { which ->
+                when (which) {
+                    0 -> {
+                        val input = android.widget.EditText(context)
+                        input.setText(personalNickname ?: user.name ?: "")
+                        input.hint = "Agent Alias"
+                        input.setTextColor(android.graphics.Color.WHITE)
+                        input.setHintTextColor(android.graphics.Color.GRAY)
 
-            androidx.appcompat.app.AlertDialog.Builder(context)
-                .setTitle("🏷️ Set Personal Nickname")
-                .setMessage("This specific label is only visible to YOU. Your contact won't know.")
-                .setView(input)
-                .setPositiveButton("SAVE") { _, _ ->
-                    val newNick = input.text.toString().trim()
-                    if (newNick.isNotEmpty()) {
-                        sharedPrefNick.edit().putString(user.uid, newNick).apply()
-                        notifyItemChanged(position)
+                        PsiRaDialogs.showDeleteSheet(
+                            context,
+                            "OVERRIDE ALIAS",
+                            "Set a local designation for this agent. This only affects your view.",
+                            "SET NICKNAME",
+                            input
+                        ) {
+                            val newNick = input.text.toString().trim()
+                            if (newNick.isNotEmpty()) {
+                                sharedPrefNick.edit().putString(user.uid, newNick).apply()
+                                notifyItemChanged(position)
+                            }
+                        }
+                    }
+                    1 -> {
+                        PsiRaDialogs.showDeleteSheet(
+                            context,
+                            "SEVER CONNECTION?",
+                            "This will permanently wipe your secure link with ${personalNickname ?: user.name}.",
+                            "WIPE LINK"
+                        ) {
+                            val myUid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+                            if (myUid != null && user.uid != null) {
+                                com.google.firebase.database.FirebaseDatabase.getInstance()
+                                    .getReference("user_direct_chats")
+                                    .child(myUid).child(user.uid).removeValue()
+                            }
+                        }
                     }
                 }
-                .setNegativeButton("CANCEL", null)
-                .show()
+            }
             true
         }
     }

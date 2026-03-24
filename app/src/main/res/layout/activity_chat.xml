@@ -9,16 +9,30 @@
     android:background="#1A1A2E">
 
     <ImageButton
-        android:id="@+id/btnSettings"
+        android:id="@+id/btnWipeChat"
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:layout_margin="16dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@android:drawable/ic_menu_delete"
+        android:contentDescription="Wipe Chat"
+        app:tint="#FF3B30"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <ImageButton
+        android:id="@+id/btnSettings"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        android:layout_marginEnd="8dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:src="@android:drawable/ic_menu_preferences"
         android:contentDescription="Settings"
         app:tint="?attr/colorPrimary"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toStartOf="@id/btnWipeChat" />
 
     <ImageButton
         android:id="@+id/btnLearningPage"
@@ -130,5 +144,22 @@
             android:textStyle="bold"
             android:text="Send" />
     </LinearLayout>
+
+    <!-- Cipher Converter Button -->
+    <ImageView
+        android:id="@+id/btnCipherOrb"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:src="@android:drawable/ic_menu_search"
+        android:alpha="1.0"
+        android:background="@drawable/bg_rounded_primary"
+        android:padding="10dp"
+        android:elevation="16dp"
+        app:tint="#FFFFFF"
+        app:layout_constraintBottom_toTopOf="@id/bottomInputBar"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="12dp"
+        android:contentDescription="PsiRa Converter" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

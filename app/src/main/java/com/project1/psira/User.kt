@@ -5,7 +5,8 @@ data class User(
     val email: String? = null,
     val name: String? = null,
     val agentId: String? = null,
-    val banned: Boolean = false
+    val banned: Boolean = false,
+    val isOnline: Boolean = false
 ) {
-    constructor() : this(null, null, null, null, false)
+    constructor() : this(null, null, null, null, false, false)
 }

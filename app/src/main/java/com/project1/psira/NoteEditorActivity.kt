@@ -60,10 +60,10 @@ class NoteEditorActivity : AppCompatActivity() {
             val note = snapshot.getValue(Note::class.java)
             if (note != null) {
                 try {
-                    val decryptedTitle = PsiRaConverter.decode(AESEncryption.decrypt(note.title ?: ""))
-                    val decryptedContent = PsiRaConverter.decode(AESEncryption.decrypt(note.content ?: ""))
-                    editTitle.setText(decryptedTitle)
-                    editContent.setText(decryptedContent)
+                    val rawTitle = AESEncryption.decrypt(note.title ?: "")
+                    val rawContent = AESEncryption.decrypt(note.content ?: "")
+                    editTitle.setText(PsiRaConverter.decodeAny(rawTitle))
+                    editContent.setText(PsiRaConverter.decodeAny(rawContent))
                 } catch (e: Exception) {
                     Toast.makeText(this, "Decryption Error", Toast.LENGTH_SHORT).show()
                 }
@@ -81,9 +81,9 @@ class NoteEditorActivity : AppCompatActivity() {
         }
 
         try {
-            // HIGH SECURITY: Double layer (PsiRa Encode + AES Encrypt)
-            val encryptedTitle = AESEncryption.encrypt(PsiRaConverter.encode(title))
-            val encryptedContent = AESEncryption.encrypt(PsiRaConverter.encode(content))
+            // AES only — plain English stored directly
+            val encryptedTitle = AESEncryption.encrypt(title)
+            val encryptedContent = AESEncryption.encrypt(content)
 
             val note = Note(noteId, encryptedTitle, encryptedContent, System.currentTimeMillis())
             
@@ -104,18 +104,18 @@ class NoteEditorActivity : AppCompatActivity() {
     }
 
     private fun confirmDelete() {
-        AlertDialog.Builder(this)
-            .setTitle("Permanently Delete?")
-            .setMessage("This note will be erased from the encrypted matrix forever.")
-            .setPositiveButton("DELETE") { _, _ ->
-                if (noteId != null) {
-                    db.child(noteId!!).removeValue().addOnSuccessListener {
-                        Toast.makeText(this, "Note purged", Toast.LENGTH_SHORT).show()
-                        finish()
-                    }
+        PsiRaDialogs.showDeleteSheet(
+            this,
+            "PURGE NOTE?",
+            "This note will be erased from the encrypted matrix forever.",
+            "PURGE"
+        ) {
+            if (noteId != null) {
+                db.child(noteId!!).removeValue().addOnSuccessListener {
+                    Toast.makeText(this, "Note purged", Toast.LENGTH_SHORT).show()
+                    finish()
                 }
             }
-            .setNegativeButton("CANCEL", null)
-            .show()
+        }
     }
 }

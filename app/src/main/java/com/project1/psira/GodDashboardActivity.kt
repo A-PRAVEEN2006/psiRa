@@ -53,16 +53,19 @@ class GodDashboardActivity : AppCompatActivity() {
     private fun showBroadcastDialog() {
         val input = EditText(this)
         input.hint = "System Override Message"
-        AlertDialog.Builder(this)
-            .setTitle("VOICE OF GOD")
-            .setMessage("Inject a priority message into every single group enclave simultaneously.")
-            .setView(input)
-            .setPositiveButton("EXECUTE") { _, _ ->
-                val msg = input.text.toString().trim()
-                if (msg.isNotEmpty()) injectBroadcast(msg)
-            }
-            .setNegativeButton("ABORT", null)
-            .show()
+        input.setTextColor(android.graphics.Color.WHITE)
+        input.setHintTextColor(android.graphics.Color.GRAY)
+
+        PsiRaDialogs.showDeleteSheet(
+            this,
+            "VOICE OF GOD",
+            "Inject a priority message into every single group enclave simultaneously.",
+            "EXECUTE",
+            input
+        ) {
+            val msg = input.text.toString().trim()
+            if (msg.isNotEmpty()) injectBroadcast(msg)
+        }
     }
 
     private fun injectBroadcast(text: String) {

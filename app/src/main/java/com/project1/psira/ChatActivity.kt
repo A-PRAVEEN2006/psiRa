@@ -33,6 +33,12 @@ class ChatActivity : AppCompatActivity() {
         val btnLearning = findViewById<ImageButton>(R.id.btnLearningPage)
         val btnSettings = findViewById<ImageButton>(R.id.btnSettings)
         val secureStatusText = findViewById<TextView>(R.id.secureStatusText)
+        val btnVoiceCall = findViewById<ImageButton>(R.id.btnVoiceCall)
+        
+        // Hide voice call from public nodes
+        if (btnVoiceCall != null) {
+            btnVoiceCall.visibility = android.view.View.GONE
+        }
 
         // 1. Setup RecyclerView
         val layoutManager = LinearLayoutManager(this)
@@ -48,6 +54,21 @@ class ChatActivity : AppCompatActivity() {
         val channelName = sharedPref.getString("SECURE_CHANNEL", "messages") ?: "messages"
 
         db = FirebaseDatabase.getInstance().getReference(channelName)
+        messageAdapter.chatDbRef = db // Link for deletions
+
+        val btnWipe = findViewById<ImageButton>(R.id.btnWipeChat)
+        btnWipe?.setOnClickListener {
+            PsiRaDialogs.showDeleteSheet(
+                this,
+                "SHRED ENCLAVE LOGS?",
+                "Confirm total eradication of encrypted messages in this channel.",
+                "ERADICATE"
+            ) {
+                db.removeValue().addOnSuccessListener {
+                    Toast.makeText(this, "Vault Purged.", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
 
         // --- NEW: NOTIFICATION TOPIC SUBSCRIPTION ---
         if (channelName == "global_protocol") {
@@ -80,6 +101,19 @@ class ChatActivity : AppCompatActivity() {
 
         btnLearning.setOnClickListener {
             startActivity(Intent(this, LearningActivity::class.java))
+        }
+
+        var isCipherMode = false
+        val orbView = findViewById<android.widget.ImageView>(R.id.btnCipherOrb)
+        orbView.setOnClickListener {
+            isCipherMode = !isCipherMode
+            if (isCipherMode) {
+                orbView.setColorFilter(android.graphics.Color.parseColor("#FF3B30"))
+                Toast.makeText(this, "⚠ PsiRa Mode: New words will be encoded", Toast.LENGTH_SHORT).show()
+            } else {
+                orbView.clearColorFilter()
+                Toast.makeText(this, "✓ English Mode", Toast.LENGTH_SHORT).show()
+            }
         }
 
         btnSettings.setOnClickListener {
@@ -141,7 +175,8 @@ class ChatActivity : AppCompatActivity() {
                 val isBurnable = findViewById<android.widget.ToggleButton>(R.id.toggleBurn).isChecked
 
                 try {
-                    val encrypted = AESEncryption.encrypt(text)
+                    val textToSend = if (isCipherMode) PsiRaConverter.encode(text) else text
+                    val encrypted = AESEncryption.encrypt(textToSend)
                     // Push with the new isBurnable flag
                     db.push().setValue(Message(null, senderName, encrypted, isBurnable))
                     editMessage.setText("")
@@ -160,16 +195,16 @@ class ChatActivity : AppCompatActivity() {
 
         // 7. WIPE VAULT logic
         secureStatusText.setOnLongClickListener {
-            AlertDialog.Builder(this)
-                .setTitle("⚠️ WIPE VAULT?")
-                .setMessage("Initiate emergency wipe for channel '$channelName'?")
-                .setPositiveButton("WIPE") { _, _ ->
-                    db.removeValue().addOnSuccessListener {
-                        Toast.makeText(this, "Vault Wiped Clean", Toast.LENGTH_SHORT).show()
-                    }
+            PsiRaDialogs.showDeleteSheet(
+                this,
+                "EMERGENCY PURGE?",
+                "Initiate immediate shredding of vault '${channelName}'?",
+                "INITIATE PURGE"
+            ) {
+                db.removeValue().addOnSuccessListener {
+                    Toast.makeText(this, "Vault Wiped Clean", Toast.LENGTH_SHORT).show()
                 }
-                .setNegativeButton("CANCEL", null)
-                .show()
+            }
             true
         }
     }

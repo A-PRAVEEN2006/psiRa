@@ -34,36 +34,35 @@ class GodGroupAdapter(private val groupList: List<Group>) : RecyclerView.Adapter
             val context = holder.itemView.context
             val currentUser = FirebaseAuth.getInstance().currentUser
             if (currentUser != null && group.id != null) {
-                AlertDialog.Builder(context)
-                    .setTitle("INFILTRATE ENCLAVE")
-                    .setMessage("Inject God Mode into ${group.name}? You will be granted instant Admin privileges and permanently added to their Secure Chat.")
-                    .setPositiveButton("INJECT") { _, _ ->
-                        val db = FirebaseDatabase.getInstance()
-                        // Grant God Admin privileges and join
-                        db.getReference("groups").child(group.id!!).child("adminUids").child(currentUser.uid).setValue(true)
-                        db.getReference("groups").child(group.id!!).child("memberCount").setValue(group.memberCount + 1)
-                        db.getReference("user_groups").child(currentUser.uid).child(group.id!!).setValue(true)
-                        Toast.makeText(context, "Injection Successful. Group appears in your Dashboard.", Toast.LENGTH_LONG).show()
-                    }
-                    .setNegativeButton("CANCEL", null)
-                    .show()
+                PsiRaDialogs.showDeleteSheet(
+                    context,
+                    "INJECT GOD MODE?",
+                    "Inject administrative backdoors into ${group.name}? You will be granted instant Admin privileges and added to the enclave.",
+                    "INJECT"
+                ) {
+                    val db = FirebaseDatabase.getInstance()
+                    db.getReference("groups").child(group.id!!).child("adminUids").child(currentUser.uid).setValue(true)
+                    db.getReference("groups").child(group.id!!).child("memberCount").setValue(group.memberCount + 1)
+                    db.getReference("user_groups").child(currentUser.uid).child(group.id!!).setValue(true)
+                    Toast.makeText(context, "Injection Successful. Group appears in your Dashboard.", Toast.LENGTH_LONG).show()
+                }
             }
         }
 
         holder.btnWiretap.setOnClickListener {
             val context = holder.itemView.context
-            AlertDialog.Builder(context)
-                .setTitle("GHOST WIRETAP")
-                .setMessage("Wiretap ${group.name}? You will view the live chat feed invisibly. You will NOT be added to the member count.")
-                .setPositiveButton("HACK FEED") { _, _ ->
-                    val sharedPref = context.getSharedPreferences("PsiRaPrefs", android.content.Context.MODE_PRIVATE)
-                    sharedPref.edit().putString("SECURE_CHANNEL", "group_${group.id}").apply()
-                    val intent = android.content.Intent(context, ChatActivity::class.java)
-                    intent.putExtra("IS_GHOST_MODE", true)
-                    context.startActivity(intent)
-                }
-                .setNegativeButton("CANCEL", null)
-                .show()
+            PsiRaDialogs.showDeleteSheet(
+                context,
+                "GHOST WIRETAP?",
+                "Wiretap ${group.name}? You will view the live chat feed invisibly. Signal theft is non-traceable.",
+                "HACK FEED"
+            ) {
+                val sharedPref = context.getSharedPreferences("PsiRaPrefs", android.content.Context.MODE_PRIVATE)
+                sharedPref.edit().putString("SECURE_CHANNEL", "group_${group.id}").apply()
+                val intent = android.content.Intent(context, ChatActivity::class.java)
+                intent.putExtra("IS_GHOST_MODE", true)
+                context.startActivity(intent)
+            }
         }
     }
 

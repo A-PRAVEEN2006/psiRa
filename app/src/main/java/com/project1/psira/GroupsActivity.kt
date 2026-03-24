@@ -130,19 +130,22 @@ class GroupsActivity : AppCompatActivity() {
 
     private fun showCreateGroupDialog() {
         val input = EditText(this)
-        input.hint = "Enter Dark Group Name"
-        
-        AlertDialog.Builder(this)
-            .setTitle("Create Enclave")
-            .setView(input)
-            .setPositiveButton("Create") { _, _ ->
-                val name = input.text.toString().trim()
-                if (name.isNotEmpty()) {
-                    createGroup(name)
-                }
+        input.hint = "Enclave Name"
+        input.setTextColor(android.graphics.Color.WHITE)
+        input.setHintTextColor(android.graphics.Color.GRAY)
+
+        PsiRaDialogs.showDeleteSheet(
+            this,
+            "INITIALIZE ENCLAVE",
+            "Establish a new encrypted node for multi-agent communication.",
+            "INITIALIZE",
+            input
+        ) {
+            val name = input.text.toString().trim()
+            if (name.isNotEmpty()) {
+                createGroup(name)
             }
-            .setNegativeButton("Cancel", null)
-            .show()
+        }
     }
 
     private fun createGroup(name: String) {
@@ -169,16 +172,14 @@ class GroupsActivity : AppCompatActivity() {
     private fun handleGroupLongClick(group: Group) {
         val user = FirebaseAuth.getInstance().currentUser
         if (user != null && group.adminUids.containsKey(user.uid)) {
-            val options = arrayOf("Add Member", "Change Group Icon", "Destroy Enclave")
-            AlertDialog.Builder(this)
-                .setTitle("Admin Control: ${group.name}")
-                .setItems(options) { _, which ->
-                    when (which) {
-                        0 -> showAddMemberDialog(group)
-                        1 -> pickGroupImage(group.id!!)
-                        2 -> confirmDestroyGroup(group)
-                    }
-                }.show()
+            val options = listOf("Add Member", "Change Group Icon", "Destroy Enclave")
+            PsiRaDialogs.showOptionsSheet(this, "ADMIN CONTROL: ${group.name}", options) { which ->
+                when (which) {
+                    0 -> showAddMemberDialog(group)
+                    1 -> pickGroupImage(group.id!!)
+                    2 -> confirmDestroyGroup(group)
+                }
+            }
         } else {
             Toast.makeText(this, "Admin privileges required.", Toast.LENGTH_SHORT).show()
         }
@@ -190,21 +191,25 @@ class GroupsActivity : AppCompatActivity() {
             return
         }
         val input = EditText(this)
-        input.hint = "Enter 5-Digit Agent ID"
+        input.hint = "5-Digit Agent ID"
+        input.setTextColor(android.graphics.Color.WHITE)
+        input.setHintTextColor(android.graphics.Color.GRAY)
         input.inputType = android.text.InputType.TYPE_CLASS_NUMBER
-        AlertDialog.Builder(this)
-            .setTitle("Add Member")
-            .setView(input)
-            .setPositiveButton("Add") { _, _ ->
-                val agentId = input.text.toString().trim()
-                if (agentId.length == 5) {
-                    addMemberByAgentId(group, agentId)
-                } else {
-                    Toast.makeText(this, "ID must be 5 digits", Toast.LENGTH_SHORT).show()
-                }
+
+        PsiRaDialogs.showDeleteSheet(
+            this,
+            "RECRUIT AGENT",
+            "Grant an agent access to vault '${group.name}'. Requires their unique 5-Digit ID.",
+            "RECRUIT",
+            input
+        ) {
+            val agentId = input.text.toString().trim()
+            if (agentId.length == 5) {
+                addMemberByAgentId(group, agentId)
+            } else {
+                Toast.makeText(this, "ID must be 5 digits", Toast.LENGTH_SHORT).show()
             }
-            .setNegativeButton("Cancel", null)
-            .show()
+        }
     }
 
     private fun addMemberByAgentId(group: Group, agentId: String) {
@@ -227,16 +232,16 @@ class GroupsActivity : AppCompatActivity() {
     }
 
     private fun confirmDestroyGroup(group: Group) {
-        AlertDialog.Builder(this)
-            .setTitle("WIPE ENCLAVE?")
-            .setMessage("This will permanently shred the group and all its encrypted messages.")
-            .setPositiveButton("WIPE") { _, _ ->
-                db.getReference("groups").child(group.id!!).removeValue()
-                db.getReference("group_${group.id}").removeValue() // Delete chat history
-                Toast.makeText(this, "Enclave completely eradicated.", Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+        PsiRaDialogs.showDeleteSheet(
+            this,
+            "WIPE ENCLAVE?",
+            "This will permanently shred the group and all its encrypted messages.",
+            "SHRED"
+        ) {
+            db.getReference("groups").child(group.id!!).removeValue()
+            db.getReference("group_${group.id}").removeValue() // Delete chat history
+            Toast.makeText(this, "Enclave completely eradicated.", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun pickGroupImage(groupId: String) {
