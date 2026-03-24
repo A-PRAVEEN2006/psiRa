@@ -16,7 +16,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 
-class ChatsActivity : AppCompatActivity() {
+class ChatsActivity : BaseActivity() {
 
     private lateinit var chatList: ArrayList<User>
     private lateinit var chatAdapter: DirectChatAdapter
@@ -87,7 +87,7 @@ class ChatsActivity : AppCompatActivity() {
                                     override fun onDataChange(userSnap: DataSnapshot) {
                                         val user = userSnap.getValue(User::class.java)
                                         if (user != null) {
-                                            val fullUser = User(uid = targetUid, email = user.email, name = user.name, agentId = user.agentId, banned = user.banned, isOnline = user.isOnline)
+                                            val fullUser = User(uid = targetUid, email = user.email, name = user.name, agentId = user.agentId, banned = user.banned, online = user.online)
                                             val existingIndex = chatList.indexOfFirst { it.uid == targetUid }
                                             if (existingIndex >= 0) {
                                                 chatList[existingIndex] = fullUser

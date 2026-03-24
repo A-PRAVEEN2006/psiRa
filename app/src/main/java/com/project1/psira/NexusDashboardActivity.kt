@@ -19,7 +19,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 
-class NexusDashboardActivity : AppCompatActivity() {
+class NexusDashboardActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_nexus_dashboard)
@@ -27,19 +27,6 @@ class NexusDashboardActivity : AppCompatActivity() {
         val currentUser = FirebaseAuth.getInstance().currentUser
         if (currentUser != null) {
             val userRef = FirebaseDatabase.getInstance().getReference("users").child(currentUser.uid)
-            val isOnlineRef = userRef.child("isOnline")
-            FirebaseDatabase.getInstance().getReference(".info/connected")
-                .addValueEventListener(object : com.google.firebase.database.ValueEventListener {
-                    override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
-                        val connected = snapshot.getValue(Boolean::class.java) ?: false
-                        if (connected) {
-                            isOnlineRef.onDisconnect().setValue(false)
-                            isOnlineRef.setValue(true)
-                        }
-                    }
-                    override fun onCancelled(error: com.google.firebase.database.DatabaseError) {}
-                })
-
             userRef.child("banned").get().addOnSuccessListener {
                 if(it.value == true) {
                     FirebaseAuth.getInstance().signOut()
@@ -90,6 +77,7 @@ class NexusDashboardActivity : AppCompatActivity() {
         // 3. LOGOUT LOGIC
         val tvLogout = findViewById<TextView>(R.id.tvLogout)
         tvLogout.setOnClickListener {
+            terminatePresence()
             FirebaseAuth.getInstance().signOut()
             startActivity(Intent(this, LoginActivity::class.java))
             finish()

@@ -22,7 +22,7 @@ import java.io.File
 import java.util.*
 import kotlin.collections.ArrayList
 
-class DirectChatActivity : AppCompatActivity() {
+class DirectChatActivity : BaseActivity() {
     private lateinit var db: DatabaseReference
     private lateinit var messageAdapter: MessageAdapter
     private lateinit var messageList: ArrayList<Message>

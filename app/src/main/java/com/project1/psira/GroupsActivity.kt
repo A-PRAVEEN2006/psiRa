@@ -23,7 +23,7 @@ import com.google.firebase.database.*
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 
-class GroupsActivity : AppCompatActivity() {
+class GroupsActivity : BaseActivity() {
 
     private lateinit var groupAdapter: GroupAdapter
     private lateinit var groupList: ArrayList<Group>

@@ -11,7 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 
-class NoteEditorActivity : AppCompatActivity() {
+class NoteEditorActivity : BaseActivity() {
 
     private lateinit var editTitle: EditText
     private lateinit var editContent: EditText

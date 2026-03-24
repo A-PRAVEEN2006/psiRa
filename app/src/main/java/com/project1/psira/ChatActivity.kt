@@ -16,7 +16,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.database.*
 import com.google.firebase.messaging.FirebaseMessaging // NEW IMPORT
 
-class ChatActivity : AppCompatActivity() {
+class ChatActivity : BaseActivity() {
     private lateinit var db: DatabaseReference
     private lateinit var messageAdapter: MessageAdapter
     private lateinit var messageList: ArrayList<Message>

@@ -11,7 +11,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 
-class VaultActivity : AppCompatActivity() {
+class VaultActivity : BaseActivity() {
 
     private lateinit var noteList: ArrayList<Note>
     private lateinit var noteAdapter: NoteAdapter

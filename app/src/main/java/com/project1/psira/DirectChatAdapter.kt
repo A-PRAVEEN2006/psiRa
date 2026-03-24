@@ -30,7 +30,7 @@ class DirectChatAdapter(private val chatList: List<User>) : RecyclerView.Adapter
         holder.tvId.text = "ID: #${user.agentId}"
         
         val presenceDot = holder.itemView.findViewById<View>(R.id.presenceDot)
-        if (user.isOnline) {
+        if (user.online) {
             presenceDot.setBackgroundResource(R.drawable.presence_online)
         } else {
             presenceDot.setBackgroundResource(R.drawable.presence_offline)
