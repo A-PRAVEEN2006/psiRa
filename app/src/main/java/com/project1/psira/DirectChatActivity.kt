@@ -51,7 +51,7 @@ class DirectChatActivity : BaseActivity() {
         
         findViewById<android.view.View>(R.id.chatBg).setBackgroundColor(android.graphics.Color.parseColor("#1A1A2E"))
         
-        findViewById<ImageButton>(R.id.btnLearningPage).visibility = android.view.View.GONE
+
         findViewById<ImageButton>(R.id.btnSettings).visibility = android.view.View.GONE
 
         secureStatusText.text = "🔒 DIRECT LINK: $displayName"

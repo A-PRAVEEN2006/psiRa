@@ -30,7 +30,7 @@ class ChatActivity : BaseActivity() {
         recyclerView = findViewById(R.id.recyclerView)
         val btnSend = findViewById<Button>(R.id.btnSend)
         val editMessage = findViewById<EditText>(R.id.editMessage)
-        val btnLearning = findViewById<ImageButton>(R.id.btnLearningPage)
+
         val btnSettings = findViewById<ImageButton>(R.id.btnSettings)
         val secureStatusText = findViewById<TextView>(R.id.secureStatusText)
         val btnVoiceCall = findViewById<ImageButton>(R.id.btnVoiceCall)
@@ -99,9 +99,7 @@ class ChatActivity : BaseActivity() {
             override fun onCancelled(error: DatabaseError) {}
         })
 
-        btnLearning.setOnClickListener {
-            startActivity(Intent(this, LearningActivity::class.java))
-        }
+
 
         var isCipherMode = false
         val orbView = findViewById<android.widget.ImageView>(R.id.btnCipherOrb)

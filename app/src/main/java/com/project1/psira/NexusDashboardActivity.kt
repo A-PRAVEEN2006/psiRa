@@ -55,6 +55,27 @@ class NexusDashboardActivity : BaseActivity() {
         val user = FirebaseAuth.getInstance().currentUser
         tvAgentName.text = "AGENT: ${user?.displayName ?: "Unknown"}"
 
+        val nexusTitle = findViewById<TextView>(R.id.nexusTitle)
+        nexusTitle.setOnLongClickListener {
+            // Secret entry to Alphabet Decoder
+            val vibrator = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                val vibratorManager = getSystemService(android.os.VibratorManager::class.java)
+                vibratorManager.defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                getSystemService(android.content.Context.VIBRATOR_SERVICE) as android.os.Vibrator
+            }
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                vibrator.vibrate(android.os.VibrationEffect.createOneShot(50, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(50)
+            }
+            startActivity(Intent(this, LearningActivity::class.java))
+            true
+        }
+
         if (user != null) {
             com.google.firebase.database.FirebaseDatabase.getInstance().getReference("users").child(user.uid).child("agentId")
                 .get().addOnSuccessListener { snapshot ->

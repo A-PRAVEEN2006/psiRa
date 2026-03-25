@@ -34,17 +34,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toStartOf="@id/btnWipeChat" />
 
-    <ImageButton
-        android:id="@+id/btnLearningPage"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_margin="16dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:src="@android:drawable/ic_menu_sort_alphabetically"
-        android:contentDescription="Alphabet Learning"
-        app:tint="?attr/colorPrimary"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/btnSettings" />
+
 
     <TextView
         android:id="@+id/secureStatusText"
@@ -70,7 +60,7 @@
         app:tint="?attr/colorPrimary"
         app:layout_constraintTop_toTopOf="@id/secureStatusText"
         app:layout_constraintBottom_toBottomOf="@id/secureStatusText"
-        app:layout_constraintEnd_toStartOf="@id/btnLearningPage" />
+        app:layout_constraintEnd_toStartOf="@id/btnSettings" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
