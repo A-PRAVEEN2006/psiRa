@@ -13,7 +13,22 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    
+    <!-- Bluetooth Tactical Mesh Permissions -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    
+    <!-- Ghost Network (Wi-Fi P2P) Permissions -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" android:usesPermissionFlags="neverForLocation" />
     <application
+        android:name=".PsiRaApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -62,6 +77,9 @@
         <activity android:name=".VaultActivity" android:exported="false" />
         <activity android:name=".NoteEditorActivity" android:exported="false" />
         <activity android:name=".GodDashboardActivity" android:exported="false" />
+        <activity android:name=".BluetoothChatActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".WifiDirectChatActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".NexusLinkActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".CallActivity" android:exported="false" android:screenOrientation="portrait"/>
         <service
             android:name=".PsiraMessagingService"

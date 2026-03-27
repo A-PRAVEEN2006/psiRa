@@ -4,6 +4,10 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import android.os.Vibrator
+import android.os.VibrationEffect
+import android.os.Build
+import android.content.Context
 
 /**
  * Base Activity for all PsiRa activities to ensure 100% presence tracking.
@@ -40,5 +44,15 @@ open class BaseActivity : AppCompatActivity() {
      */
     fun terminatePresence() {
         updatePresence(false)
+    }
+
+    protected fun vibrate(duration: Long) {
+        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createOneShot(duration, VibrationEffect.DEFAULT_AMPLITUDE))
+        } else {
+            @Suppress("DEPRECATION")
+            vibrator.vibrate(duration)
+        }
     }
 }

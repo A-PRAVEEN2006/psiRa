@@ -1,16 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Light Mode (Feel Good Colors) -->
-    <color name="colorPrimary">#4A90E2</color>
-    <color name="colorOnPrimary">#FFFFFF</color>
-    <color name="colorBackground">#F5F7FA</color>
-    <color name="colorOnBackground">#333333</color>
-    <color name="colorSurface">#FFFFFF</color>
-    <color name="colorOnSurface">#333333</color>
-    <color name="colorAccent">#2FA29C</color>
-    <color name="colorError">#E74C3C</color>
-    <color name="colorCalcKeyBg">#E1E8EE</color>
-    <color name="colorCalcKeyText">#333333</color>
+    <!-- Midnight Mode (Tactical Cyber) -->
+    <color name="colorPrimary">@color/psira_accent</color>
+    <color name="colorOnPrimary">#000000</color>
+    <color name="colorBackground">#0A0A0A</color>
+    <color name="purple_200">#00D2FF</color>
+    <color name="purple_500">#00A8FF</color>
+    <color name="purple_700">#0077FF</color>
+    <color name="teal_200">#4FACFE</color>
+    <color name="teal_700">#00F2FE</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    
+    <color name="psira_accent">#B388FF</color>
+    <color name="psira_dark">#0A0A0A</color>
+    <color name="psira_red">#FF1744</color>
+
+    <color name="colorAccent">#B388FF</color>
+    <color name="colorOnBackground">#E0E0E0</color>
+    <color name="colorSurface">#121212</color>
+    <color name="colorOnSurface">#FFFFFF</color>
+    <color name="colorError">#FF5252</color>
+    <color name="colorCalcKeyBg">#1A1A1A</color>
+    <color name="colorCalcKeyText">#FFFFFF</color>
 </resources>

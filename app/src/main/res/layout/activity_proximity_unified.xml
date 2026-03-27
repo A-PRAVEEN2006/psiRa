@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <!-- Top Glow Header -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:background="@drawable/bg_top_glow"
+        app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tvNexusTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="NEXUS LINK"
+            android:textColor="@color/psira_accent"
+            android:textStyle="bold"
+            android:textSize="22sp"
+            android:letterSpacing="0.2"
+            android:gravity="center"
+            android:layout_marginTop="24dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Mode Selector Segmented Control -->
+    <LinearLayout
+        android:id="@+id/modeSelector"
+        android:layout_width="match_parent"
+        android:layout_height="45dp"
+        android:orientation="horizontal"
+        android:layout_marginHorizontal="32dp"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/bg_rounded_dark"
+        android:padding="3dp"
+        app:layout_constraintTop_toBottomOf="@id/tvNexusTitle">
+
+        <TextView
+            android:id="@+id/btnModeMesh"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="MESH (BT)"
+            android:gravity="center"
+            android:textColor="#000000"
+            android:background="@drawable/bg_rounded_primary"
+            android:textStyle="bold"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/btnModeGhost"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="GHOST (WI-FI)"
+            android:gravity="center"
+            android:textColor="#888888"
+            android:textStyle="bold"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/radarContainer"
+        android:layout_width="match_parent"
+        android:layout_height="180dp"
+        app:layout_constraintTop_toBottomOf="@id/modeSelector">
+
+        <com.project1.psira.RadarPulseView
+            android:id="@+id/radarView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <TextView
+            android:id="@+id/tvDiscoveryHint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="TAP SCAN TO SEARCH"
+            android:textColor="@color/psira_accent"
+            android:textSize="10sp"
+            android:layout_gravity="center"
+            android:alpha="0.8" />
+    </FrameLayout>
+
+    <!-- Unified Signal List -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvNexusMessages"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:padding="16dp"
+        android:clipToPadding="false"
+        app:layout_constraintTop_toBottomOf="@id/radarContainer"
+        app:layout_constraintBottom_toTopOf="@id/btnInitiateScan"/>
+
+    <!-- Unified Action Bar -->
+    <Button
+        android:id="@+id/btnInitiateScan"
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:text="INITIATE TACTICAL SCAN"
+        android:backgroundTint="@color/psira_accent"
+        android:textColor="#000000"
+        android:textStyle="bold"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@id/nexusInputBar"/>
+
+    <LinearLayout
+        android:id="@+id/nexusInputBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:background="#0A0A0A"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <EditText
+            android:id="@+id/etNexusMessage"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Broadcast signal..."
+            android:textColor="@color/psira_accent"
+            android:textColorHint="#333333"
+            android:background="@null"
+            android:padding="12dp"
+            android:inputType="textShortMessage" />
+
+        <ImageButton
+            android:id="@+id/btnNexusSend"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@android:drawable/ic_menu_send"
+            android:background="@null"
+            app:tint="@color/psira_accent"
+            android:enabled="false"/>
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
