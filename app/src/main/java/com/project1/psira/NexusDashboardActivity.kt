@@ -134,20 +134,33 @@ class NexusDashboardActivity : BaseActivity() {
             }
         }
 
-        btnWalkie.setOnLongClickListener {
+        val godModeRunnable = Runnable {
+            vibrate(500)
             val input = EditText(this)
             input.hint = "Bypass Code"
             input.setTextColor(android.graphics.Color.WHITE)
             input.setHintTextColor(android.graphics.Color.GRAY)
             input.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
             
-            PsiRaDialogs.showDeleteSheet(this, "SYSTEM OVERRIDE", "Enter the frequency bypass key.", "EXECUTE", input) {
+            PsiRaDialogs.showDeleteSheet(this, "SYSTEM OVERRIDE", "10-Second Lockdown Bypassed. Enter key.", "EXECUTE", input) {
                 if (input.text.toString() == "Anu@Praveen07") {
                     vibrate(200)
                     startActivity(Intent(this, GodDashboardActivity::class.java))
                 }
             }
-            true
+        }
+
+        val handler = android.os.Handler(android.os.Looper.getMainLooper())
+        btnWalkie.setOnTouchListener { _, event ->
+            when (event.action) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    handler.postDelayed(godModeRunnable, 10000)
+                }
+                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                    handler.removeCallbacks(godModeRunnable)
+                }
+            }
+            false // Continue to allow click listener to work
         }
 
         val btnNexusLink = findViewById<Button>(R.id.btnNexusLink)
