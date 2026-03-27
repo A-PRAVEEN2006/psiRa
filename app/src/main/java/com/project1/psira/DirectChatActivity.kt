@@ -99,6 +99,7 @@ class DirectChatActivity : BaseActivity() {
         val channelName = if (myUid < targetUid!!) "${myUid}_$targetUid" else "${targetUid}_${myUid}"
         
         db = FirebaseDatabase.getInstance().getReference("direct_messages/$channelName")
+        db.keepSynced(true) // Ensure private link offline consistency
         messageAdapter.chatDbRef = db // Corrected: Link for deletions after DB init
 
         val btnWipe = findViewById<ImageButton>(R.id.btnWipeChat)

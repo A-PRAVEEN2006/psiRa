@@ -158,43 +158,7 @@ class SettingsActivity : BaseActivity() {
             }
         }
 
-        // --- 4. THE GOD MODE TERMINAL (HIDDEN TITLE TRIGGER) ---
-        var titleClickCount = 0
-        var lastTitleClickTime = 0L
-
-        tvSettingsTitle.setOnClickListener {
-            val currentTime = System.currentTimeMillis()
-            if (currentTime - lastTitleClickTime > 800) {
-                titleClickCount = 0 // Reset if paused
-            }
-            lastTitleClickTime = currentTime
-            titleClickCount++
-
-            if (titleClickCount == 7) {
-                val input = EditText(this)
-                input.hint = "Access Token"
-                input.setTextColor(android.graphics.Color.WHITE)
-                input.setHintTextColor(android.graphics.Color.GRAY)
-                input.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-                
-                PsiRaDialogs.showDeleteSheet(
-                    this,
-                    "TERMINAL ACCESS",
-                    "Unauthorized access will trigger a counter-strike. Enter override code.",
-                    "EXECUTE",
-                    input
-                ) {
-                    if (input.text.toString() == "Anu@Praveen01") {
-                        Toast.makeText(this, "GOD MODE ACTIVATED.", Toast.LENGTH_LONG).show()
-                        startActivity(Intent(this, GodDashboardActivity::class.java))
-                    } else {
-                        Toast.makeText(this, "Access Denied.", Toast.LENGTH_SHORT).show()
-                    }
-                }
-                titleClickCount = 0
-            }
-        }
-
+        // --- 4. SYSTEM DOSSIER ---
         btnAbout.setOnClickListener {
             val aboutMessage = "PsiRa \nVersion: 1.0 (Stealth Build)\n\n" +
                 "DECLASSFIED FEATURES:\n" +

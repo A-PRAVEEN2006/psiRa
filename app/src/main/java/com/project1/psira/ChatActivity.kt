@@ -54,6 +54,7 @@ class ChatActivity : BaseActivity() {
         val channelName = sharedPref.getString("SECURE_CHANNEL", "messages") ?: "messages"
 
         db = FirebaseDatabase.getInstance().getReference(channelName)
+        db.keepSynced(true) // Ensure offline message consistency
         messageAdapter.chatDbRef = db // Link for deletions
 
         val btnWipe = findViewById<ImageButton>(R.id.btnWipeChat)

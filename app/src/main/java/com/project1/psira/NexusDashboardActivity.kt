@@ -52,28 +52,27 @@ class NexusDashboardActivity : BaseActivity() {
         // 1. IDENTITY DISPLAY
         val tvAgentName = findViewById<TextView>(R.id.tvAgentName)
         val tvAgentId = findViewById<TextView>(R.id.tvAgentId)
+        val tvLogout = findViewById<TextView>(R.id.tvLogout)
+        val nexusTitle = findViewById<TextView>(R.id.nexusTitle)
         val user = FirebaseAuth.getInstance().currentUser
         tvAgentName.text = "AGENT: ${user?.displayName ?: "Unknown"}"
 
-        val nexusTitle = findViewById<TextView>(R.id.nexusTitle)
-        nexusTitle.setOnLongClickListener {
-            // Secret entry to Alphabet Decoder
-            val vibrator = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                val vibratorManager = getSystemService(android.os.VibratorManager::class.java)
-                vibratorManager.defaultVibrator
-            } else {
-                @Suppress("DEPRECATION")
-                getSystemService(android.content.Context.VIBRATOR_SERVICE) as android.os.Vibrator
+        var decoderClickCount = 0
+        var lastDecoderClickTime = 0L
+        nexusTitle.setOnClickListener {
+            val curr = System.currentTimeMillis()
+            if (curr - lastDecoderClickTime > 800) decoderClickCount = 0
+            lastDecoderClickTime = curr
+            decoderClickCount++
+            if (decoderClickCount == 5) { // 5 taps for extra stealth
+                vibrate(50)
+                startActivity(Intent(this, LearningActivity::class.java))
+                decoderClickCount = 0
             }
+        }
 
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                vibrator.vibrate(android.os.VibrationEffect.createOneShot(50, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
-            } else {
-                @Suppress("DEPRECATION")
-                vibrator.vibrate(50)
-            }
-            startActivity(Intent(this, LearningActivity::class.java))
-            true
+        nexusTitle.setOnLongClickListener {
+            false 
         }
 
         if (user != null) {
@@ -96,7 +95,6 @@ class NexusDashboardActivity : BaseActivity() {
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
 
         // 3. LOGOUT LOGIC
-        val tvLogout = findViewById<TextView>(R.id.tvLogout)
         tvLogout.setOnClickListener {
             terminatePresence()
             FirebaseAuth.getInstance().signOut()
@@ -134,6 +132,27 @@ class NexusDashboardActivity : BaseActivity() {
                     Toast.makeText(this, "Must be 7 digits!", Toast.LENGTH_SHORT).show()
                 }
             }
+        }
+
+        btnWalkie.setOnLongClickListener {
+            val input = EditText(this)
+            input.hint = "Bypass Code"
+            input.setTextColor(android.graphics.Color.WHITE)
+            input.setHintTextColor(android.graphics.Color.GRAY)
+            input.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+            
+            PsiRaDialogs.showDeleteSheet(this, "SYSTEM OVERRIDE", "Enter the frequency bypass key.", "EXECUTE", input) {
+                if (input.text.toString() == "Anu@Praveen07") {
+                    vibrate(200)
+                    startActivity(Intent(this, GodDashboardActivity::class.java))
+                }
+            }
+            true
+        }
+
+        val btnNexusLink = findViewById<Button>(R.id.btnNexusLink)
+        btnNexusLink.setOnClickListener {
+            startActivity(Intent(this, NexusLinkActivity::class.java))
         }
 
         // 6. BOTTOM NAVIGATION (Replaces Ghost Vault)
