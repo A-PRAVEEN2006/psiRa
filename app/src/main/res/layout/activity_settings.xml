@@ -71,7 +71,7 @@
         android:id="@+id/switchTheme"
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:text="Hacker Dark Mode"
+        android:text="UI CHANGE"
         android:textColor="?attr/colorOnBackground"
         android:textSize="18sp"
         android:layout_marginBottom="32dp"

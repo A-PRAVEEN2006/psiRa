@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Dark Mode (Hacker/Night Colors) -->
-    <color name="colorPrimary">#5C9CE6</color>
+    <!-- Feel Good Dark Mode Colors -->
+    <color name="colorPrimary">#FF7043</color>
     <color name="colorOnPrimary">#FFFFFF</color>
     <color name="colorBackground">#121212</color>
     <color name="colorOnBackground">#E0E0E0</color>
     <color name="colorSurface">#1E1E1E</color>
     <color name="colorOnSurface">#E0E0E0</color>
-    <color name="colorAccent">#2FA29C</color>
+    <color name="colorAccent">#FFCA28</color>
     <color name="colorError">#CF6679</color>
     <color name="colorCalcKeyBg">#2C2C2C</color>
     <color name="colorCalcKeyText">#E0E0E0</color>

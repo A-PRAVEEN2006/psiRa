@@ -413,11 +413,6 @@ class NexusLinkActivity : BaseActivity() {
         getSharedPreferences("PsiRaNexus", Context.MODE_PRIVATE).edit().putString("history", sb.toString()).apply()
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        super.onBackPressed()
-        finish()
-    }
 
     override fun onDestroy() {
         super.onDestroy()
