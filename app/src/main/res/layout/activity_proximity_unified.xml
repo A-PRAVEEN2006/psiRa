@@ -16,7 +16,7 @@
             android:id="@+id/tvNexusTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="NEXUS LINK"
+            android:text="SPECTRE NODE"
             android:textColor="@color/psira_accent"
             android:textStyle="bold"
             android:textSize="22sp"

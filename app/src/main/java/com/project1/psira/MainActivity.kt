@@ -132,6 +132,7 @@ class MainActivity : BaseActivity() {
         }
 
         startActivity(Intent(this, LoginActivity::class.java))
+        finish()
 
         if (android.os.Build.VERSION.SDK_INT >= 34) {
             overrideActivityTransition(android.app.Activity.OVERRIDE_TRANSITION_OPEN, android.R.anim.fade_in, android.R.anim.fade_out)

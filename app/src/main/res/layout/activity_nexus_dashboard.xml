@@ -105,6 +105,7 @@
             android:textSize="18sp"
             android:textStyle="bold"
             android:elevation="8dp"
+            android:visibility="gone"
             android:layout_marginBottom="24dp" />
 
         <TextView

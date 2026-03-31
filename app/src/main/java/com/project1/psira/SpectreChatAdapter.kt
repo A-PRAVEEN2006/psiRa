@@ -6,10 +6,10 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-class BluetoothMessage(val sender: String, val message: String, val isMe: Boolean)
+class SpectreMessage(val sender: String, val message: String, val isMe: Boolean)
 
-class BluetoothChatAdapter(private val messageList: List<BluetoothMessage>) :
-    RecyclerView.Adapter<BluetoothChatAdapter.BTViewHolder>() {
+class SpectreChatAdapter(private val messageList: List<SpectreMessage>) :
+    RecyclerView.Adapter<SpectreChatAdapter.BTViewHolder>() {
 
     class BTViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val tvMessage: TextView = view.findViewById(R.id.textMessage)
@@ -25,7 +25,6 @@ class BluetoothChatAdapter(private val messageList: List<BluetoothMessage>) :
         val msg = messageList[position]
         holder.tvMessage.text = msg.message
     }
-
 
     override fun getItemViewType(position: Int): Int {
         return if (messageList[position].isMe) 1 else 0

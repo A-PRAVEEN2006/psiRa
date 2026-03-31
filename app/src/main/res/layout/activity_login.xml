@@ -8,6 +8,7 @@
     android:padding="32dp">
 
     <TextView
+        android:id="@+id/tvLoginTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="PsiRa"

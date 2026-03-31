@@ -1,5 +1,6 @@
 package com.project1.psira
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
@@ -25,6 +26,16 @@ class LoginActivity : AppCompatActivity() {
         val editPassword = findViewById<EditText>(R.id.editPassword)
         val btnLogin = findViewById<Button>(R.id.btnLogin)
         val btnRegister = findViewById<Button>(R.id.btnRegister)
+        val tvLoginTitle = findViewById<android.widget.TextView>(R.id.tvLoginTitle)
+
+        tvLoginTitle.setOnLongClickListener {
+            @Suppress("DEPRECATION")
+            val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
+            vibrator.vibrate(android.os.VibrationEffect.createOneShot(50, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+            Toast.makeText(this, "INITIALIZING SPECTRE NODE...", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, NexusLinkActivity::class.java))
+            true
+        }
 
         // --- 1. INITIALIZE CONNECTION (LOGIN) ---
         // --- 1. INITIALIZE CONNECTION (LOGIN) ---

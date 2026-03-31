@@ -30,8 +30,8 @@ class NexusLinkActivity : BaseActivity() {
 
     // Common UI
     private lateinit var rvMessages: RecyclerView
-    private lateinit var adapter: BluetoothChatAdapter
-    private val messageList = mutableListOf<BluetoothMessage>()
+    private lateinit var adapter: SpectreChatAdapter
+    private val messageList = mutableListOf<SpectreMessage>()
     private lateinit var radarView: RadarPulseView
     private lateinit var tvStatus: TextView
     private lateinit var etMessage: EditText
@@ -78,7 +78,7 @@ class NexusLinkActivity : BaseActivity() {
         btnModeMesh = findViewById(R.id.btnModeMesh)
         btnModeGhost = findViewById(R.id.btnModeGhost)
 
-        adapter = BluetoothChatAdapter(messageList)
+        adapter = SpectreChatAdapter(messageList)
         rvMessages.layoutManager = LinearLayoutManager(this)
         rvMessages.adapter = adapter
 
@@ -105,13 +105,13 @@ class NexusLinkActivity : BaseActivity() {
             btnModeMesh.setTextColor(Color.BLACK)
             btnModeGhost.setBackground(null)
             btnModeGhost.setTextColor(Color.GRAY)
-            tvStatus.text = "MESH MODE (BLUETOOTH)"
+            tvStatus.text = "SPECTRE MESH (OFFLINE)"
         } else {
             btnModeGhost.setBackgroundResource(R.drawable.bg_rounded_primary)
             btnModeGhost.setTextColor(Color.BLACK)
             btnModeMesh.setBackground(null)
             btnModeMesh.setTextColor(Color.GRAY)
-            tvStatus.text = "GHOST MODE (WI-FI DIRECT)"
+            tvStatus.text = "SPECTRE GHOST (WI-FI)"
         }
         
         terminateAllThreads()
@@ -134,6 +134,12 @@ class NexusLinkActivity : BaseActivity() {
         btnScan.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.RED))
         
         if (currentMode == LinkMode.MESH) {
+            // Request Discoverability
+            val discoverableIntent = Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE).apply {
+                putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 120)
+            }
+            startActivity(discoverableIntent)
+            
             startBtDiscovery()
             startBtBroadcasting()
         } else {
@@ -164,7 +170,7 @@ class NexusLinkActivity : BaseActivity() {
                 wfDataThread?.write(encoded)
             }
             
-            messageList.add(BluetoothMessage("You", text, true))
+            messageList.add(SpectreMessage("You", text, true))
             adapter.notifyItemInserted(messageList.size - 1)
             rvMessages.scrollToPosition(messageList.size - 1)
             etMessage.setText("")
@@ -198,11 +204,14 @@ class NexusLinkActivity : BaseActivity() {
                     intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
                 }
                 device?.let {
-                    val name = it.name ?: "Unknown"
+                    val name = it.name ?: "Unknown Node"
                     if (name.contains("PsiRa", ignoreCase = true)) {
-                        tvStatus.text = "NODE DETECTED: $name"
-                        stopScan()
+                        tvStatus.text = "ELITE NODE DETECTED: $name"
+                        vibrate(50)
                         connectToBtDevice(it)
+                    } else {
+                        // For manual testing/visibility
+                        tvStatus.text = "SCANNING... FOUND: $name"
                     }
                 }
             }
@@ -291,7 +300,7 @@ class NexusLinkActivity : BaseActivity() {
     private inner class BtAcceptThread : Thread() {
         private val mmServerSocket: BluetoothServerSocket? by lazy {
             if (ActivityCompat.checkSelfPermission(this@NexusLinkActivity, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) return@lazy null
-            btAdapter?.listenUsingInsecureRfcommWithServiceRecord("PsiRaMesh", PSIRA_UUID)
+            btAdapter?.listenUsingInsecureRfcommWithServiceRecord("SpectreMesh", PSIRA_UUID)
         }
         override fun run() {
             val socket = mmServerSocket?.accept()
@@ -373,7 +382,7 @@ class NexusLinkActivity : BaseActivity() {
 
     private fun postMessage(msg: String) {
         handler.post {
-            messageList.add(BluetoothMessage("Agent", msg, false))
+            messageList.add(SpectreMessage("Agent", msg, false))
             adapter.notifyItemInserted(messageList.size - 1)
             rvMessages.scrollToPosition(messageList.size - 1)
             saveArchive()
@@ -386,7 +395,7 @@ class NexusLinkActivity : BaseActivity() {
         if (raw.isNotEmpty()) {
             raw.split("[MSG_SEP]").forEach {
                 val f = it.split("|")
-                if (f.size == 3) messageList.add(BluetoothMessage(f[0], f[1], f[2] == "1"))
+                if (f.size == 3) messageList.add(SpectreMessage(f[0], f[1], f[2] == "1"))
             }
             adapter.notifyDataSetChanged()
             rvMessages.scrollToPosition(messageList.size - 1)
@@ -402,6 +411,12 @@ class NexusLinkActivity : BaseActivity() {
             if (i < messageList.size - 1) sb.append("[MSG_SEP]")
         }
         getSharedPreferences("PsiRaNexus", Context.MODE_PRIVATE).edit().putString("history", sb.toString()).apply()
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        super.onBackPressed()
+        finish()
     }
 
     override fun onDestroy() {
