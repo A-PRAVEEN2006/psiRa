@@ -39,15 +39,7 @@ class NexusLinkActivity : BaseActivity() {
     private lateinit var btnScan: Button
     private lateinit var btnModeMesh: TextView
     private lateinit var btnModeGhost: TextView
-
-    // Bluetooth Mesh (Carrier 1)
-    private val PSIRA_UUID = UUID.fromString("8ce255c0-200a-11e0-ac64-0800200c9a66")
-    private val btAdapter: BluetoothAdapter? by lazy {
-        (getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
-    }
-    private var btAcceptThread: BtAcceptThread? = null
-    private var btConnectThread: BtConnectThread? = null
-    private var btDataThread: BtDataThread? = null
+    private lateinit var etTargetId: EditText
 
     // Ghost Network (Carrier 2)
     private lateinit var wifiManager: WifiP2pManager
@@ -66,6 +58,17 @@ class NexusLinkActivity : BaseActivity() {
         initUI()
         initCarriers()
         loadArchive()
+        
+        
+        val filter = IntentFilter(SpectreNodeService.BROADCAST_SPECTRE_MESSAGE)
+        val statusFilter = IntentFilter(SpectreNodeService.BROADCAST_SPECTRE_STATUS)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(spectreReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            registerReceiver(statusReceiver, statusFilter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(spectreReceiver, filter)
+            registerReceiver(statusReceiver, statusFilter)
+        }
     }
 
     private fun initUI() {
@@ -77,6 +80,7 @@ class NexusLinkActivity : BaseActivity() {
         btnScan = findViewById(R.id.btnInitiateScan)
         btnModeMesh = findViewById(R.id.btnModeMesh)
         btnModeGhost = findViewById(R.id.btnModeGhost)
+        etTargetId = findViewById(R.id.etTargetId)
 
         adapter = SpectreChatAdapter(messageList)
         rvMessages.layoutManager = LinearLayoutManager(this)
@@ -134,14 +138,15 @@ class NexusLinkActivity : BaseActivity() {
         btnScan.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.RED))
         
         if (currentMode == LinkMode.MESH) {
-            // Request Discoverability
-            val discoverableIntent = Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE).apply {
-                putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 120)
+            val intent = Intent(this, SpectreNodeService::class.java)
+            intent.action = SpectreNodeService.SERVICE_ACTION_START
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent)
+            } else {
+                startService(intent)
             }
-            startActivity(discoverableIntent)
-            
-            startBtDiscovery()
-            startBtBroadcasting()
+            tvStatus.text = "SPECTRE BACKGROUND MESH ACTIVE"
+            tvStatus.setTextColor(Color.GREEN)
         } else {
             startWfDiscovery()
         }
@@ -154,7 +159,11 @@ class NexusLinkActivity : BaseActivity() {
         btnScan.setBackgroundTintList(android.content.res.ColorStateList.valueOf(ContextCompat.getColor(this, R.color.psira_accent)))
         
         if (currentMode == LinkMode.MESH) {
-            btAdapter?.cancelDiscovery()
+            val intent = Intent(this, SpectreNodeService::class.java)
+            intent.action = SpectreNodeService.SERVICE_ACTION_STOP
+            startService(intent)
+            tvStatus.text = "SPECTRE MESH (OFFLINE)"
+            tvStatus.setTextColor(Color.GRAY)
         } else {
             wifiManager.stopPeerDiscovery(wifiChannel, null)
         }
@@ -165,7 +174,17 @@ class NexusLinkActivity : BaseActivity() {
         if (text.isNotEmpty()) {
             val encoded = PsiRaConverter.encode(text)
             if (currentMode == LinkMode.MESH) {
-                btDataThread?.write(encoded.toByteArray())
+                val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+                val targetId = etTargetId.text.toString().trim()
+                val finalTarget = if (targetId.isEmpty()) "ALL" else targetId
+                
+                val intent = Intent(this, SpectreNodeService::class.java).apply {
+                    action = SpectreNodeService.ACTION_SEND_MESSAGE
+                    putExtra("message", text)
+                    putExtra("alias", user?.displayName ?: "Ghost")
+                    putExtra("target", finalTarget)
+                }
+                startService(intent)
             } else {
                 wfDataThread?.write(encoded)
             }
@@ -178,50 +197,39 @@ class NexusLinkActivity : BaseActivity() {
         }
     }
 
-    // --- Bluetooth Implementation ---
-
-    private fun startBtBroadcasting() {
-        if (btAdapter?.isEnabled == false) return
-        btAcceptThread?.cancel()
-        btAcceptThread = BtAcceptThread()
-        btAcceptThread?.start()
-    }
-
-    private fun startBtDiscovery() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) return
-        btAdapter?.startDiscovery()
-        val filter = IntentFilter(BluetoothDevice.ACTION_FOUND)
-        registerReceiver(btReceiver, filter)
-    }
-
-    private val btReceiver = object : BroadcastReceiver() {
+    private val spectreReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            if (BluetoothDevice.ACTION_FOUND == intent.action) {
-                val device: BluetoothDevice? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
-                } else {
-                    @Suppress("DEPRECATION")
-                    intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
-                }
-                device?.let {
-                    val name = it.name ?: "Unknown Node"
-                    if (name.contains("PsiRa", ignoreCase = true)) {
-                        tvStatus.text = "ELITE NODE DETECTED: $name"
-                        vibrate(50)
-                        connectToBtDevice(it)
-                    } else {
-                        // For manual testing/visibility
-                        tvStatus.text = "SCANNING... FOUND: $name"
-                    }
-                }
+            if (intent.action == SpectreNodeService.BROADCAST_SPECTRE_MESSAGE) {
+                val alias = intent.getStringExtra("alias") ?: "Unknown"
+                val msg = intent.getStringExtra("message") ?: ""
+                postMessage(alias, msg)
             }
         }
     }
 
-    private fun connectToBtDevice(device: BluetoothDevice) {
-        btConnectThread?.cancel()
-        btConnectThread = BtConnectThread(device)
-        btConnectThread?.start()
+    private val statusReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == SpectreNodeService.BROADCAST_SPECTRE_STATUS) {
+                val status = intent.getStringExtra("status") ?: ""
+                if (status == "LINKED") {
+                    tvStatus.text = "✔ SECURE NEXUS LINK ESTABLISHED"
+                    tvStatus.setTextColor(Color.GREEN)
+                    btnSend.isEnabled = true
+                    vibrate(100)
+                } else if (status == "UNLINKED") {
+                    if (currentMode == LinkMode.MESH) {
+                        tvStatus.text = "SPECTRE BACKGROUND MESH ACTIVE (0 NODES)"
+                        tvStatus.setTextColor(Color.YELLOW)
+                        btnSend.isEnabled = false
+                    }
+                } else if (status.startsWith("ELITE NODE DETECTED")) {
+                    tvStatus.text = status
+                    vibrate(50)
+                } else {
+                    tvStatus.text = status
+                }
+            }
+        }
     }
 
     // --- Wi-Fi Implementation ---
@@ -288,61 +296,9 @@ class NexusLinkActivity : BaseActivity() {
     }
 
     private fun terminateAllThreads() {
-        btAcceptThread?.cancel()
-        btConnectThread?.cancel()
-        btDataThread?.cancel()
         wfServerThread?.interrupt()
         wfClientThread?.interrupt()
         wfDataThread?.interrupt()
-    }
-
-    // --- Inner Threads (BT) ---
-    private inner class BtAcceptThread : Thread() {
-        private val mmServerSocket: BluetoothServerSocket? by lazy {
-            if (ActivityCompat.checkSelfPermission(this@NexusLinkActivity, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) return@lazy null
-            btAdapter?.listenUsingInsecureRfcommWithServiceRecord("SpectreMesh", PSIRA_UUID)
-        }
-        override fun run() {
-            val socket = mmServerSocket?.accept()
-            socket?.let { 
-                onLinkEstablished()
-                btDataThread = BtDataThread(it)
-                btDataThread?.start()
-            }
-        }
-        fun cancel() { try { mmServerSocket?.close() } catch (e: Exception) {} }
-    }
-
-    private inner class BtConnectThread(device: BluetoothDevice) : Thread() {
-        private val mmSocket: BluetoothSocket? by lazy {
-             if (ActivityCompat.checkSelfPermission(this@NexusLinkActivity, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) return@lazy null
-            device.createInsecureRfcommSocketToServiceRecord(PSIRA_UUID)
-        }
-        override fun run() {
-            try {
-                mmSocket?.connect()
-                onLinkEstablished()
-                btDataThread = BtDataThread(mmSocket!!)
-                btDataThread?.start()
-            } catch (e: Exception) {
-                handler.post { tvStatus.text = "LINK FAILED" }
-            }
-        }
-        fun cancel() { try { mmSocket?.close() } catch (e: Exception) {} }
-    }
-
-    private inner class BtDataThread(private val socket: BluetoothSocket) : Thread() {
-        private val mmInStream = socket.inputStream
-        private val mmBuffer = ByteArray(1024)
-        override fun run() {
-            while (true) {
-                val numBytes = try { mmInStream.read(mmBuffer) } catch (e: Exception) { break }
-                val decoded = PsiRaConverter.decode(String(mmBuffer, 0, numBytes))
-                postMessage(decoded)
-            }
-        }
-        fun write(bytes: ByteArray) { try { socket.outputStream.write(bytes) } catch (e: Exception) {} }
-        fun cancel() { try { socket.close() } catch (e: Exception) {} }
     }
 
     // --- Inner Threads (Wi-Fi) ---
@@ -374,15 +330,15 @@ class NexusLinkActivity : BaseActivity() {
             val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
             while (true) {
                 val received = try { reader.readLine() ?: break } catch (e: Exception) { break }
-                postMessage(PsiRaConverter.decodeAny(received))
+                postMessage("Ghost Agent", PsiRaConverter.decodeAny(received))
             }
         }
         fun write(data: String) { Thread { try { PrintWriter(socket.getOutputStream(), true).println(data) } catch (e: Exception) {} }.start() }
     }
 
-    private fun postMessage(msg: String) {
+    private fun postMessage(sender: String, msg: String) {
         handler.post {
-            messageList.add(SpectreMessage("Agent", msg, false))
+            messageList.add(SpectreMessage(sender, msg, false))
             adapter.notifyItemInserted(messageList.size - 1)
             rvMessages.scrollToPosition(messageList.size - 1)
             saveArchive()
@@ -417,7 +373,8 @@ class NexusLinkActivity : BaseActivity() {
     override fun onDestroy() {
         super.onDestroy()
         terminateAllThreads()
-        try { unregisterReceiver(btReceiver) } catch (e: Exception) {}
+        try { unregisterReceiver(spectreReceiver) } catch (e: Exception) {}
+        try { unregisterReceiver(statusReceiver) } catch (e: Exception) {}
         try { unregisterReceiver(wfReceiver) } catch (e: Exception) {}
     }
 }

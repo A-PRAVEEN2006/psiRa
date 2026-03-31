@@ -106,6 +106,20 @@
         android:textStyle="bold"
         android:layout_marginHorizontal="16dp"
         android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@id/etTargetId"/>
+
+    <EditText
+        android:id="@+id/etTargetId"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Target Alias (Blank = Broadcast)"
+        android:textColor="@color/psira_accent"
+        android:textColorHint="#555555"
+        android:background="@drawable/bg_rounded_dark"
+        android:padding="12dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="8dp"
+        android:textSize="14sp"
         app:layout_constraintBottom_toTopOf="@id/nexusInputBar"/>
 
     <LinearLayout

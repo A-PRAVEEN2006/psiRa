@@ -22,6 +22,8 @@
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     
     <!-- Ghost Network (Wi-Fi P2P) Permissions -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
@@ -88,6 +90,11 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+        
+        <service 
+            android:name=".SpectreNodeService" 
+            android:foregroundServiceType="connectedDevice" 
+            android:exported="false" />
     </application>
 
 </manifest>
