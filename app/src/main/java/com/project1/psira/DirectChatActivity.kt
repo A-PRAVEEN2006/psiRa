@@ -38,6 +38,12 @@ class DirectChatActivity : BaseActivity() {
         targetUid = intent.getStringExtra("TARGET_UID")
         targetName = intent.getStringExtra("TARGET_NAME")
 
+        if (targetUid == null) {
+            Toast.makeText(this, "⚠ Secure link corrupted. Re-establish contact.", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
+
         // Load local nickname if exists
         val myUid = FirebaseAuth.getInstance().currentUser!!.uid
         val sharedPrefNick = getSharedPreferences("PsiRaNicknames", android.content.Context.MODE_PRIVATE)
@@ -77,6 +83,8 @@ class DirectChatActivity : BaseActivity() {
         messageList = ArrayList()
         messageAdapter = MessageAdapter(messageList)
         recyclerView.adapter = messageAdapter
+
+        loadLocalCache() // Instant history recovery
 
         val btnVoiceCall = findViewById<ImageButton>(R.id.btnVoiceCall)
 
@@ -129,19 +137,22 @@ class DirectChatActivity : BaseActivity() {
                 messageAdapter.notifyDataSetChanged()
                 if (messageList.isNotEmpty()) {
                     recyclerView.scrollToPosition(messageList.size - 1)
+                    saveLocalCache() // Persist for offline access
                 }
             }
             override fun onCancelled(error: DatabaseError) {}
         })
 
         btnSend.setOnClickListener {
-            val text = editMessage.text.toString()
+            val text = editMessage.text.toString().trim()
             if (text.isNotEmpty()) {
                 val user = FirebaseAuth.getInstance().currentUser
                 val senderName = user?.displayName ?: "Unknown Agent"
                 val isBurnable = findViewById<android.widget.ToggleButton>(R.id.toggleBurn).isChecked
                 sendMessage(text, "text", isBurnable, senderName, myUid, isCipherMode)
                 editMessage.setText("")
+            } else {
+                Toast.makeText(this, "Empty signals are not broadcasted.", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -151,13 +162,42 @@ class DirectChatActivity : BaseActivity() {
         try {
             val textToSend = if (type == "text" && encodeCipher) PsiRaConverter.encode(content) else content
             val encrypted = if (type == "text") AESEncryption.encrypt(textToSend) else content
-            db.push().setValue(Message(null, senderName, encrypted, isBurnable, type)).addOnFailureListener {
-                Toast.makeText(this, "Signal sync failed.", Toast.LENGTH_SHORT).show()
+            db.push().setValue(Message(null, senderName, encrypted, isBurnable, type)).addOnFailureListener { e ->
+                Toast.makeText(this, "Signal sync failed: ${e.message}", Toast.LENGTH_LONG).show()
             }
             FirebaseDatabase.getInstance().getReference("user_direct_chats").child(myUid).child(targetUid!!).setValue(true)
             FirebaseDatabase.getInstance().getReference("user_direct_chats").child(targetUid!!).child(myUid).setValue(true)
         } catch (e: Exception) {
             e.printStackTrace()
+            Toast.makeText(this, "Encryption/Transmission crash: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun saveLocalCache() {
+        val sharedPref = getSharedPreferences("PsiRaCache_$targetUid", android.content.Context.MODE_PRIVATE)
+        val sb = StringBuilder()
+        val limit = if (messageList.size > 50) messageList.size - 50 else 0
+        for (i in limit until messageList.size) {
+            val m = messageList[i]
+            sb.append("${m.sender}|${m.content}|${m.isBurnable}|${m.type}")
+            if (i < messageList.size - 1) sb.append("[MSG_SEP]")
+        }
+        sharedPref.edit().putString("history", sb.toString()).apply()
+    }
+
+    private fun loadLocalCache() {
+        val sharedPref = getSharedPreferences("PsiRaCache_$targetUid", android.content.Context.MODE_PRIVATE)
+        val raw = sharedPref.getString("history", "") ?: ""
+        if (raw.isNotEmpty()) {
+            val items = raw.split("[MSG_SEP]")
+            for (item in items) {
+                val f = item.split("|")
+                if (f.size >= 4) {
+                    messageList.add(Message(null, f[0], f[1], f[2] == "true", f[3]))
+                }
+            }
+            messageAdapter.notifyDataSetChanged()
+            recyclerView.scrollToPosition(messageList.size - 1)
         }
     }
 

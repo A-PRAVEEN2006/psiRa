@@ -1,14 +1,11 @@
-plugins {id("com.google.gms.google-services")
+plugins {
+    id("com.google.gms.google-services")
     alias(libs.plugins.android.application)
 }
 
 android {
     namespace = "com.project1.psira"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.project1.psira"

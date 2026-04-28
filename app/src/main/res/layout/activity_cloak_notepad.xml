@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFFFFF">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="#F8F8F8"
+        android:paddingHorizontal="16dp">
+
+        <TextView
+            android:id="@+id/tvNotepadLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:text="Notes"
+            android:textColor="#000000"
+            android:textSize="20sp"
+            android:fontFamily="sans-serif-medium" />
+
+        <Button
+            android:id="@+id/btnSaveNote"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:text="Done"
+            android:textAllCaps="false"
+            android:textColor="#007AFF"
+            style="@style/Widget.AppCompat.Button.Borderless" />
+    </RelativeLayout>
+
+    <EditText
+        android:id="@+id/etNoteContent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="top"
+        android:padding="20dp"
+        android:hint="Start typing..."
+        android:background="@null"
+        android:textColor="#333333"
+        android:textSize="18sp"
+        android:lineSpacingExtra="4dp" />
+
+</LinearLayout>

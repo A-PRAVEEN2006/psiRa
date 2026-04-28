@@ -1,7 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.PsiRa" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorOnPrimary">@color/colorOnPrimary</item>
         <item name="android:colorBackground">@color/colorBackground</item>
@@ -13,6 +12,61 @@
     </style>
 
     <style name="Theme.PsiRa" parent="Base.Theme.PsiRa" />
+
+    <!-- Custom Theme Variants -->
+    <style name="Theme.PsiRa.Emerald" parent="Theme.PsiRa">
+        <item name="colorPrimary">@color/emerald_accent</item>
+        <item name="colorAccent">@color/emerald_accent</item>
+        <item name="android:colorBackground">#061A0C</item>
+    </style>
+
+    <style name="Theme.PsiRa.Ruby" parent="Theme.PsiRa">
+        <item name="colorPrimary">@color/ruby_accent</item>
+        <item name="colorAccent">@color/ruby_accent</item>
+        <item name="android:colorBackground">#1A0606</item>
+    </style>
+
+    <style name="Theme.PsiRa.Cobalt" parent="Theme.PsiRa">
+        <item name="colorPrimary">@color/cobalt_accent</item>
+        <item name="colorAccent">@color/cobalt_accent</item>
+        <item name="android:colorBackground">#060B1A</item>
+    </style>
+
+    <style name="Theme.PsiRa.Midnight" parent="Theme.PsiRa">
+        <item name="colorPrimary">@color/midnight_accent</item>
+        <item name="colorAccent">@color/midnight_accent</item>
+        <item name="android:colorBackground">#0A0A0A</item>
+    </style>
+
+    <style name="Theme.PsiRa.Obsidian" parent="Theme.PsiRa">
+        <item name="colorPrimary">@color/obsidian_accent</item>
+        <item name="colorAccent">@color/obsidian_accent</item>
+        <item name="android:colorBackground">#000000</item>
+    </style>
+
+    <style name="Theme.PsiRa.Desert" parent="Theme.PsiRa">
+        <item name="colorPrimary">@color/desert_accent</item>
+        <item name="colorAccent">@color/desert_accent</item>
+        <item name="android:colorBackground">#1A120B</item>
+    </style>
+
+    <style name="Theme.PsiRa.Ghost" parent="Theme.PsiRa">
+        <item name="colorPrimary">@color/ghost_accent</item>
+        <item name="colorAccent">@color/ghost_accent</item>
+        <item name="android:colorBackground">#121212</item>
+    </style>
+
+    <style name="Theme.PsiRa.DeepSea" parent="Theme.PsiRa">
+        <item name="colorPrimary">@color/deepsea_accent</item>
+        <item name="colorAccent">@color/deepsea_accent</item>
+        <item name="android:colorBackground">#001219</item>
+    </style>
+
+    <style name="Theme.PsiRa.Nova" parent="Theme.PsiRa">
+        <item name="colorPrimary">@color/nova_accent</item>
+        <item name="colorAccent">@color/nova_accent</item>
+        <item name="android:colorBackground">#120112</item>
+    </style>
 
     <style name="CalcButton" parent="Widget.MaterialComponents.Button.TextButton">
         <item name="android:layout_width">0dp</item>

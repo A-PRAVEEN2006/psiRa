@@ -15,6 +15,7 @@ import android.view.View
 import android.widget.*
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import java.io.*
@@ -63,10 +64,12 @@ class NexusLinkActivity : BaseActivity() {
         val filter = IntentFilter(SpectreNodeService.BROADCAST_SPECTRE_MESSAGE)
         val statusFilter = IntentFilter(SpectreNodeService.BROADCAST_SPECTRE_STATUS)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(spectreReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
-            registerReceiver(statusReceiver, statusFilter, Context.RECEIVER_NOT_EXPORTED)
+            registerReceiver(spectreReceiver, filter, RECEIVER_NOT_EXPORTED)
+            registerReceiver(statusReceiver, statusFilter, RECEIVER_NOT_EXPORTED)
         } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
             registerReceiver(spectreReceiver, filter)
+            @Suppress("UnspecifiedRegisterReceiverFlag")
             registerReceiver(statusReceiver, statusFilter)
         }
     }
@@ -140,11 +143,7 @@ class NexusLinkActivity : BaseActivity() {
         if (currentMode == LinkMode.MESH) {
             val intent = Intent(this, SpectreNodeService::class.java)
             intent.action = SpectreNodeService.SERVICE_ACTION_START
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(intent)
-            } else {
-                startService(intent)
-            }
+            startForegroundService(intent)
             tvStatus.text = "SPECTRE BACKGROUND MESH ACTIVE"
             tvStatus.setTextColor(Color.GREEN)
         } else {
@@ -234,6 +233,8 @@ class NexusLinkActivity : BaseActivity() {
 
     // --- Wi-Fi Implementation ---
 
+    private var isWfReceiverRegistered = false
+
     private fun startWfDiscovery() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) return
         wifiManager.discoverPeers(wifiChannel, object : WifiP2pManager.ActionListener {
@@ -242,10 +243,20 @@ class NexusLinkActivity : BaseActivity() {
             }
             override fun onFailure(reason: Int) {}
         })
-        val filter = IntentFilter()
-        filter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION)
-        filter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION)
-        registerReceiver(wfReceiver, filter)
+        
+        if (!isWfReceiverRegistered) {
+            val filter = IntentFilter().apply {
+                addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION)
+                addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(wfReceiver, filter, RECEIVER_NOT_EXPORTED)
+            } else {
+                @Suppress("UnspecifiedRegisterReceiverFlag")
+                registerReceiver(wfReceiver, filter)
+            }
+            isWfReceiverRegistered = true
+        }
     }
 
     private val wfReceiver = object : BroadcastReceiver() {
@@ -265,9 +276,11 @@ class NexusLinkActivity : BaseActivity() {
                 WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION -> {
                     wifiManager.requestConnectionInfo(wifiChannel) { info ->
                         if (info.groupFormed && info.isGroupOwner) {
+                            wfServerThread?.cancel()
                             wfServerThread = WfServerThread()
                             wfServerThread?.start()
                         } else if (info.groupFormed) {
+                            wfClientThread?.cancel()
                             wfClientThread = WfClientThread(info.groupOwnerAddress.hostAddress!!)
                             wfClientThread?.start()
                         }
@@ -296,31 +309,52 @@ class NexusLinkActivity : BaseActivity() {
     }
 
     private fun terminateAllThreads() {
-        wfServerThread?.interrupt()
-        wfClientThread?.interrupt()
-        wfDataThread?.interrupt()
+        wfServerThread?.cancel()
+        wfClientThread?.cancel()
+        wfDataThread?.cancel()
+        wfServerThread = null
+        wfClientThread = null
+        wfDataThread = null
     }
 
     // --- Inner Threads (Wi-Fi) ---
     private inner class WfServerThread : Thread() {
+        private var serverSocket: ServerSocket? = null
         override fun run() {
             try {
-                val socket = ServerSocket(8888).accept()
+                serverSocket = ServerSocket(8888)
+                val socket = serverSocket?.accept() ?: return
                 onLinkEstablished()
+                wfDataThread?.cancel()
                 wfDataThread = WfDataThread(socket)
                 wfDataThread?.start()
+            } catch (e: Exception) {}
+        }
+        fun cancel() {
+            try {
+                interrupt()
+                serverSocket?.close()
             } catch (e: Exception) {}
         }
     }
 
     private inner class WfClientThread(val host: String) : Thread() {
+        private var socket: Socket? = null
         override fun run() {
             try {
-                val socket = Socket()
-                socket.connect(InetSocketAddress(host, 8888), 5000)
+                socket = Socket()
+                socket?.connect(InetSocketAddress(host, 8888), 5000)
+                if (isInterrupted) return
                 onLinkEstablished()
-                wfDataThread = WfDataThread(socket)
+                wfDataThread?.cancel()
+                wfDataThread = WfDataThread(socket!!)
                 wfDataThread?.start()
+            } catch (e: Exception) {}
+        }
+        fun cancel() {
+            try {
+                interrupt()
+                socket?.close()
             } catch (e: Exception) {}
         }
     }
@@ -328,12 +362,18 @@ class NexusLinkActivity : BaseActivity() {
     private inner class WfDataThread(val socket: Socket) : Thread() {
         override fun run() {
             val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
-            while (true) {
+            while (!isInterrupted) {
                 val received = try { reader.readLine() ?: break } catch (e: Exception) { break }
                 postMessage("Ghost Agent", PsiRaConverter.decodeAny(received))
             }
         }
-        fun write(data: String) { Thread { try { PrintWriter(socket.getOutputStream(), true).println(data) } catch (e: Exception) {} }.start() }
+        fun write(data: String) { Thread { try { if (!socket.isClosed) PrintWriter(socket.getOutputStream(), true).println(data) } catch (_: Exception) {} }.start() }
+        fun cancel() {
+            try {
+                interrupt()
+                socket.close()
+            } catch (_: Exception) {}
+        }
     }
 
     private fun postMessage(sender: String, msg: String) {
@@ -375,6 +415,8 @@ class NexusLinkActivity : BaseActivity() {
         terminateAllThreads()
         try { unregisterReceiver(spectreReceiver) } catch (e: Exception) {}
         try { unregisterReceiver(statusReceiver) } catch (e: Exception) {}
-        try { unregisterReceiver(wfReceiver) } catch (e: Exception) {}
+        if (isWfReceiverRegistered) {
+            try { unregisterReceiver(wfReceiver) } catch (e: Exception) {}
+        }
     }
 }

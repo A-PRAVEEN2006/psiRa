@@ -14,11 +14,11 @@ object PsiRaDialogs {
         context: Context,
         title: String,
         message: String,
-        confirmText: String = "CONFIRM WIPE",
+        confirmText: String = "CONFIRM",
         optionalView: View? = null,
         isCancelable: Boolean = true,
         onConfirm: () -> Unit
-    ) {
+    ): BottomSheetDialog {
         val dialog = BottomSheetDialog(context, R.style.CustomBottomSheetDialog)
         dialog.setCancelable(isCancelable)
         val view = LayoutInflater.from(context).inflate(R.layout.layout_delete_bottom_sheet, null)
@@ -45,6 +45,7 @@ object PsiRaDialogs {
         
         dialog.setContentView(view)
         dialog.show()
+        return dialog
     }
 
     /**
@@ -55,7 +56,7 @@ object PsiRaDialogs {
         title: String,
         options: List<String>,
         onOptionSelected: (Int) -> Unit
-    ) {
+    ): BottomSheetDialog {
         val dialog = BottomSheetDialog(context, R.style.CustomBottomSheetDialog)
         val view = LayoutInflater.from(context).inflate(R.layout.layout_options_bottom_sheet, null)
         
@@ -81,5 +82,6 @@ object PsiRaDialogs {
         
         dialog.setContentView(view)
         dialog.show()
+        return dialog
     }
 }

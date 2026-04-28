@@ -27,4 +27,26 @@ object PsiraCipher {
     fun toBase64(alien: String): String {
         return alien.map { c -> reverseMap[c] ?: c }.joinToString("")
     }
+
+    private val paddingChars = alienMap.values.toList()
+
+    // Pads the payload to a fixed size to prevent metadata traffic analysis
+    fun padPayload(alien: String, targetSize: Int = 512): String {
+        if (alien.length >= targetSize) return alien
+        
+        val delimiter = "■"
+        val padLength = targetSize - alien.length - delimiter.length
+        if (padLength <= 0) return alien
+
+        val padding = (1..padLength).map { paddingChars.random() }.joinToString("")
+        return alien + delimiter + padding
+    }
+
+    fun unpadPayload(paddedAlien: String): String {
+        val delimiterIndex = paddedAlien.indexOf("■")
+        if (delimiterIndex != -1) {
+            return paddedAlien.substring(0, delimiterIndex)
+        }
+        return paddedAlien
+    }
 }

@@ -44,9 +44,11 @@ class SpectreNodeService : Service() {
     private val seenMessageIds = mutableSetOf<String>()
     
     private var acceptThread: AcceptThread? = null
+    private lateinit var deadDropManager: DeadDropRelayManager
 
     override fun onCreate() {
         super.onCreate()
+        deadDropManager = DeadDropRelayManager(this)
         val btManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         btAdapter = btManager.adapter
         createNotificationChannel()
@@ -93,15 +95,13 @@ class SpectreNodeService : Service() {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Spectre Sleeper Network",
-                NotificationManager.IMPORTANCE_LOW
-            )
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
-        }
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "Spectre Sleeper Network",
+            NotificationManager.IMPORTANCE_LOW
+        )
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannel(channel)
     }
 
     private fun startMeshServer() {
@@ -113,9 +113,16 @@ class SpectreNodeService : Service() {
     private fun startAutoDiscovery() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) return
         val filter = IntentFilter(BluetoothDevice.ACTION_FOUND)
-        registerReceiver(discoveryReceiver, filter)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(discoveryReceiver, filter, RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            registerReceiver(discoveryReceiver, filter)
+        }
         btAdapter?.startDiscovery()
     }
+
+    private val activeConnectionAttempts = mutableSetOf<String>()
 
     private val discoveryReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -130,10 +137,14 @@ class SpectreNodeService : Service() {
                 if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) return
                 
                 device?.let {
+                    val address = it.address
+                    if (activeConnectionAttempts.contains(address)) return
+                    
                     val name = it.name ?: "Unknown Node"
                     if (name.contains("PsiRa", ignoreCase = true) || name.contains("Spectre", ignoreCase = true)) {
                         updateStatus("ELITE NODE DETECTED: $name")
                         // Attempt connection
+                        activeConnectionAttempts.add(address)
                         ConnectThread(it).start()
                     } else {
                         updateStatus("SCANNING... FOUND: $name")
@@ -157,10 +168,25 @@ class SpectreNodeService : Service() {
             updateStatus("LINKED")
         }
         DataThread(socket).start()
+
+        // Sync Dead Drop vault with new node
+        val stored = deadDropManager.getAllStoredPayloads()
+        for (packet in stored) {
+            sendDirectToSocket(packet, socket)
+        }
+    }
+
+    private fun sendDirectToSocket(packet: String, socket: BluetoothSocket) {
+        val bytes = "$packet\n".toByteArray()
+        try {
+            socket.outputStream.write(bytes)
+        } catch (e: Exception) {
+            Log.e("SpectreNode", "Failed to sync dead drop payload to node")
+        }
     }
 
     private fun broadcastToMesh(packet: String, excludeSocket: BluetoothSocket?) {
-        val bytes = packet.toByteArray()
+        val bytes = "$packet\n".toByteArray() // Add newline for stream delimitation
         synchronized(connectedSockets) {
             val iterator = connectedSockets.iterator()
             while (iterator.hasNext()) {
@@ -168,8 +194,8 @@ class SpectreNodeService : Service() {
                 if (socket != excludeSocket) {
                     try {
                         socket.outputStream.write(bytes)
-                    } catch (e: Exception) {
-                        try { socket.close() } catch (ex: Exception) {}
+                    } catch (_: Exception) {
+                        try { socket.close() } catch (_: Exception) {}
                         iterator.remove()
                     }
                 }
@@ -189,6 +215,7 @@ class SpectreNodeService : Service() {
 
             if (!seenMessageIds.contains(uuid)) {
                 seenMessageIds.add(uuid)
+                deadDropManager.storePayload(packet)
                 
                 val myAlias = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.displayName ?: "Unknown"
 
@@ -218,10 +245,10 @@ class SpectreNodeService : Service() {
         }
         override fun run() {
             var shouldLoop = true
-            while (shouldLoop && isRunning) {
+            while (shouldLoop && isRunning && !isInterrupted) {
                 val socket: BluetoothSocket? = try {
                     mmServerSocket?.accept()
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     shouldLoop = false
                     null
                 }
@@ -231,7 +258,7 @@ class SpectreNodeService : Service() {
             }
         }
         fun cancel() {
-            try { mmServerSocket?.close() } catch (e: Exception) {}
+            try { interrupt(); mmServerSocket?.close() } catch (_: Exception) {}
         }
     }
 
@@ -245,25 +272,30 @@ class SpectreNodeService : Service() {
                 btAdapter?.cancelDiscovery()
             }
             try {
+                if (isInterrupted) return
                 mmSocket?.connect()
                 mmSocket?.let { manageConnectedSocket(it) }
-            } catch (e: Exception) {
-                try { mmSocket?.close() } catch (e2: Exception) {}
+            } catch (_: Exception) {
+                try { mmSocket?.close() } catch (_: Exception) {}
+            } finally {
+                activeConnectionAttempts.remove(device.address)
             }
+        }
+        fun cancel() {
+            try { interrupt(); mmSocket?.close() } catch (_: Exception) {}
         }
     }
 
     private inner class DataThread(private val mmSocket: BluetoothSocket) : Thread() {
         private val mmInStream: InputStream = mmSocket.inputStream
         private val mmOutStream: OutputStream = mmSocket.outputStream
-        private val buffer: ByteArray = ByteArray(4096)
 
         override fun run() {
-            while (isRunning) {
+            val reader = mmInStream.bufferedReader()
+            while (isRunning && !isInterrupted) {
                 try {
-                    val bytes = mmInStream.read(buffer)
-                    val receivedStr = String(buffer, 0, bytes)
-                    processIncomingPacket(receivedStr, mmSocket)
+                    val line = reader.readLine() ?: break
+                    processIncomingPacket(line, mmSocket)
                 } catch (e: Exception) {
                     synchronized(connectedSockets) { 
                         connectedSockets.remove(mmSocket) 
@@ -271,12 +303,13 @@ class SpectreNodeService : Service() {
                             updateStatus("UNLINKED")
                         }
                     }
-                    try { mmSocket.close() } catch (ex: Exception) {}
+                    try { mmSocket.close() } catch (_: Exception) {}
                     break
                 }
             }
         }
     }
+
 
     private fun stopMesh() {
         isRunning = false

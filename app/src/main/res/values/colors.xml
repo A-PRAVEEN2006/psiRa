@@ -23,4 +23,15 @@
     <color name="colorError">#FF5252</color>
     <color name="colorCalcKeyBg">#1A1A1A</color>
     <color name="colorCalcKeyText">#FFFFFF</color>
+
+    <!-- Theme Accents -->
+    <color name="emerald_accent">#00C853</color>
+    <color name="ruby_accent">#FF1744</color>
+    <color name="cobalt_accent">#2962FF</color>
+    <color name="midnight_accent">#B388FF</color>
+    <color name="obsidian_accent">#00FFFF</color>
+    <color name="desert_accent">#D4A017</color>
+    <color name="ghost_accent">#9E9E9E</color>
+    <color name="deepsea_accent">#00B8D4</color>
+    <color name="nova_accent">#FF6D00</color>
 </resources>

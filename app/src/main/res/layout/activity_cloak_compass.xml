@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#1B5E20"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/tvHeading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="50dp"
+        android:text="359° N"
+        android:textColor="#FFFFFF"
+        android:textSize="40sp" />
+
+    <ImageView
+        android:id="@+id/ivCompass"
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:layout_centerInParent="true"
+        android:src="@drawable/ic_cloak_compass"
+        android:padding="20dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="50dp">
+        
+        <Button android:id="@+id/btnNorth" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="N" />
+        <Button android:id="@+id/btnSouth" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="S" />
+        <Button android:id="@+id/btnEast" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="E" />
+        <Button android:id="@+id/btnWest" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="W" />
+    </LinearLayout>
+
+</RelativeLayout>

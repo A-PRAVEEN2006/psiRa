@@ -79,38 +79,43 @@ class AnalogClockView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         
-        // Face - Clean White (like the photo)
+        // Face - Clean White with subtle shadow
         paint.color = Color.parseColor("#F5F5F7")
         paint.style = Paint.Style.FILL
         canvas.drawCircle(centerX, centerY, radius, paint)
         
+        // Face Border
+        paint.color = Color.parseColor("#D1D1D6")
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = 2f
+        canvas.drawCircle(centerX, centerY, radius, paint)
+        
         // Draw Ticks & Numbers
-        paint.textSize = radius * 0.18f
+        paint.textSize = radius * 0.16f
         paint.textAlign = Paint.Align.CENTER
-        paint.isFakeBoldText = true
+        paint.isFakeBoldText = false
+        paint.style = Paint.Style.FILL
 
         for (i in 0..59) {
             val isHour = i % 5 == 0
-            val tickLength = if (isHour) radius * 0.08f else radius * 0.04f
-            paint.strokeWidth = if (isHour) 6f else 3f
-            paint.color = Color.parseColor("#B0B0B5") // Grey lines
+            val tickLength = if (isHour) radius * 0.1f else radius * 0.05f
+            paint.strokeWidth = if (isHour) 5f else 2f
+            paint.color = if (isHour) Color.parseColor("#3A3A3C") else Color.parseColor("#C7C7CC")
             
             val angle = Math.PI * i / 30 - Math.PI / 2
-            val startX = centerX + cos(angle).toFloat() * (radius * 0.95f - tickLength)
-            val startY = centerY + sin(angle).toFloat() * (radius * 0.95f - tickLength)
-            val stopX = centerX + cos(angle).toFloat() * (radius * 0.95f)
-            val stopY = centerY + sin(angle).toFloat() * (radius * 0.95f)
+            val startX = centerX + cos(angle).toFloat() * (radius * 0.92f - tickLength)
+            val startY = centerY + sin(angle).toFloat() * (radius * 0.92f - tickLength)
+            val stopX = centerX + cos(angle).toFloat() * (radius * 0.92f)
+            val stopY = centerY + sin(angle).toFloat() * (radius * 0.92f)
             canvas.drawLine(startX, startY, stopX, stopY, paint)
             
-            // Draw Numbers for Hours
+            // Draw Numbers for Hours (Premium Typography feel)
             if (isHour) {
                 val num = if (i == 0) 12 else i / 5
-                val numOffset = radius * 0.68f
+                val numOffset = radius * 0.65f
                 val numX = centerX + cos(angle).toFloat() * numOffset
-                // Adjusted Y to vertically center text
                 val numY = centerY + sin(angle).toFloat() * numOffset - (paint.descent() + paint.ascent()) / 2
-                paint.color = Color.BLACK
-                paint.style = Paint.Style.FILL
+                paint.color = Color.parseColor("#1C1C1E")
                 canvas.drawText(num.toString(), numX, numY, paint)
             }
         }
@@ -122,36 +127,42 @@ class AnalogClockView @JvmOverloads constructor(
 
         // Hour Hand
         paint.color = Color.parseColor("#1C1C1E")
-        paint.strokeWidth = 24f
+        paint.strokeWidth = 20f
         paint.strokeCap = Paint.Cap.ROUND
-        val hX = centerX + cos(hourAngle).toFloat() * (radius * 0.45f)
-        val hY = centerY + sin(hourAngle).toFloat() * (radius * 0.45f)
+        val hX = centerX + cos(hourAngle).toFloat() * (radius * 0.5f)
+        val hY = centerY + sin(hourAngle).toFloat() * (radius * 0.5f)
         canvas.drawLine(centerX, centerY, hX, hY, paint)
 
         // Minute Hand
-        paint.strokeWidth = 16f
-        val mX = centerX + cos(minAngle).toFloat() * (radius * 0.7f)
-        val mY = centerY + sin(minAngle).toFloat() * (radius * 0.7f)
+        paint.strokeWidth = 12f
+        val mX = centerX + cos(minAngle).toFloat() * (radius * 0.75f)
+        val mY = centerY + sin(minAngle).toFloat() * (radius * 0.75f)
         canvas.drawLine(centerX, centerY, mX, mY, paint)
 
-        // Second Hand (Blue, only in real time)
-        val blueColor = Color.parseColor("#0A84FF")
+        // Second Hand (Tactical Orange/Red)
+        val accentColor = Color.parseColor("#FF3B30")
         if (isRealTime) {
-            paint.color = blueColor
-            paint.strokeWidth = 6f
+            paint.color = accentColor
+            paint.strokeWidth = 4f
             val sX = centerX + cos(secAngle).toFloat() * (radius * 0.85f)
             val sY = centerY + sin(secAngle).toFloat() * (radius * 0.85f)
-            val counterX = centerX - cos(secAngle).toFloat() * (radius * 0.1f)
-            val counterY = centerY - sin(secAngle).toFloat() * (radius * 0.1f)
+            val counterX = centerX - cos(secAngle).toFloat() * (radius * 0.15f)
+            val counterY = centerY - sin(secAngle).toFloat() * (radius * 0.15f)
             canvas.drawLine(counterX, counterY, sX, sY, paint)
+            
+            // Second hand pivot circle
+            paint.style = Paint.Style.FILL
+            canvas.drawCircle(centerX, centerY, 8f, paint)
+        } else {
+            // Pivot hub
+            paint.color = Color.parseColor("#1C1C1E")
+            paint.style = Paint.Style.FILL
+            canvas.drawCircle(centerX, centerY, 10f, paint)
         }
 
-        // Center Dot trigger area visual
-        paint.color = blueColor
-        paint.style = Paint.Style.FILL
-        canvas.drawCircle(centerX, centerY, 20f, paint)
-        paint.color = Color.parseColor("#F5F5F7")
-        canvas.drawCircle(centerX, centerY, 6f, paint)
+        // Hub cap
+        paint.color = Color.parseColor("#FFFFFF")
+        canvas.drawCircle(centerX, centerY, 4f, paint)
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -163,7 +174,7 @@ class AnalogClockView @JvmOverloads constructor(
 
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                val triggerZone = radius * 0.35f // Very large invisible trigger circle
+                val triggerZone = radius * 0.35f
                 if (distance < triggerZone) {
                     activeHand = null
                     return true
@@ -174,7 +185,6 @@ class AnalogClockView @JvmOverloads constructor(
                     removeCallbacks(ticker)
                 }
 
-                // Strictly rely on radial distance for massive hitboxes
                 activeHand = if (distance > radius * 0.5f) HandType.MINUTE else HandType.HOUR
                 updateTimeFromTouch(dx, dy)
                 return true

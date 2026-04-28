@@ -15,6 +15,7 @@ import android.view.LayoutInflater
 import android.widget.*
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import java.io.IOException
@@ -136,8 +137,10 @@ class BluetoothChatActivity : BaseActivity() {
 
     private fun startAdvertising() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-            if (originalBtName == null) originalBtName = btAdapter?.name
-            btAdapter?.name = "PsiRa-Agent"
+            try {
+                if (originalBtName == null) originalBtName = btAdapter?.name
+                btAdapter?.name = "PsiRa-Agent"
+            } catch (e: Exception) {}
         }
 
         val discoverableIntent = Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE).apply {
@@ -154,6 +157,7 @@ class BluetoothChatActivity : BaseActivity() {
 
     private val discoveredDevices = mutableListOf<BluetoothDevice>()
     private lateinit var deviceAdapter: DeviceAdapter
+    private var discoveryDialog: com.google.android.material.bottomsheet.BottomSheetDialog? = null
 
     private fun startDiscovery() {
         if (!isLocationEnabled()) {
@@ -173,7 +177,12 @@ class BluetoothChatActivity : BaseActivity() {
         val filter = IntentFilter()
         filter.addAction(BluetoothDevice.ACTION_FOUND)
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
-        registerReceiver(receiver, filter)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            registerReceiver(receiver, filter)
+        }
         
         tvStatus.text = "STATUS: SCANNING NODES..."
         tvStatus.setTextColor(android.graphics.Color.CYAN)
@@ -193,10 +202,11 @@ class BluetoothChatActivity : BaseActivity() {
         deviceAdapter = DeviceAdapter(discoveredDevices) { device ->
             connectToDevice(device)
             btAdapter?.cancelDiscovery()
+            discoveryDialog?.dismiss()
         }
         rvDevices.adapter = deviceAdapter
 
-        PsiRaDialogs.showDeleteSheet(this, "SELECT AGENT NODE", "Scanning for nearby Tactical Mesh signatures...", "CANCEL SCAN", rvDevices) {
+        discoveryDialog = PsiRaDialogs.showDeleteSheet(this, "SELECT AGENT NODE", "Scanning for nearby Tactical Mesh signatures...", "CANCEL SCAN", rvDevices) {
             btAdapter?.cancelDiscovery()
         }
     }
@@ -263,10 +273,10 @@ class BluetoothChatActivity : BaseActivity() {
 
         override fun run() {
             var shouldLoop = true
-            while (shouldLoop) {
+            while (shouldLoop && !isInterrupted) {
                 val socket: BluetoothSocket? = try {
                     mmServerSocket?.accept()
-                } catch (e: IOException) {
+                } catch (_: IOException) {
                     shouldLoop = false
                     null
                 }
@@ -280,6 +290,7 @@ class BluetoothChatActivity : BaseActivity() {
 
         fun cancel() {
             try {
+                interrupt()
                 mmServerSocket?.close()
             } catch (e: IOException) {}
         }
@@ -294,9 +305,12 @@ class BluetoothChatActivity : BaseActivity() {
         override fun run() {
             btAdapter?.cancelDiscovery()
             try {
+                if (isInterrupted) return
                 mmSocket?.connect()
             } catch (e: IOException) {
-                handler.post { tvStatus.text = "STATUS: CONNECTION FAILED" }
+                if (!isInterrupted) {
+                    handler.post { tvStatus.text = "STATUS: CONNECTION FAILED" }
+                }
                 return
             }
             mmSocket?.let { manageConnectedSocket(it) }
@@ -304,6 +318,7 @@ class BluetoothChatActivity : BaseActivity() {
 
         fun cancel() {
             try {
+                interrupt()
                 mmSocket?.close()
             } catch (e: IOException) {}
         }
@@ -316,11 +331,13 @@ class BluetoothChatActivity : BaseActivity() {
 
         override fun run() {
             var numBytes: Int
-            while (true) {
+            while (!isInterrupted) {
                 numBytes = try {
                     mmInStream.read(mmBuffer)
-                } catch (e: IOException) {
-                    handler.post { tvStatus.text = "STATUS: LINK TERMINATED" }
+                } catch (_: IOException) {
+                    if (!isInterrupted) {
+                        handler.post { tvStatus.text = "STATUS: LINK TERMINATED" }
+                    }
                     break
                 }
                 val received = String(mmBuffer, 0, numBytes)
@@ -342,6 +359,7 @@ class BluetoothChatActivity : BaseActivity() {
 
         fun cancel() {
             try {
+                interrupt()
                 mmSocket.close()
             } catch (e: IOException) {}
         }

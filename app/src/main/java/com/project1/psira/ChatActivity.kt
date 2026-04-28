@@ -22,6 +22,16 @@ class ChatActivity : BaseActivity() {
     private lateinit var messageList: ArrayList<Message>
     private lateinit var recyclerView: RecyclerView
 
+    private var messageListener: ValueEventListener? = null
+    private var presenceListener: ValueEventListener? = null
+    private lateinit var presenceRef: DatabaseReference
+
+    override fun onDestroy() {
+        super.onDestroy()
+        messageListener?.let { db.removeEventListener(it) }
+        presenceListener?.let { presenceRef.removeEventListener(it) }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
@@ -82,7 +92,7 @@ class ChatActivity : BaseActivity() {
         }
 
         // 3. Listen for messages
-        db.addValueEventListener(object : ValueEventListener {
+        messageListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 messageList.clear()
                 for (postSnapshot in snapshot.children) {
@@ -98,7 +108,8 @@ class ChatActivity : BaseActivity() {
                 }
             }
             override fun onCancelled(error: DatabaseError) {}
-        })
+        }
+        db.addValueEventListener(messageListener!!)
 
 
 
@@ -121,7 +132,7 @@ class ChatActivity : BaseActivity() {
 
         // --- 4.5. PRESENCE & TYPING INDICATORS ---
         val userAuth = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
-        val presenceRef = FirebaseDatabase.getInstance().getReference("presence/$channelName")
+        presenceRef = FirebaseDatabase.getInstance().getReference("presence/$channelName")
         val myPresenceRef = presenceRef.child(userAuth?.uid ?: "anonymous")
 
         val isGhostMode = intent.getBooleanExtra("IS_GHOST_MODE", false)
@@ -148,7 +159,7 @@ class ChatActivity : BaseActivity() {
         }
 
         val tvTypingIndicator = findViewById<TextView>(R.id.tvTypingIndicator)
-        presenceRef.addValueEventListener(object : ValueEventListener {
+        presenceListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 var someoneTyping = false
                 for (child in snapshot.children) {
@@ -160,28 +171,32 @@ class ChatActivity : BaseActivity() {
                 tvTypingIndicator.visibility = if (someoneTyping) android.view.View.VISIBLE else android.view.View.GONE
             }
             override fun onCancelled(error: DatabaseError) {}
-        })
+        }
+        presenceRef.addValueEventListener(presenceListener!!)
+
 
         // 5. Send Message Logic (Using Display Name)
         btnSend.setOnClickListener {
-            val text = editMessage.text.toString()
+            val text = editMessage.text.toString().trim()
             if (text.isNotEmpty()) {
                 val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
                 val impersonatingName = sharedPref.getString("IMPERSONATING_NAME", null)
                 val senderName = impersonatingName ?: user?.displayName ?: "Unknown Agent"
                 
-                // Read from our new toggle
                 val isBurnable = findViewById<android.widget.ToggleButton>(R.id.toggleBurn).isChecked
 
                 try {
                     val textToSend = if (isCipherMode) PsiRaConverter.encode(text) else text
                     val encrypted = AESEncryption.encrypt(textToSend)
-                    // Push with the new isBurnable flag
-                    db.push().setValue(Message(null, senderName, encrypted, isBurnable))
+                    db.push().setValue(Message(null, senderName, encrypted, isBurnable)).addOnFailureListener { e ->
+                         Toast.makeText(this, "Transmission failed: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
                     editMessage.setText("")
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Toast.makeText(this, "Encryption failure: ${e.message}", Toast.LENGTH_LONG).show()
                 }
+            } else {
+                Toast.makeText(this, "Empty signals are rejected.", Toast.LENGTH_SHORT).show()
             }
         }
 

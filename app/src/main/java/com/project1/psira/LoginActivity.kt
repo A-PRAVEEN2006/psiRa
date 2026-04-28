@@ -5,40 +5,44 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.userProfileChangeRequest
 import com.google.firebase.database.FirebaseDatabase
 
-class LoginActivity : AppCompatActivity() {
+class LoginActivity : BaseActivity() {
     private lateinit var auth: FirebaseAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE, android.view.WindowManager.LayoutParams.FLAG_SECURE)
+        // super.onCreate handles FLAG_SECURE and Theme
         setContentView(R.layout.activity_login)
 
         auth = FirebaseAuth.getInstance()
+        val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
 
         val editEmail = findViewById<EditText>(R.id.editEmail)
         val editPassword = findViewById<EditText>(R.id.editPassword)
         val btnLogin = findViewById<Button>(R.id.btnLogin)
         val btnRegister = findViewById<Button>(R.id.btnRegister)
-        val tvLoginTitle = findViewById<android.widget.TextView>(R.id.tvLoginTitle)
 
-        tvLoginTitle.setOnLongClickListener {
-            @Suppress("DEPRECATION")
-            val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
-            vibrator.vibrate(android.os.VibrationEffect.createOneShot(50, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
-            Toast.makeText(this, "INITIALIZING SPECTRE NODE...", Toast.LENGTH_SHORT).show()
-            startActivity(Intent(this, NexusLinkActivity::class.java))
-            true
+        // 1. Persistent Login Check (Auto-Bypass with 10-Session Security Guard)
+        if (auth.currentUser != null) {
+            val autoCount = sharedPref.getInt("AUTO_LOGIN_COUNT", 0)
+            if (autoCount < 10) {
+                val user = auth.currentUser
+                ensureAgentId(user!!.uid) {
+                    sharedPref.edit().putInt("AUTO_LOGIN_COUNT", autoCount + 1).apply()
+                    startActivity(Intent(this, NexusDashboardActivity::class.java))
+                    finish()
+                }
+                return
+            }
         }
 
-        // --- 1. INITIALIZE CONNECTION (LOGIN) ---
-        // --- 1. INITIALIZE CONNECTION (LOGIN) ---
+        // 2. LOGIN LOGIC
         btnLogin.setOnClickListener {
             val email = editEmail.text.toString().trim()
             val pass = editPassword.text.toString().trim()
@@ -47,27 +51,25 @@ class LoginActivity : AppCompatActivity() {
                 auth.signInWithEmailAndPassword(email, pass).addOnCompleteListener { task ->
                     if (task.isSuccessful) {
                         val user = auth.currentUser
-
-                        // Check if the user ALREADY has a name
+                        sharedPref.edit().putInt("AUTO_LOGIN_COUNT", 0).apply() // Reset on successful login
+                        
                         if (user?.displayName.isNullOrEmpty()) {
-                            // If NO NAME exists, show the popup now!
                             showNamePopup()
                         } else {
-                            // If name exists, proceed to Dashboard
                             ensureAgentId(user!!.uid) {
-                                Toast.makeText(this, "Welcome back, ${user.displayName}!", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this, "Agent Verified: ${user.displayName}", Toast.LENGTH_SHORT).show()
                                 startActivity(Intent(this, NexusDashboardActivity::class.java))
                                 finish()
                             }
                         }
                     } else {
-                        Toast.makeText(this, "Error: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this, "Access Denied: ${task.exception?.message}", Toast.LENGTH_LONG).show()
                     }
                 }
             }
         }
 
-        // --- 2. REGISTER NEW AGENT (WITH NAME POPUP) ---
+        // 3. REGISTER LOGIC
         btnRegister.setOnClickListener {
             val email = editEmail.text.toString().trim()
             val pass = editPassword.text.toString().trim()
@@ -76,66 +78,48 @@ class LoginActivity : AppCompatActivity() {
                 val nameInput = EditText(this)
                 nameInput.hint = "Agent Alias"
                 nameInput.setTextColor(android.graphics.Color.WHITE)
-                nameInput.setHintTextColor(android.graphics.Color.GRAY)
-
-                PsiRaDialogs.showDeleteSheet(
-                    this,
-                    "NEW AGENT PROFILE",
-                    "Enter your public identifier for the encrypted network.",
-                    "INITIALIZE",
-                    nameInput
-                ) {
+                
+                PsiRaDialogs.showDeleteSheet(this, "NEW PROFILE", "Set your identifier.", "INITIALIZE", nameInput) {
                     val displayName = nameInput.text.toString().trim()
                     if (displayName.isNotEmpty()) {
                         auth.createUserWithEmailAndPassword(email, pass).addOnCompleteListener { task ->
                             if (task.isSuccessful) {
                                 val user = auth.currentUser
-                                val profileUpdates = userProfileChangeRequest {
-                                    setDisplayName(displayName)
-                                }
+                                sharedPref.edit().putInt("AUTO_LOGIN_COUNT", 0).apply()
+                                val profileUpdates = userProfileChangeRequest { setDisplayName(displayName) }
                                 user?.updateProfile(profileUpdates)?.addOnCompleteListener {
                                     Toast.makeText(this, "Agent $displayName Registered!", Toast.LENGTH_SHORT).show()
+                                    startActivity(Intent(this, NexusDashboardActivity::class.java))
+                                    finish()
                                 }
                             } else {
-                                Toast.makeText(this, "Reg Failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                                Toast.makeText(this, "Failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
                             }
                         }
                     }
                 }
             }
         }
+
     }
+
     private fun showNamePopup() {
         val nameInput = EditText(this)
         nameInput.hint = "Agent Alias"
         nameInput.setTextColor(android.graphics.Color.WHITE)
-        nameInput.setHintTextColor(android.graphics.Color.GRAY)
 
-        PsiRaDialogs.showDeleteSheet(
-            this,
-            "IDENTITY REQUIRED",
-            "Your Agent Profile is incomplete. Enter your Alias to proceed.",
-            "SYNCHRONIZE",
-            nameInput,
-            false // Not cancelable
-        ) {
+        PsiRaDialogs.showDeleteSheet(this, "IDENTITY RECOVERY", "Enter Alias to synchronize profile.", "SAVE", nameInput, false) {
             val displayName = nameInput.text.toString().trim()
             if (displayName.isNotEmpty()) {
                 val user = auth.currentUser
-                val profileUpdates = userProfileChangeRequest {
-                    setDisplayName(displayName)
-                }
+                val profileUpdates = userProfileChangeRequest { setDisplayName(displayName) }
                 user?.updateProfile(profileUpdates)?.addOnCompleteListener {
                     ensureAgentId(user!!.uid) {
                         FirebaseDatabase.getInstance().getReference("users").child(user.uid).child("name").setValue(displayName)
-                        Toast.makeText(this, "Profile Updated: $displayName", Toast.LENGTH_SHORT).show()
                         startActivity(Intent(this, NexusDashboardActivity::class.java))
                         finish()
                     }
                 }
-            } else {
-                Toast.makeText(this, "Name cannot be empty!", Toast.LENGTH_SHORT).show()
-                showNamePopup()
             }
         }
     }
@@ -143,17 +127,19 @@ class LoginActivity : AppCompatActivity() {
     private fun ensureAgentId(uid: String, onComplete: () -> Unit) {
         val usersRef = FirebaseDatabase.getInstance().getReference("users").child(uid)
         usersRef.child("agentId").get().addOnSuccessListener { snapshot ->
-            if (!snapshot.exists() || snapshot.value == null) {
-                // Generate 5 digit ID
+            val existing = snapshot.value?.toString()
+            if (existing == null || existing.isEmpty()) {
                 val newId = (10000..99999).random().toString()
                 usersRef.child("agentId").setValue(newId).addOnCompleteListener {
+                    getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE).edit().putString("AGENT_ID_LOCAL", newId).apply()
                     onComplete()
                 }
             } else {
+                getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE).edit().putString("AGENT_ID_LOCAL", existing).apply()
                 onComplete()
             }
         }.addOnFailureListener {
-            onComplete()
+            onComplete() // Allow entry even if DB check fails (e.g., offline)
         }
     }
 }

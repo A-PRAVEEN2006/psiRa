@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#1A1A2E">
+    android:background="?android:attr/colorBackground">
 
     <LinearLayout
         android:id="@+id/mainContentContainer"
@@ -30,7 +30,7 @@
                     android:id="@+id/tvAgentName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="AGENT: LOADING..."
+                    android:text="USER: LOADING..."
                     android:textColor="?attr/colorOnBackground"
                     android:textSize="12sp"
                     android:letterSpacing="0.05" />
@@ -39,7 +39,7 @@
                     android:id="@+id/tvAgentId"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="ID: [FETCHING...]"
+                    android:text="ID: [LOADING...]"
                     android:textColor="?attr/colorAccent"
                     android:textSize="10sp"
                     android:textStyle="bold"
@@ -50,7 +50,7 @@
                 android:id="@+id/tvLogout"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="LOGOUT"
+                android:text="LOG OUT"
                 android:textColor="?attr/colorError"
                 android:textSize="12sp"
                 android:textStyle="bold"
@@ -64,7 +64,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="PsiRa"
-            android:textColor="@color/psira_red"
+            android:textColor="?attr/colorPrimary"
             android:textSize="42sp"
             android:textStyle="bold"
             android:gravity="center"
@@ -75,9 +75,9 @@
             android:id="@+id/btnGlobal"
             android:layout_width="match_parent"
             android:layout_height="75dp"
-            android:text="📡 Global Enclave"
+            android:text="📡 Global Chat"
             android:background="@drawable/bg_rounded_primary"
-            android:backgroundTint="#7B61FF"
+            android:backgroundTint="?attr/colorPrimary"
             android:textColor="#FFFFFF"
             android:textSize="18sp"
             android:textStyle="bold"
@@ -87,19 +87,50 @@
             android:id="@+id/btnWalkie"
             android:layout_width="match_parent"
             android:layout_height="75dp"
-            android:text="📻 Frequency Node"
-            android:backgroundTint="#16213E"
-            android:textColor="#7B61FF"
+            android:text="📻 Private Channel"
+            android:backgroundTint="?attr/colorSurface"
+            android:textColor="?attr/colorAccent"
             android:textSize="18sp"
             android:textStyle="bold"
             android:elevation="4dp"
             android:layout_marginBottom="24dp" />
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="24dp">
+
+            <Button
+                android:id="@+id/btnBluetooth"
+                android:layout_width="0dp"
+                android:layout_height="75dp"
+                android:layout_weight="1"
+                android:text="🌀 BLUETOOTH"
+                android:backgroundTint="#0D47A1"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:textSize="12sp"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/btnWifiMesh"
+                android:layout_width="0dp"
+                android:layout_height="75dp"
+                android:layout_weight="1"
+                android:text="💠 WI-FI MESH"
+                android:backgroundTint="#006064"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:textSize="12sp"
+                android:layout_marginStart="8dp" />
+        </LinearLayout>
+
         <Button
             android:id="@+id/btnNexusLink"
             android:layout_width="match_parent"
             android:layout_height="85dp"
-            android:text="🛰️ NEXUS LINK (UNIFIED)"
+            android:text="🛰️ UNIFIED MESSAGES"
             android:backgroundTint="@color/psira_accent"
             android:textColor="#000000"
             android:textSize="18sp"
@@ -109,9 +140,10 @@
             android:layout_marginBottom="24dp" />
 
         <TextView
+            android:id="@+id/tvStatusIndicator"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="AGENT STATUS: ACTIVE"
+            android:text="STATUS: ONLINE"
             android:textColor="#00FF00"
             android:textSize="14sp"
             android:textStyle="bold"
@@ -121,7 +153,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="All systems operational. Personal encryption nodes established. Secure Vault is locked."
+            android:text="Your messages are safe and fully encrypted."
             android:textColor="#FFFFFF"
             android:textSize="14sp"
             android:gravity="center"

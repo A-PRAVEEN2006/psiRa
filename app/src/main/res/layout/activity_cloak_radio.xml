@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#263238"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="FM RADIO"
+        android:textColor="#FFFFFF" />
+
+    <TextView
+        android:id="@+id/tvFrequency"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:text="98.5"
+        android:textColor="#FFCA28"
+        android:textSize="80sp"
+        android:gravity="center" />
+
+    <SeekBar
+        android:id="@+id/seekBarFrequency"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="1080"
+        android:progress="985"
+        android:layout_marginBottom="50dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center">
+        <Button android:id="@+id/btnPrev" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="PREV" />
+        <Button android:id="@+id/btnNext" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="NEXT" />
+    </LinearLayout>
+
+</LinearLayout>

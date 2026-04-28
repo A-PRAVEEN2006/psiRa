@@ -140,7 +140,7 @@ class WebRTCClient(
     }
 
     private fun listenForOffer() {
-        mySignalingRef.child("offer").addValueEventListener(object : ValueEventListener {
+        offerListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (isRemoteDescriptionSet) return
                 val sdpDescription = snapshot.getValue(String::class.java) ?: return
@@ -157,7 +157,8 @@ class WebRTCClient(
                 }, sdp)
             }
             override fun onCancelled(error: DatabaseError) {}
-        })
+        }
+        mySignalingRef.child("offer").addValueEventListener(offerListener!!)
     }
 
     private fun createAnswer() {
@@ -183,7 +184,7 @@ class WebRTCClient(
     }
 
     private fun listenForAnswer() {
-        signalingRef.child("answer").addValueEventListener(object : ValueEventListener {
+        answerListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (!isLocalDescriptionSet) return // Signaling Guard: Wait for local offer to be set
                 if (isRemoteDescriptionSet) return // Guard: Only set answer once
@@ -200,11 +201,12 @@ class WebRTCClient(
                 }, sdp)
             }
             override fun onCancelled(error: DatabaseError) {}
-        })
+        }
+        signalingRef.child("answer").addValueEventListener(answerListener!!)
     }
 
     private fun listenForIceCandidates(remoteUid: String) {
-        db.getReference("calls").child(remoteUid).child("iceCandidates").addChildEventListener(object : com.google.firebase.database.ChildEventListener {
+        iceListener = object : com.google.firebase.database.ChildEventListener {
             override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                 val sdpMid = snapshot.child("sdpMid").getValue(String::class.java) ?: return
                 val sdpMLineIndex = snapshot.child("sdpMLineIndex").getValue(Int::class.java) ?: return
@@ -221,8 +223,10 @@ class WebRTCClient(
             override fun onChildRemoved(p0: DataSnapshot) {}
             override fun onChildMoved(p0: DataSnapshot, p1: String?) {}
             override fun onCancelled(p0: DatabaseError) { showToast("ICE Handshake Interrupted") }
-        })
+        }
+        db.getReference("calls").child(remoteUid).child("iceCandidates").addChildEventListener(iceListener!!)
     }
+
 
     private fun drainIceCandidates() {
         for (candidate in iceCandidateQueue) {
@@ -235,9 +239,22 @@ class WebRTCClient(
         localAudioTrack?.setEnabled(!isMuted)
     }
 
+    private var offerListener: ValueEventListener? = null
+    private var answerListener: ValueEventListener? = null
+    private var iceListener: com.google.firebase.database.ChildEventListener? = null
+
     fun close() {
+        offerListener?.let { mySignalingRef.child("offer").removeEventListener(it) }
+        answerListener?.let { signalingRef.child("answer").removeEventListener(it) }
+        iceListener?.let { db.getReference("calls").child(targetUid).child("iceCandidates").removeEventListener(it) }
+        
         peerConnection?.close()
         peerConnectionFactory?.dispose()
         audioSource?.dispose()
+        
+        isLocalDescriptionSet = false
+        isRemoteDescriptionSet = false
+        iceCandidateQueue.clear()
     }
+
 }

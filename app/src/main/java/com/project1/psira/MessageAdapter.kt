@@ -82,8 +82,9 @@ class MessageAdapter(private val messageList: List<Message>) : RecyclerView.Adap
                 holder.tvVoiceDuration?.text = "Voice Note (Encrypted)"
                 holder.btnPlayVoice?.setOnClickListener {
                     // Start simple playback (URL from message.content)
-                    playAudio(context, message.content ?: "")
+                    playOneAudio(context, message.content ?: "")
                 }
+
             }
             "image" -> {
                 holder.ivMessageMedia?.visibility = View.VISIBLE
@@ -116,7 +117,7 @@ class MessageAdapter(private val messageList: List<Message>) : RecyclerView.Adap
             val messageId = messageList[position].id
             if (messageId != null) {
                 val type = messageList[position].type ?: "text"
-                val options = mutableListOf("Delete")
+                val options = mutableListOf("Delete", "Copy to Clipboard")
                 if (type in listOf("image", "doc", "voice")) {
                     options.add(0, "Save to Device")
                 }
@@ -142,6 +143,12 @@ class MessageAdapter(private val messageList: List<Message>) : RecyclerView.Adap
                                 Toast.makeText(context, "Message Erased", Toast.LENGTH_SHORT).show()
                             }
                         }
+                    } else if (selectedOption == "Copy to Clipboard") {
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        val textToCopy = holder.textMessage?.text?.toString() ?: messageList[position].content ?: ""
+                        val clip = android.content.ClipData.newPlainText("PsiRa Message", textToCopy)
+                        clipboard.setPrimaryClip(clip)
+                        Toast.makeText(context, "Copied to Clipboard", Toast.LENGTH_SHORT).show()
                     }
                 }
             } else {
@@ -151,17 +158,17 @@ class MessageAdapter(private val messageList: List<Message>) : RecyclerView.Adap
         }
     }
 
-    private fun playAudio(context: Context, url: String) {
-        try {
-            val mediaPlayer = android.media.MediaPlayer()
-            mediaPlayer.setDataSource(url)
-            mediaPlayer.prepareAsync()
-            mediaPlayer.setOnPreparedListener { it.start() }
-            Toast.makeText(context, "Initializing secure audio stream...", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            Toast.makeText(context, "Audio playback failed.", Toast.LENGTH_SHORT).show()
-        }
+    private fun playOneAudio(context: Context, url: String) {
+        AudioPlayer.play(url, 
+            onStart = {
+                Toast.makeText(context, "Initializing secure audio stream...", Toast.LENGTH_SHORT).show()
+            },
+            onError = {
+                Toast.makeText(context, "Audio playback failed.", Toast.LENGTH_SHORT).show()
+            }
+        )
     }
+
 
     private fun saveFileToLocal(context: Context, url: String, fileName: String) {
         try {

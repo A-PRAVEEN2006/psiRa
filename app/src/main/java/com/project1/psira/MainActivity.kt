@@ -7,6 +7,8 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import android.os.Build
+import androidx.core.content.edit
 
 class MainActivity : BaseActivity() {
     private lateinit var calcDisplay: EditText
@@ -32,7 +34,7 @@ class MainActivity : BaseActivity() {
             val panicCode = sharedPref.getString("PANIC_PASSCODE", null)
             if (panicCode != null && currentText == panicCode) {
                 com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
-                sharedPref.edit().clear().apply()
+                sharedPref.edit { clear() }
                 calcDisplay.setText("")
                 Toast.makeText(this, "System Error 0x000F", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
@@ -44,7 +46,7 @@ class MainActivity : BaseActivity() {
             if (savedPassword == null) {
                 // 1. FIRST TIME SETUP: Whatever you type becomes the password
                 if (currentText.isNotEmpty()) {
-                    sharedPref.edit().putString("VAULT_PASS", currentText).apply()
+                    sharedPref.edit { putString("VAULT_PASS", currentText) }
                     Toast.makeText(this, "Secret Code Set!", Toast.LENGTH_SHORT).show()
                     enterVault()
                 }
@@ -70,7 +72,7 @@ class MainActivity : BaseActivity() {
         findViewById<Button>(R.id.btnDel).setOnClickListener {
             val text = calcDisplay.text.toString()
             if (text.isNotEmpty()) {
-                calcDisplay.setText(text.substring(0, text.length - 1))
+                calcDisplay.setText(text.lowercase().dropLast(1))
             }
         }
     }
@@ -78,26 +80,30 @@ class MainActivity : BaseActivity() {
     // Logic to handle real math results
     private fun evaluateMath(expression: String): String {
         return try {
-            val parts = expression.split(Regex("(?<=[-+*/])|(?=[-+*/])"))
-            if (parts.size < 3) return expression
-
-            val num1 = parts[0].trim().toDouble()
-            val op = parts[1].trim()
-            val num2 = parts[2].trim().toDouble()
-
-            val res = when (op) {
-                "+" -> num1 + num2
-                "-" -> num1 - num2
-                "*" -> num1 * num2
-                "/" -> if (num2 != 0.0) num1 / num2 else 0.0
-                else -> 0.0
+            val tokens = expression.split(Regex("(?<=[-+*/])|(?=[-+*/])")).map { it.trim() }.filter { it.isNotEmpty() }
+            if (tokens.isEmpty()) return "0"
+            
+            var result = tokens[0].toDouble()
+            var i = 1
+            while (i < tokens.size) {
+                val op = tokens[i]
+                val nextVal = tokens.getOrNull(i + 1)?.toDouble() ?: 0.0
+                result = when (op) {
+                    "+" -> result + nextVal
+                    "-" -> result - nextVal
+                    "*" -> result * nextVal
+                    "/" -> if (nextVal != 0.0) result / nextVal else 0.0
+                    else -> result
+                }
+                i += 2
             }
-            // Drop the .0 if it's a clean number
-            if (res % 1 == 0.0) res.toInt().toString() else res.toString()
-        } catch (e: Exception) {
+            
+            if (result % 1 == 0.0) result.toInt().toString() else "%.2f".format(result)
+        } catch (_: Exception) {
             "Error"
         }
     }
+
 
     private fun setNumberListeners() {
         val ids = arrayOf(R.id.btn0, R.id.btn1, R.id.btn2, R.id.btn3, R.id.btn4, R.id.btn5, R.id.btn6, R.id.btn7, R.id.btn8, R.id.btn9)
@@ -119,19 +125,16 @@ class MainActivity : BaseActivity() {
 
     @Suppress("DEPRECATION")
     private fun enterVault() {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as android.os.VibratorManager
             vibratorManager.defaultVibrator.vibrate(android.os.VibrationEffect.createOneShot(150, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
         } else {
             val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                vibrator.vibrate(android.os.VibrationEffect.createOneShot(150, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
-            } else {
-                vibrator.vibrate(150)
-            }
+            vibrator.vibrate(android.os.VibrationEffect.createOneShot(150, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
         }
 
-        startActivity(Intent(this, LoginActivity::class.java))
+        val destination = getSmartDestination(this)
+        startActivity(Intent(this, destination))
         finish()
 
         if (android.os.Build.VERSION.SDK_INT >= 34) {

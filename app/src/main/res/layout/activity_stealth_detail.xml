@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0A0A0B">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:id="@+id/tvMaskTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="MASK LOGIC: UNKNOWN"
+            android:textColor="#FFD700"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"
+            android:gravity="center" />
+
+        <View
+            android:layout_width="60dp"
+            android:layout_height="2dp"
+            android:background="#FFD700"
+            android:layout_gravity="center"
+            android:layout_marginBottom="32dp"/>
+
+        <!-- Operational Info -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="OPERATIONAL INTEL"
+            android:textColor="#8E8E93"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:id="@+id/tvDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No data found for this mask logic."
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:layout_marginBottom="32dp"
+            android:lineSpacingExtra="4dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="DEPLOYMENT GUIDE"
+            android:textColor="#8E8E93"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:id="@+id/tvGuide"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Guide not initialized."
+            android:textColor="#EFEFEF"
+            android:textSize="15sp"
+            android:layout_marginBottom="40dp"
+            android:lineSpacingExtra="4dp"
+            android:background="#1C1C1E"
+            android:padding="16dp"/>
+
+        <!-- Security Configuration -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="BYPASS OVERRIDE CONFIG"
+            android:textColor="#8E8E93"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp"/>
+
+        <Button
+            android:id="@+id/btnSetPasscode"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="CHANGE VAULT BYPASS"
+            android:backgroundTint="#1C1C1E"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:layout_marginBottom="16dp"
+            android:gravity="start|center_vertical"
+            android:paddingStart="24dp"/>
+
+        <Button
+            android:id="@+id/btnSetGateway"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="CHANGE SETTINGS GATEWAY"
+            android:backgroundTint="#1C1C1E"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:layout_marginBottom="40dp"
+            android:gravity="start|center_vertical"
+            android:paddingStart="24dp"/>
+
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="CLOSE DOSSIER"
+            android:backgroundTint="#FF3B30"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"/>
+
+    </LinearLayout>
+</ScrollView>

@@ -1,90 +1,124 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="?android:attr/colorBackground"
-    android:padding="24dp">
+    android:background="?android:attr/colorBackground">
 
-    <TextView
-        android:id="@+id/tvSettingsTitle"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="System Settings"
-        android:textColor="?attr/colorPrimary"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="40dp"
-        android:gravity="center" />
+        android:orientation="vertical"
+        android:padding="24dp">
 
-    <Button
-        android:id="@+id/btnChangeName"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:text="Edit Your Public Signal Name"
-        android:backgroundTint="?attr/colorAccent"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:layout_marginBottom="16dp"/>
+        <TextView
+            android:id="@+id/tvSettingsTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="App Settings"
+            android:textColor="?attr/colorPrimary"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="32dp"
+            android:gravity="center" />
 
-    <Button
-        android:id="@+id/btnChangeClockPasscode"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:text="Change Stealth Clock Time"
-        android:backgroundTint="?attr/colorAccent"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:layout_marginBottom="16dp"/>
+        <!-- PHASE 1: STEALTH MASKING (Separate as requested) -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="DISGUISE MASK"
+            android:textColor="#FFD700"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+        
+        <Button
+            android:id="@+id/btnConfigureCloak"
+            android:layout_width="match_parent"
+            android:layout_height="70dp"
+            android:text="SELECT APP DISGUISE"
+            android:backgroundTint="#FFD700"
+            android:textColor="#000000"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="32dp"/>
 
-    <Button
-        android:id="@+id/btnChangePasscode"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:text="Change Vault Passcode"
-        android:background="@drawable/bg_rounded_primary"
-        android:textColor="?attr/colorOnPrimary"
-        android:textSize="16sp"
-        android:layout_marginBottom="16dp"/>
+        <!-- PHASE 2: SECURITY FAMILY -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="SECURITY SETTINGS"
+            android:textColor="?attr/colorPrimary"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
 
-    <Button
-        android:id="@+id/btnSetPanicCode"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:text="Set EMP Panic Code"
-        android:backgroundTint="?attr/colorError"
-        android:textColor="?attr/colorSurface"
-        android:textSize="16sp"
-        android:layout_marginBottom="16dp"/>
+        <Button
+            android:id="@+id/btnSecurityFamily"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="Passwords &amp; Unlock Codes"
+            android:backgroundTint="?attr/colorSurface"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="16sp"
+            android:layout_marginBottom="16dp"
+            android:gravity="start|center_vertical"
+            android:paddingStart="20dp"/>
 
-    <Button
-        android:id="@+id/btnWipeLocal"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:text="Wipe Local Vault Cache"
-        android:backgroundTint="?attr/colorSurface"
-        android:textColor="?attr/colorError"
-        android:textSize="16sp"
-        android:layout_marginBottom="32dp"/>
+        <!-- PHASE 3: IDENTITY FAMILY -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="PROFILE SETTINGS"
+            android:textColor="?attr/colorPrimary"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
 
-    <Switch
-        android:id="@+id/switchTheme"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:text="UI CHANGE"
-        android:textColor="?attr/colorOnBackground"
-        android:textSize="18sp"
-        android:layout_marginBottom="32dp"
-        android:checked="true"
-        android:padding="8dp"/>
+        <Button
+            android:id="@+id/btnChangeName"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="Change Name &amp; Info"
+            android:backgroundTint="?attr/colorSurface"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="16sp"
+            android:layout_marginBottom="32dp"
+            android:gravity="start|center_vertical"
+            android:paddingStart="20dp"/>
 
-    <Button
-        android:id="@+id/btnAbout"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:text="About PsiRa"
-        android:backgroundTint="?attr/colorSurface"
-        android:textColor="?attr/colorOnBackground"
-        android:textSize="16sp"/>
+        <!-- PHASE 4: SYSTEM FAMILY -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="GENERAL SETTINGS"
+            android:textColor="?attr/colorPrimary"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
 
-</LinearLayout>
+        <Button
+            android:id="@+id/btnSystemFamily"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="Maintenance &amp; About"
+            android:backgroundTint="?attr/colorSurface"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="16sp"
+            android:layout_marginBottom="16dp"
+            android:gravity="start|center_vertical"
+            android:paddingStart="20dp"/>
+
+        <Button
+            android:id="@+id/btnThemeSelection"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="Change App Theme"
+            android:backgroundTint="?attr/colorSurface"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="16sp"
+            android:layout_marginBottom="16dp"
+            android:gravity="start|center_vertical"
+            android:paddingStart="20dp"/>
+
+    </LinearLayout>
+</ScrollView>

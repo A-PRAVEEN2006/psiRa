@@ -165,11 +165,16 @@ class WifiDirectChatActivity : BaseActivity() {
         })
     }
 
+    private var ghostScanDialog: com.google.android.material.bottomsheet.BottomSheetDialog? = null
+
     private val peerListListener = WifiP2pManager.PeerListListener { peerList ->
         val peers = peerList.deviceList.toList()
         if (peers.isNotEmpty()) {
+            if (ghostScanDialog?.isShowing == true) {
+                ghostScanDialog?.dismiss()
+            }
             val options = peers.map { "${it.deviceName}\n[${it.deviceAddress}]" }
-            PsiRaDialogs.showOptionsSheet(this, "GHOST SCAN RESULTS", options) { which ->
+            ghostScanDialog = PsiRaDialogs.showOptionsSheet(this, "GHOST SCAN RESULTS", options) { which ->
                 connectToPeer(peers[which])
             }
         }
