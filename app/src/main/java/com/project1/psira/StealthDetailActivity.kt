@@ -35,7 +35,13 @@ class StealthDetailActivity : BaseActivity() {
             PsiRaDialogs.showDeleteSheet(this, "SET APP CODE", "Enter the secret code to open the app using the ${logic.name}.", "SAVE", input) {
                 val value = input.text.toString().trim()
                 if (value.isNotEmpty()) {
-                    sharedPref.edit { putString("PASS_$id", value) }
+                    sharedPref.edit {
+                        putString("PASS_$id", value)
+                        if (id == "CALCULATOR") {
+                            putString("VAULT_PASS", value)
+                            putBoolean("CALC_PASS_SET", true)
+                        }
+                    }
                     Toast.makeText(this, "Unlock code saved.", Toast.LENGTH_SHORT).show()
                 }
             }

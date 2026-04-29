@@ -113,7 +113,14 @@ class SettingsActivity : BaseActivity() {
         input.setTextColor(android.graphics.Color.WHITE)
         PsiRaDialogs.showDeleteSheet(this, "APP PASSWORD", "Set the code to unlock the app from your disguise.", "SAVE", input) {
             val v = input.text.toString().trim()
-            if (v.isNotEmpty()) { sharedPref.edit { putString("VAULT_PASS", v) }; Toast.makeText(this, "Password saved.", Toast.LENGTH_SHORT).show() }
+            if (v.isNotEmpty()) {
+                sharedPref.edit {
+                    putString("VAULT_PASS", v)
+                    putString("PASS_CALCULATOR", v)
+                    putBoolean("CALC_PASS_SET", true)
+                }
+                Toast.makeText(this, "Password saved.", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -155,14 +162,27 @@ class SettingsActivity : BaseActivity() {
                 val reasonInput = EditText(this)
                 reasonInput.hint = "Reason"
                 reasonInput.setTextColor(android.graphics.Color.WHITE)
-                PsiRaDialogs.showDeleteSheet(this, "REPORT REASON", "Why are you reporting Agent $agentId?", "SUBMIT", reasonInput) {
+                PsiRaDialogs.showDeleteSheet(this, "REPORT REASON", "Why are you reporting User $agentId?", "SUBMIT", reasonInput) {
                     val reason = reasonInput.text.toString().trim()
-                    val repMap = mapOf("reportedUserId" to agentId, "reason" to reason, "timestamp" to System.currentTimeMillis())
-                    FirebaseDatabase.getInstance().getReference("reports").push().setValue(repMap).addOnSuccessListener {
-                        Toast.makeText(this, "Report transmitted to God Mode.", Toast.LENGTH_LONG).show()
-                    }.addOnFailureListener { e ->
-                        Toast.makeText(this, "Report send failed: ${e.message}", Toast.LENGTH_LONG).show()
-                    }
+                    
+                    // Fetch last 5 messages for context
+                    FirebaseDatabase.getInstance().getReference("messages").child("global_chat")
+                        .limitToLast(5).get().addOnSuccessListener { snapshot ->
+                            val messages = snapshot.children.mapNotNull { 
+                                it.child("sender").getValue(String::class.java) + ": " + it.child("content").getValue(String::class.java)
+                            }
+                            
+                            val repMap = mapOf(
+                                "reportedUserId" to agentId, 
+                                "reason" to reason, 
+                                "timestamp" to System.currentTimeMillis(),
+                                "lastMessages" to messages
+                            )
+                            
+                            FirebaseDatabase.getInstance().getReference("reports").push().setValue(repMap).addOnSuccessListener {
+                                Toast.makeText(this, "Report sent to the Admin Panel.", Toast.LENGTH_LONG).show()
+                            }
+                        }
                 }
             }
         }

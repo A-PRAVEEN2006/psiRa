@@ -41,4 +41,16 @@ object VaultAuthHelper {
 
         biometricPrompt.authenticate(promptInfo)
     }
+
+    fun wipeLocalVault(context: android.content.Context) {
+        // Delete any local databases containing sensitive vault data
+        val dbName = "notes.db" // Assuming standard SQLite DB for Notes
+        context.deleteDatabase(dbName)
+        
+        // Clear any specific vault preferences
+        val prefs = context.getSharedPreferences("VaultPrefs", android.content.Context.MODE_PRIVATE)
+        prefs.edit().clear().apply()
+        
+        android.util.Log.e("Vault", "Local Vault Wiped")
+    }
 }

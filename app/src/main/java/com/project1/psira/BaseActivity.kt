@@ -111,8 +111,7 @@ open class BaseActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val n = cm.activeNetwork ?: return false
             val cap = cm.getNetworkCapabilities(n) ?: return false
-            return cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) && 
-                   cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+            return cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
         } else {
             @Suppress("DEPRECATION")
             return cm.activeNetworkInfo?.isConnected ?: false
