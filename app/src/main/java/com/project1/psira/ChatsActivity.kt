@@ -140,30 +140,56 @@ class ChatsActivity : BaseActivity() {
     }
 
     private fun findAgentAndChat(agentId: String) {
+        Toast.makeText(this, "Scanning secure frequency...", Toast.LENGTH_SHORT).show()
         val db = FirebaseDatabase.getInstance().getReference("users")
+        
+        // Try searching as String first
         db.orderByChild("agentId").equalTo(agentId).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists()) {
-                    for (child in snapshot.children) {
-                        val targetUid = child.key
-                        val targetName = child.child("name").getValue(String::class.java)
-                        
-                        if (targetUid == FirebaseAuth.getInstance().currentUser?.uid) {
-                            Toast.makeText(this@ChatsActivity, "You cannot chat with yourself.", Toast.LENGTH_SHORT).show()
-                            return
-                        }
-                        
-                        val intent = Intent(this@ChatsActivity, DirectChatActivity::class.java)
-                        intent.putExtra("TARGET_UID", targetUid)
-                        intent.putExtra("TARGET_NAME", targetName)
-                        startActivity(intent)
-                        return
-                    }
+                    handleSnapshot(snapshot)
                 } else {
-                    Toast.makeText(this@ChatsActivity, "Agent ID not found in the matrix.", Toast.LENGTH_LONG).show()
+                    // Try searching as Long/Int if String fails (for compatibility)
+                    val numericId = agentId.toLongOrNull()
+                    if (numericId != null) {
+                        db.orderByChild("agentId").equalTo(numericId.toDouble()).addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(numSnap: DataSnapshot) {
+                                if (numSnap.exists()) {
+                                    handleSnapshot(numSnap)
+                                } else {
+                                    Toast.makeText(this@ChatsActivity, "Agent ID not found in the matrix.", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                            override fun onCancelled(error: DatabaseError) {
+                                Toast.makeText(this@ChatsActivity, "Search Error: ${error.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        })
+                    } else {
+                        Toast.makeText(this@ChatsActivity, "Agent ID not found in the matrix.", Toast.LENGTH_LONG).show()
+                    }
                 }
             }
-            override fun onCancelled(error: DatabaseError) {}
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(this@ChatsActivity, "Search Error: ${error.message}", Toast.LENGTH_SHORT).show()
+            }
         })
+    }
+
+    private fun handleSnapshot(snapshot: DataSnapshot) {
+        for (child in snapshot.children) {
+            val targetUid = child.key
+            val targetName = child.child("name").getValue(String::class.java)
+            
+            if (targetUid == FirebaseAuth.getInstance().currentUser?.uid) {
+                Toast.makeText(this@ChatsActivity, "You cannot chat with yourself.", Toast.LENGTH_SHORT).show()
+                return
+            }
+            
+            val intent = Intent(this@ChatsActivity, DirectChatActivity::class.java)
+            intent.putExtra("TARGET_UID", targetUid)
+            intent.putExtra("TARGET_NAME", targetName)
+            startActivity(intent)
+            return
+        }
     }
 }

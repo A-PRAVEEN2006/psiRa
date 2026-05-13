@@ -58,6 +58,9 @@ class WebRTCClient(
             .setUseHardwareAcousticEchoCanceler(true)
             .setUseHardwareNoiseSuppressor(true)
             .createAudioDeviceModule()
+            
+        audioDeviceModule.setMicrophoneMute(false)
+        audioDeviceModule.setSpeakerMute(false)
 
         return PeerConnectionFactory.builder()
             .setAudioDeviceModule(audioDeviceModule)
@@ -97,7 +100,16 @@ class WebRTCClient(
             override fun onRemoveStream(p0: MediaStream?) {}
             override fun onDataChannel(p0: DataChannel?) {}
             override fun onRenegotiationNeeded() {}
-            override fun onAddTrack(receiver: RtpReceiver?, streams: Array<out MediaStream>?) {}
+            override fun onAddTrack(receiver: RtpReceiver?, streams: Array<out MediaStream>?) {
+                val track = receiver?.track()
+                if (track is AudioTrack) {
+                    track.setEnabled(true)
+                    track.setVolume(1.0)
+                    (context as? android.app.Activity)?.runOnUiThread {
+                        android.widget.Toast.makeText(context, "Secure Voice Stream Active", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
         })
     }
 

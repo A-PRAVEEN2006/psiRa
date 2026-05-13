@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="#16213E">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="EDIT ENCRYPTED NOTE"
+        android:textColor="#BC13FE"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp"/>
+
+    <EditText
+        android:id="@+id/etNoteTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Title"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#55FFFFFF"
+        android:backgroundTint="#BC13FE"
+        android:layout_marginBottom="16dp"/>
+
+    <EditText
+        android:id="@+id/etNoteContent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Content"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#55FFFFFF"
+        android:backgroundTint="#BC13FE"
+        android:minLines="5"
+        android:gravity="top"/>
+
+</LinearLayout>

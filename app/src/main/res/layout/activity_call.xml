@@ -11,6 +11,18 @@
         android:background="@drawable/bg_god_gradient"
         android:alpha="0.3" />
 
+    <ImageButton
+        android:id="@+id/btnMinimize"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_margin="16dp"
+        android:background="@drawable/bg_circle_dark"
+        android:src="@android:drawable/ic_menu_directions"
+        android:padding="8dp"
+        android:tint="#7B61FF" />
+
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

@@ -20,12 +20,26 @@ class CallActivity : AppCompatActivity() {
     private var isCallActive = true
     private var isMuted = false
     private var isSpeakerOn = false
+    private var isMinimized = false
 
     private var rtcClient: WebRTCClient? = null
     private lateinit var tvStatus: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Allow call to show over lockscreen
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+        } else {
+            window.addFlags(
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+            )
+        }
+        
         setContentView(R.layout.activity_call)
 
         val targetName = intent.getStringExtra("TARGET_NAME") ?: "Unknown Agent"
@@ -45,10 +59,24 @@ class CallActivity : AppCompatActivity() {
         val btnMute = findViewById<ImageButton>(R.id.btnMute)
         val btnSpeaker = findViewById<ImageButton>(R.id.btnSpeaker)
 
+        // Permissions Check First
+        if (androidx.core.app.ActivityCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            androidx.core.app.ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.RECORD_AUDIO), 101)
+        }
+
+        // Set Audio Mode for Voice Call Immediately
+        val audioManager = getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager
+        audioManager.mode = android.media.AudioManager.MODE_IN_COMMUNICATION
+        audioManager.isMicrophoneMute = false
+        audioManager.isSpeakerphoneOn = false // Start with earpiece for privacy
+
         // Initialize WebRTC
         rtcClient = WebRTCClient(this, myUid, if (callMode == "OUTGOING") targetUid else callerUid, object : WebRTCClient.WebRTCListener {
             override fun onCallReady() {
-                runOnUiThread { tvStatus.text = "SECURE CHANNEL ESTABLISHED" }
+                runOnUiThread { 
+                    tvStatus.text = "SECURE CHANNEL ESTABLISHED"
+                    tvStatus.setTextColor(android.graphics.Color.GREEN)
+                }
             }
             override fun onCallEnded() {
                 runOnUiThread { 
@@ -57,16 +85,6 @@ class CallActivity : AppCompatActivity() {
                 }
             }
         })
-
-        // Permissions Check
-        if (androidx.core.app.ActivityCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-            androidx.core.app.ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.RECORD_AUDIO), 101)
-        }
-
-        // Set Audio Mode for Voice Call
-        val audioManager = getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager
-        audioManager.mode = android.media.AudioManager.MODE_IN_COMMUNICATION
-        audioManager.isMicrophoneMute = false
 
         if (callMode == "OUTGOING") {
             tvStatus.text = "Initiating Secure Uplink..."
@@ -153,6 +171,39 @@ class CallActivity : AppCompatActivity() {
             }
             Toast.makeText(this, if (isSpeakerOn) "Speaker ON" else "Handset Mode", Toast.LENGTH_SHORT).show()
         }
+
+        findViewById<ImageButton>(R.id.btnMinimize)?.setOnClickListener {
+            minimizeCall()
+        }
+    }
+
+    private fun minimizeCall() {
+        isMinimized = true
+        showMinimizedNotification()
+        moveTaskToBack(true) // Send app to background
+        Toast.makeText(this, "Link active in background", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun showMinimizedNotification() {
+        val intent = Intent(this, CallActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(this, "PsiRaCallService")
+            .setSmallIcon(android.R.drawable.ic_menu_call)
+            .setContentTitle("Active Secure Link")
+            .setContentText("Tap to return to transmission")
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.notify(2003, notification)
     }
 
     private fun terminateCall(nodeUid: String) {

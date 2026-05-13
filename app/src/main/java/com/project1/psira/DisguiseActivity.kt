@@ -112,12 +112,11 @@ open class DisguiseActivity : BaseActivity() {
                     
                     if (!isPassSet) {
                         // First equation becomes the password
-                        sharedPref.edit {
-                            putString("VAULT_PASS", currentInput)
-                            putString("PASS_CALCULATOR", currentInput) // For consistency
-                            putBoolean("CALC_PASS_SET", true)
-                            apply()
-                        }
+                        sharedPref.edit()
+                            .putString("VAULT_PASS", currentInput)
+                            .putString("PASS_CALCULATOR", currentInput) // For consistency
+                            .putBoolean("CALC_PASS_SET", true)
+                            .apply()
                         isPassSet = true
                         vibrate(200)
                         Toast.makeText(this, "Secret Equation Locked", Toast.LENGTH_LONG).show()
@@ -337,7 +336,7 @@ open class DisguiseActivity : BaseActivity() {
 
     private fun setupWeather() {
         setContentView(R.layout.activity_cloak_weather)
-        val ivRefresh = findViewById<ImageView>(R.id.ivRefresh)
+        val ivRefresh = findViewById<ImageView>(R.id.ivWeatherRefresh)
         var tapCount = 0
         ivRefresh?.setOnClickListener {
             tapCount++
@@ -349,7 +348,7 @@ open class DisguiseActivity : BaseActivity() {
 
     private fun setupConverter() {
         setContentView(R.layout.activity_cloak_converter)
-        val etValue = findViewById<EditText>(R.id.etConvertValue)
+        val etValue = findViewById<EditText>(R.id.etInput)
         val ivConvert = findViewById<ImageView>(R.id.ivConvert)
         
         ivConvert?.setOnClickListener {
