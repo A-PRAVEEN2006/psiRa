@@ -10,7 +10,15 @@ import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.database.FirebaseDatabase
 
-class MessageAdapter(private val messageList: List<Message>) : RecyclerView.Adapter<MessageAdapter.MessageViewHolder>() {
+class MessageAdapter(
+    private val messageList: List<Message>,
+    /**
+     * Set to true when the calling activity has already decrypted the messages
+     * before adding them to the list (e.g. DirectChatActivity with ECDH).
+     * When false, the adapter decrypts itself using the global AES key (group chat).
+     */
+    private val alreadyDecrypted: Boolean = false
+) : RecyclerView.Adapter<MessageAdapter.MessageViewHolder>() {
     
     var chatDbRef: com.google.firebase.database.DatabaseReference? = null
 
@@ -71,12 +79,16 @@ class MessageAdapter(private val messageList: List<Message>) : RecyclerView.Adap
 
         when (message.type) {
             "text" -> {
-                try {
-                    val plainText = AESEncryption.decrypt(message.content!!)
-                    holder.textMessage?.text = plainText
-                } catch (e: Exception) {
-                    holder.textMessage?.text = message.content
+                val displayText = if (alreadyDecrypted) {
+                    // Already decrypted by the activity — show as-is
+                    // (PsiRa cipher symbols are intentional — receiver sees the cipher)
+                    message.content ?: ""
+                } else {
+                    // Group chat path — decrypt with global AES key
+                    try { AESEncryption.decrypt(message.content!!) }
+                    catch (e: Exception) { message.content ?: "" }
                 }
+                holder.textMessage?.text = displayText
             }
             "voice" -> {
                 holder.tvVoiceDuration?.text = "Voice Note (Encrypted)"

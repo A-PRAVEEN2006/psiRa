@@ -120,5 +120,165 @@
             android:gravity="start|center_vertical"
             android:paddingStart="20dp"/>
 
+        <!-- NETWORK SECURITY — TOR TOGGLE -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="NETWORK SECURITY"
+            android:textColor="#9B59B6"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"/>
+
+        <!-- TOR Card -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardTorMode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#1A0A2E"
+            xmlns:app="http://schemas.android.com/apk/res-auto">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <!-- Header Row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="🧅  TOR ANONYMOUS MODE"
+                        android:textColor="#CE93D8"
+                        android:textSize="16sp"
+                        android:textStyle="bold"/>
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/switchTorMode"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+
+                </LinearLayout>
+
+                <!-- Speed / Security Indicators -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:layout_marginBottom="12dp">
+
+                    <!-- OFF State -->
+                    <LinearLayout
+                        android:id="@+id/layoutTorOff"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:background="#1E3A2F"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="⚡ 3× FAST"
+                            android:textColor="#44FF88"
+                            android:textSize="14sp"
+                            android:textStyle="bold"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="E2EE Only"
+                            android:textColor="#88AA99"
+                            android:textSize="11sp"/>
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="  VS  "
+                        android:textColor="#555577"
+                        android:textSize="12sp"
+                        android:textStyle="bold"/>
+
+                    <!-- ON State -->
+                    <LinearLayout
+                        android:id="@+id/layoutTorOn"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:background="#2A1040"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🧅 ANONYMOUS"
+                            android:textColor="#CE93D8"
+                            android:textSize="14sp"
+                            android:textStyle="bold"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="E2EE + TOR"
+                            android:textColor="#9966BB"
+                            android:textSize="11sp"/>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- Status Label -->
+                <TextView
+                    android:id="@+id/tvTorStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="● OFF — Direct connection (E2EE active)"
+                    android:textColor="#88AA99"
+                    android:textSize="12sp"
+                    android:layout_marginBottom="8dp"/>
+
+                <!-- Warning -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="⚠ TOR hides your IP but is ~3× slower. Voice calls bypass TOR automatically."
+                    android:textColor="#666688"
+                    android:textSize="11sp"
+                    android:layout_marginBottom="12dp"/>
+
+                <!-- Verify Button -->
+                <Button
+                    android:id="@+id/btnVerifyTor"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:text="🔍 VERIFY TOR CONNECTION"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:backgroundTint="#44CE93D8"
+                    android:textColor="#CE93D8"/>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
     </LinearLayout>
 </ScrollView>

@@ -81,10 +81,25 @@ class DirectChatActivity : BaseActivity() {
         recyclerView.layoutManager = layoutManager
 
         messageList = ArrayList()
-        messageAdapter = MessageAdapter(messageList)
+        messageAdapter = MessageAdapter(messageList, alreadyDecrypted = true)
         recyclerView.adapter = messageAdapter
 
         loadLocalCache() // Instant history recovery
+
+        // 🔐 Pre-derive the ECDH shared key for this contact in background
+        secureStatusText.text = "🔒 ESTABLISHING E2EE..."
+        ECDHKeyManager.deriveSharedKey(
+            this, targetUid!!,
+            onReady = { _ ->
+                runOnUiThread { secureStatusText.text = "🔒 E2EE DIRECT LINK: $displayName" }
+            },
+            onError = { err ->
+                runOnUiThread {
+                    secureStatusText.text = "🔒 DIRECT LINK: $displayName"
+                    android.widget.Toast.makeText(this, "E2EE notice: $err", android.widget.Toast.LENGTH_LONG).show()
+                }
+            }
+        )
 
         val btnVoiceCall = findViewById<ImageButton>(R.id.btnVoiceCall)
 
@@ -128,16 +143,18 @@ class DirectChatActivity : BaseActivity() {
             override fun onDataChange(snapshot: DataSnapshot) {
                 messageList.clear()
                 for (postSnapshot in snapshot.children) {
-                    val message = postSnapshot.getValue(Message::class.java)
-                    if (message != null) {
-                        message.id = postSnapshot.key
-                        messageList.add(message)
-                    }
+                    val raw = postSnapshot.getValue(Message::class.java) ?: continue
+                    val decryptedContent = ECDHKeyManager.decryptFromContact(
+                        this@DirectChatActivity, targetUid!!, raw.content ?: ""
+                    )
+                    // Build a new Message with decrypted content
+                    val msg = Message(postSnapshot.key, raw.sender, decryptedContent, raw.isBurnable, raw.type)
+                    messageList.add(msg)
                 }
                 messageAdapter.notifyDataSetChanged()
                 if (messageList.isNotEmpty()) {
                     recyclerView.scrollToPosition(messageList.size - 1)
-                    saveLocalCache() // Persist for offline access
+                    saveLocalCache()
                 }
             }
             override fun onCancelled(error: DatabaseError) {}
@@ -159,18 +176,36 @@ class DirectChatActivity : BaseActivity() {
 
 
     private fun sendMessage(content: String, type: String, isBurnable: Boolean, senderName: String, myUid: String, encodeCipher: Boolean = false) {
-        try {
-            val textToSend = if (type == "text" && encodeCipher) PsiRaConverter.encode(content) else content
-            val encrypted = if (type == "text") AESEncryption.encrypt(textToSend) else content
-            db.push().setValue(Message(null, senderName, encrypted, isBurnable, type)).addOnFailureListener { e ->
-                Toast.makeText(this, "Signal sync failed: ${e.message}", Toast.LENGTH_LONG).show()
-            }
-            FirebaseDatabase.getInstance().getReference("user_direct_chats").child(myUid).child(targetUid!!).setValue(true)
-            FirebaseDatabase.getInstance().getReference("user_direct_chats").child(targetUid!!).child(myUid).setValue(true)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Toast.makeText(this, "Encryption/Transmission crash: ${e.message}", Toast.LENGTH_LONG).show()
+        val textToSend = if (type == "text" && encodeCipher) PsiRaConverter.encode(content) else content
+
+        if (type == "text") {
+            // 🔐 Encrypt with ECDH-derived key (falls back to shared static key transparently)
+            ECDHKeyManager.encryptForContact(
+                this, targetUid!!, textToSend,
+                onResult = { encrypted ->
+                    db.push().setValue(Message(null, senderName, encrypted, isBurnable, type))
+                        .addOnFailureListener { e ->
+                            Toast.makeText(this, "Signal sync failed: ${e.message}", Toast.LENGTH_LONG).show()
+                        }
+                    registerContactLink(myUid)
+                },
+                onError = { _ ->
+                    // This path should not be reached — fallback always succeeds
+                    // but just in case, send raw text
+                    db.push().setValue(Message(null, senderName, textToSend, isBurnable, type))
+                    registerContactLink(myUid)
+                }
+            )
+        } else {
+            // Media/voice — content is a URL, no text encryption
+            db.push().setValue(Message(null, senderName, content, isBurnable, type))
+            registerContactLink(myUid)
         }
+    }
+
+    private fun registerContactLink(myUid: String) {
+        FirebaseDatabase.getInstance().getReference("user_direct_chats").child(myUid).child(targetUid!!).setValue(true)
+        FirebaseDatabase.getInstance().getReference("user_direct_chats").child(targetUid!!).child(myUid).setValue(true)
     }
 
     private fun saveLocalCache() {

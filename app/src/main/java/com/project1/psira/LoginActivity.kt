@@ -57,6 +57,7 @@ class LoginActivity : BaseActivity() {
                             showNamePopup()
                         } else {
                             ensureAgentId(user!!.uid) {
+                                ECDHKeyManager.initializeKeys(this) // 🔐 Init E2EE keys
                                 Toast.makeText(this, "Agent Verified: ${user.displayName}", Toast.LENGTH_SHORT).show()
                                 startActivity(Intent(this, NexusDashboardActivity::class.java))
                                 finish()

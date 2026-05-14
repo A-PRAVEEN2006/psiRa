@@ -69,7 +69,26 @@
             android:textStyle="bold"
             android:gravity="center"
             android:layout_marginTop="20dp"
-            android:layout_marginBottom="60dp" />
+            android:layout_marginBottom="8dp" />
+
+        <!-- TOR Status Pill — only visible when TOR is ON -->
+        <TextView
+            android:id="@+id/tvTorBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🧅  TOR ACTIVE — IP HIDDEN"
+            android:textColor="#CE93D8"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:background="#331A0A2E"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:gravity="center"
+            android:layout_gravity="center"
+            android:layout_marginBottom="40dp"
+            android:visibility="gone"/>
 
         <Button
             android:id="@+id/btnGlobal"

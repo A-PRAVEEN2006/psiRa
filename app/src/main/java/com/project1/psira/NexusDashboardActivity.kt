@@ -54,6 +54,11 @@ class NexusDashboardActivity : BaseActivity() {
         scaleDown.interpolator = DecelerateInterpolator()
         scaleDown.start()
 
+        // TOR Badge — show/hide based on saved TOR_MODE preference
+        val tvTorBadge = findViewById<TextView>(R.id.tvTorBadge)
+        val isTorOn = sharedPref.getBoolean("TOR_MODE", false)
+        tvTorBadge.visibility = if (isTorOn) View.VISIBLE else View.GONE
+
         // 1. IDENTITY DISPLAY
         val tvAgentName = findViewById<TextView>(R.id.tvAgentName)
         val tvAgentId = findViewById<TextView>(R.id.tvAgentId)

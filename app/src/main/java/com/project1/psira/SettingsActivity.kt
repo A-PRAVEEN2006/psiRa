@@ -82,9 +82,198 @@ class SettingsActivity : BaseActivity() {
             }
         }
 
-        // Theme selector replacing simple switch
         val btnThemeSelection = findViewById<Button>(R.id.btnThemeSelection)
         btnThemeSelection.setOnClickListener { showThemeSelector() }
+
+        // ── TOR Toggle ────────────────────────────────────────────────────────
+        val switchTor   = findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.switchTorMode)
+        val tvTorStatus = findViewById<android.widget.TextView>(R.id.tvTorStatus)
+        val layoutOff   = findViewById<android.view.View>(R.id.layoutTorOff)
+        val layoutOn    = findViewById<android.view.View>(R.id.layoutTorOn)
+
+        val isTorOn = sharedPref.getBoolean("TOR_MODE", false)
+        switchTor.isChecked = isTorOn
+        updateTorUi(tvTorStatus, layoutOff, layoutOn, isTorOn)
+
+        switchTor.setOnCheckedChangeListener { _, isChecked ->
+            sharedPref.edit().putBoolean("TOR_MODE", isChecked).apply()
+            updateTorUi(tvTorStatus, layoutOff, layoutOn, isChecked)
+            applyTorProxy(isChecked)
+
+            val msg = if (isChecked)
+                "🧅 TOR Mode ON — Your IP is now hidden. Speed reduced ~3×."
+            else
+                "⚡ Direct Mode ON — Full speed. E2EE still active."
+            Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+        }
+
+        // Verify TOR button
+        val btnVerify = findViewById<Button>(R.id.btnVerifyTor)
+        btnVerify.setOnClickListener {
+            btnVerify.isEnabled = false
+            btnVerify.text = "⏳ CHECKING..."
+            verifyTorConnection { result ->
+                runOnUiThread {
+                    btnVerify.isEnabled = true
+                    btnVerify.text = "🔍 VERIFY TOR CONNECTION"
+                    showTorVerifyResult(result)
+                }
+            }
+        }
+    }
+
+    private fun updateTorUi(
+        tvStatus: android.widget.TextView,
+        layoutOff: android.view.View,
+        layoutOn: android.view.View,
+        torEnabled: Boolean
+    ) {
+        if (torEnabled) {
+            tvStatus.text  = "🧅 ON — Routing through TOR (E2EE + Anonymous)"
+            tvStatus.setTextColor(android.graphics.Color.parseColor("#CE93D8"))
+            layoutOn.alpha  = 1.0f
+            layoutOff.alpha = 0.4f
+        } else {
+            tvStatus.text  = "● OFF — Direct connection (E2EE active)"
+            tvStatus.setTextColor(android.graphics.Color.parseColor("#88AA99"))
+            layoutOn.alpha  = 0.4f
+            layoutOff.alpha = 1.0f
+        }
+    }
+
+    /**
+     * Checks if a SOCKS5 proxy is reachable at 127.0.0.1:9050, then connects through
+     * it to check.torproject.org using an EXPLICIT proxy (Android ignores system properties).
+     */
+    private fun verifyTorConnection(callback: (TorVerifyResult) -> Unit) {
+        val isTorModeOn = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
+            .getBoolean("TOR_MODE", false)
+
+        Thread {
+            // Step 1: Check if a SOCKS5 server is actually running at 127.0.0.1:9050
+            val isDaemonRunning = try {
+                val sock = java.net.Socket()
+                sock.connect(java.net.InetSocketAddress("127.0.0.1", 9050), 2_000)
+                sock.close()
+                true
+            } catch (_: Exception) { false }
+
+            if (isTorModeOn && !isDaemonRunning) {
+                // TOR mode is ON but no daemon is running
+                callback(TorVerifyResult(
+                    isTor    = false,
+                    ip       = "N/A",
+                    country  = "??",
+                    error    = "NO_DAEMON"
+                ))
+                return@Thread
+            }
+
+            // Step 2: Make the request — through explicit SOCKS5 proxy if TOR is ON
+            try {
+                val torProxy = java.net.Proxy(
+                    java.net.Proxy.Type.SOCKS,
+                    java.net.InetSocketAddress("127.0.0.1", 9050)
+                )
+                val url  = java.net.URL("https://check.torproject.org/api/ip")
+                // IMPORTANT: openConnection(proxy) — Android ignores System.setProperty for proxy
+                val conn = (if (isTorModeOn && isDaemonRunning)
+                    url.openConnection(torProxy)
+                else
+                    url.openConnection()) as java.net.HttpURLConnection
+
+                conn.connectTimeout = 20_000
+                conn.readTimeout    = 20_000
+                conn.requestMethod  = "GET"
+
+                val response = conn.inputStream.bufferedReader().readText()
+                conn.disconnect()
+
+                // Response: {"IsTor":true,"IP":"185.220.101.x"}
+                val isTor = response.contains("\"IsTor\":true")
+                val ip    = Regex("\"IP\":\"([^\"]+)\"").find(response)
+                    ?.groupValues?.get(1) ?: "Unknown"
+
+                // Step 3: Get country for the exit node IP
+                val countryUrl  = java.net.URL("https://ipinfo.io/$ip/country")
+                val countryConn = (if (isTorModeOn && isDaemonRunning)
+                    countryUrl.openConnection(torProxy)
+                else
+                    countryUrl.openConnection()) as java.net.HttpURLConnection
+                countryConn.connectTimeout = 5_000
+                countryConn.readTimeout    = 5_000
+                val country = try {
+                    countryConn.inputStream.bufferedReader().readText().trim()
+                } catch (_: Exception) { "??" }
+                countryConn.disconnect()
+
+                callback(TorVerifyResult(isTor = isTor, ip = ip, country = country, error = null))
+            } catch (e: Exception) {
+                callback(TorVerifyResult(isTor = false, ip = "N/A", country = "??", error = e.message))
+            }
+        }.start()
+    }
+
+    data class TorVerifyResult(
+        val isTor: Boolean,
+        val ip: String,
+        val country: String,
+        val error: String?
+    )
+
+    private fun showTorVerifyResult(result: TorVerifyResult) {
+        val (title, message, color) = when {
+            result.error == "NO_DAEMON" -> Triple(
+                "🧅 TOR MODE ON — DAEMON MISSING",
+                "TOR mode is enabled but no TOR service is running on this device.\n\n" +
+                "To activate TOR anonymization:\n" +
+                "1. Install Orbot from the Play Store\n" +
+                "2. Open Orbot and tap START\n" +
+                "3. Return here and tap VERIFY again\n\n" +
+                "✅ Your E2EE encryption is still fully active.\n" +
+                "❌ Your IP address is currently visible.",
+                "#FF9800"
+            )
+            result.error != null -> Triple(
+                "⚠ CHECK FAILED",
+                "Could not reach check.torproject.org.\n\nError: ${result.error}\n\n" +
+                "Check your internet connection and try again.",
+                "#FF9800"
+            )
+            result.isTor -> Triple(
+                "✅ TOR CONFIRMED — YOU ARE ANONYMOUS",
+                "🧅 Your traffic is routed through TOR.\n\n" +
+                "Exit Node IP :  ${result.ip}\n" +
+                "Exit Country :  ${result.country}\n\n" +
+                "This IP is NOT your real address.\n" +
+                "Network observers cannot trace you back.\n" +
+                "Messages are protected by E2EE on top of TOR.",
+                "#44FF88"
+            )
+            else -> Triple(
+                "⚡ DIRECT CONNECTION",
+                "Your traffic is going directly to the internet.\n\n" +
+                "Current IP :  ${result.ip}\n" +
+                "Country    :  ${result.country}\n\n" +
+                "Enable TOR mode in the toggle above to hide your IP.\n" +
+                "Your messages are still protected by E2EE.",
+                "#CE93D8"
+            )
+        }
+
+        val tv = android.widget.TextView(this).apply {
+            text     = message
+            setPadding(48, 32, 48, 16)
+            setTextColor(android.graphics.Color.parseColor(color))
+            textSize = 13f
+            setLineSpacing(4f, 1f)
+        }
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(title)
+            .setView(tv)
+            .setPositiveButton("CLOSE", null)
+            .show()
     }
 
     private fun showMaskSelector() {

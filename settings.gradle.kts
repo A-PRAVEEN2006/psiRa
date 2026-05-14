@@ -19,6 +19,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // Required for kmp-tor (embedded TOR library)
+        maven("https://s01.oss.sonatype.org/content/repositories/releases/")
     }
 }
 
