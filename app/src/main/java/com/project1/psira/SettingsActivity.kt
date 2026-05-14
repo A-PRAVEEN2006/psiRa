@@ -227,7 +227,7 @@ class SettingsActivity : BaseActivity() {
                 "🧅 TOR MODE ON — DAEMON MISSING",
                 "TOR mode is enabled but no TOR service is running on this device.\n\n" +
                 "To activate TOR anonymization:\n" +
-                "1. Install Orbot from the Play Store\n" +
+                "1. Install Orbot (from GitHub or F-Droid)\n" +
                 "2. Open Orbot and tap START\n" +
                 "3. Return here and tap VERIFY again\n\n" +
                 "✅ Your E2EE encryption is still fully active.\n" +
