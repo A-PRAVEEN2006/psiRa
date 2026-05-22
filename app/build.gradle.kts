@@ -49,4 +49,5 @@ dependencies {
     implementation("com.google.firebase:firebase-messaging-ktx:23.4.1")
     implementation("com.google.firebase:firebase-storage-ktx:20.3.0")
     implementation("io.getstream:stream-webrtc-android:1.1.2")
+    implementation("com.github.bumptech.glide:glide:4.16.0")
 }

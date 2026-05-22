@@ -1,7 +1,11 @@
 package com.project1.psira
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.media.MediaRecorder
+import android.net.Uri
 import android.os.Bundle
 import android.view.WindowManager
 import android.widget.Button
@@ -9,12 +13,17 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.database.*
-import com.google.firebase.messaging.FirebaseMessaging // NEW IMPORT
+import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.storage.FirebaseStorage
+import java.io.File
+import java.util.UUID
 
 class ChatActivity : BaseActivity() {
     private lateinit var db: DatabaseReference
@@ -25,6 +34,17 @@ class ChatActivity : BaseActivity() {
     private var messageListener: ValueEventListener? = null
     private var presenceListener: ValueEventListener? = null
     private lateinit var presenceRef: DatabaseReference
+
+    private var mediaRecorder: MediaRecorder? = null
+    private var voiceOutputFile: File? = null
+    private var isRecording = false
+
+    private val pickMediaLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        if (uri != null) {
+            val type = if (contentResolver.getType(uri)?.startsWith("image/") == true) "image" else "doc"
+            uploadAndSendFile(uri, type)
+        }
+    }
 
     override fun onDestroy() {
         super.onDestroy()
@@ -40,6 +60,27 @@ class ChatActivity : BaseActivity() {
         recyclerView = findViewById(R.id.recyclerView)
         val btnSend = findViewById<Button>(R.id.btnSend)
         val editMessage = findViewById<EditText>(R.id.editMessage)
+
+        val btnAttachMedia = findViewById<ImageButton>(R.id.btnAttachMedia)
+        val btnRecordVoice = findViewById<ImageButton>(R.id.btnRecordVoice)
+
+        btnAttachMedia.setOnClickListener {
+            PsiRaDialogs.showOptionsSheet(this, "ATTACH FILE", listOf("Image", "Document")) { index ->
+                if (index == 0) {
+                    pickMediaLauncher.launch("image/*")
+                } else {
+                    pickMediaLauncher.launch("*/*")
+                }
+            }
+        }
+
+        btnRecordVoice.setOnClickListener {
+            if (isRecording) {
+                stopRecording(true)
+            } else {
+                startRecording()
+            }
+        }
 
         val btnSettings = findViewById<ImageButton>(R.id.btnSettings)
         val secureStatusText = findViewById<TextView>(R.id.secureStatusText)
@@ -142,6 +183,8 @@ class ChatActivity : BaseActivity() {
             btnSend.text = "GHOST"
             editMessage.isEnabled = false
             editMessage.hint = "Wiretap Active. Read-Only Mode."
+            btnAttachMedia.isEnabled = false
+            btnRecordVoice.isEnabled = false
             Toast.makeText(this, "Ghost Wiretap engaged. You are invisible.", Toast.LENGTH_LONG).show()
         } else {
             myPresenceRef.child("online").setValue(true)
@@ -183,18 +226,9 @@ class ChatActivity : BaseActivity() {
                 val impersonatingName = sharedPref.getString("IMPERSONATING_NAME", null)
                 val senderName = impersonatingName ?: user?.displayName ?: "Unknown Agent"
                 
-                val isBurnable = findViewById<android.widget.ToggleButton>(R.id.toggleBurn).isChecked
-
-                try {
-                    val textToSend = if (isCipherMode) PsiRaConverter.encode(text) else text
-                    val encrypted = AESEncryption.encrypt(textToSend)
-                    db.push().setValue(Message(null, senderName, encrypted, isBurnable)).addOnFailureListener { e ->
-                         Toast.makeText(this, "Transmission failed: ${e.message}", Toast.LENGTH_LONG).show()
-                    }
-                    editMessage.setText("")
-                } catch (e: Exception) {
-                    Toast.makeText(this, "Encryption failure: ${e.message}", Toast.LENGTH_LONG).show()
-                }
+                val isBurnable = false
+                sendMessage(text, "text", isBurnable, senderName, isCipherMode)
+                editMessage.setText("")
             } else {
                 Toast.makeText(this, "Empty signals are rejected.", Toast.LENGTH_SHORT).show()
             }
@@ -221,5 +255,128 @@ class ChatActivity : BaseActivity() {
             }
             true
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (isRecording) {
+            stopRecording(false)
+        }
+    }
+
+    private fun sendMessage(content: String, type: String, isBurnable: Boolean, senderName: String, encodeCipher: Boolean = false) {
+        if (type == "text") {
+            try {
+                val textToSend = if (encodeCipher) PsiRaConverter.encode(content) else content
+                val encrypted = AESEncryption.encrypt(textToSend)
+                db.push().setValue(Message(null, senderName, encrypted, isBurnable, type)).addOnFailureListener { e ->
+                     Toast.makeText(this, "Transmission failed: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this, "Encryption failure: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        } else {
+            db.push().setValue(Message(null, senderName, content, isBurnable, type)).addOnFailureListener { e ->
+                 Toast.makeText(this, "Transmission failed: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun checkRecordAudioPermission(): Boolean {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), 200)
+            return false
+        }
+        return true
+    }
+
+    private fun startRecording() {
+        if (!checkRecordAudioPermission()) return
+        
+        val recDir = getExternalFilesDir(null) ?: filesDir
+        val file = File(recDir, "voice_msg_${System.currentTimeMillis()}.m4a")
+        voiceOutputFile = file
+        
+        try {
+            @Suppress("DEPRECATION")
+            mediaRecorder = if (android.os.Build.VERSION.SDK_INT >= 31)
+                MediaRecorder(this)
+            else MediaRecorder()
+            
+            mediaRecorder!!.apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                setAudioSamplingRate(44100)
+                setAudioEncodingBitRate(128000)
+                setOutputFile(file.absolutePath)
+                prepare()
+                start()
+            }
+            isRecording = true
+            val btnRecordVoice = findViewById<ImageButton>(R.id.btnRecordVoice)
+            btnRecordVoice.setColorFilter(android.graphics.Color.parseColor("#FF3B30"))
+            val editMessage = findViewById<EditText>(R.id.editMessage)
+            editMessage.isEnabled = false
+            editMessage.hint = "🔴 Recording... Tap Mic again to Send"
+            Toast.makeText(this, "Recording started...", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Failed to start recording: ${e.message}", Toast.LENGTH_SHORT).show()
+            e.printStackTrace()
+        }
+    }
+
+    private fun stopRecording(shouldSend: Boolean) {
+        if (!isRecording) return
+        
+        try {
+            mediaRecorder?.stop()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            mediaRecorder?.release()
+            mediaRecorder = null
+            isRecording = false
+        }
+        
+        val btnRecordVoice = findViewById<ImageButton>(R.id.btnRecordVoice)
+        btnRecordVoice.clearColorFilter()
+        val editMessage = findViewById<EditText>(R.id.editMessage)
+        editMessage.isEnabled = true
+        editMessage.hint = "Type a secure message..."
+        
+        val file = voiceOutputFile
+        if (shouldSend && file != null && file.exists()) {
+            uploadAndSendFile(Uri.fromFile(file), "voice")
+        }
+        voiceOutputFile = null
+    }
+
+    private fun uploadAndSendFile(uri: Uri, type: String) {
+        val progressDialog = AlertDialog.Builder(this)
+            .setMessage("Uploading secure asset...")
+            .setCancelable(false)
+            .create()
+        progressDialog.show()
+        
+        val storageRef = FirebaseStorage.getInstance().getReference("uploads/${UUID.randomUUID()}")
+        storageRef.putFile(uri)
+            .addOnSuccessListener { _ ->
+                storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                    progressDialog.dismiss()
+                    val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
+                    val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+                    val impersonatingName = sharedPref.getString("IMPERSONATING_NAME", null)
+                    val senderName = impersonatingName ?: user?.displayName ?: "Unknown Agent"
+                    sendMessage(downloadUri.toString(), type, false, senderName, false)
+                }.addOnFailureListener { e ->
+                    progressDialog.dismiss()
+                    Toast.makeText(this, "Failed to get download URL: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .addOnFailureListener { e ->
+                progressDialog.dismiss()
+                Toast.makeText(this, "Upload failed: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
     }
 }

@@ -99,18 +99,29 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <ToggleButton
-            android:id="@+id/toggleBurn"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:textOn="🔥"
-            android:textOff="⏱️"
-            android:checked="false"
+        <ImageButton
+            android:id="@+id/btnAttachMedia"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_gravity="center_vertical"
-            android:background="?attr/colorSurface"
-            android:textColor="?attr/colorOnSurface"
-            android:textSize="18sp"
-            android:layout_marginEnd="8dp"/>
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_input_add"
+            app:tint="?attr/colorAccent"
+            android:padding="8dp"
+            android:layout_marginEnd="4dp"
+            android:contentDescription="Attach Media" />
+
+        <ImageButton
+            android:id="@+id/btnRecordVoice"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center_vertical"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_cloak_recorder"
+            app:tint="?attr/colorAccent"
+            android:padding="8dp"
+            android:layout_marginEnd="8dp"
+            android:contentDescription="Record Voice" />
 
         <EditText
             android:id="@+id/editMessage"

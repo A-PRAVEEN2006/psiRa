@@ -159,6 +159,7 @@
         <activity android:name=".WifiDirectChatActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".NexusLinkActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".CallActivity" android:exported="false" android:screenOrientation="portrait"/>
+        <activity android:name=".CallHistoryActivity" android:exported="false" />
 
         <service android:name="com.project1.psira.PsiraMessagingService" android:exported="false">
             <intent-filter>

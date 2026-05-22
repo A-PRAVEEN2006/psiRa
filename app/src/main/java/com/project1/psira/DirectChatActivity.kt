@@ -30,6 +30,17 @@ class DirectChatActivity : BaseActivity() {
     private var targetUid: String? = null
     private var targetName: String? = null
 
+    private var mediaRecorder: MediaRecorder? = null
+    private var voiceOutputFile: File? = null
+    private var isRecording = false
+
+    private val pickMediaLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        if (uri != null) {
+            val type = if (contentResolver.getType(uri)?.startsWith("image/") == true) "image" else "doc"
+            uploadAndSendFile(uri, type)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
@@ -57,8 +68,28 @@ class DirectChatActivity : BaseActivity() {
         
         findViewById<android.view.View>(R.id.chatBg).setBackgroundColor(android.graphics.Color.parseColor("#1A1A2E"))
         
-
         findViewById<ImageButton>(R.id.btnSettings).visibility = android.view.View.GONE
+
+        val btnAttachMedia = findViewById<ImageButton>(R.id.btnAttachMedia)
+        val btnRecordVoice = findViewById<ImageButton>(R.id.btnRecordVoice)
+
+        btnAttachMedia.setOnClickListener {
+            PsiRaDialogs.showOptionsSheet(this, "ATTACH FILE", listOf("Image", "Document")) { index ->
+                if (index == 0) {
+                    pickMediaLauncher.launch("image/*")
+                } else {
+                    pickMediaLauncher.launch("*/*")
+                }
+            }
+        }
+
+        btnRecordVoice.setOnClickListener {
+            if (isRecording) {
+                stopRecording(true)
+            } else {
+                startRecording()
+            }
+        }
 
         secureStatusText.text = "🔒 DIRECT LINK: $displayName"
         secureStatusText.setTextColor(android.graphics.Color.parseColor("#7B61FF"))
@@ -165,7 +196,7 @@ class DirectChatActivity : BaseActivity() {
             if (text.isNotEmpty()) {
                 val user = FirebaseAuth.getInstance().currentUser
                 val senderName = user?.displayName ?: "Unknown Agent"
-                val isBurnable = findViewById<android.widget.ToggleButton>(R.id.toggleBurn).isChecked
+                val isBurnable = false
                 sendMessage(text, "text", isBurnable, senderName, myUid, isCipherMode)
                 editMessage.setText("")
             } else {
@@ -244,5 +275,105 @@ class DirectChatActivity : BaseActivity() {
 
     override fun onStop() {
         super.onStop()
+        if (isRecording) {
+            stopRecording(false)
+        }
+    }
+
+    private fun checkRecordAudioPermission(): Boolean {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), 200)
+            return false
+        }
+        return true
+    }
+
+    private fun startRecording() {
+        if (!checkRecordAudioPermission()) return
+        
+        val recDir = getExternalFilesDir(null) ?: filesDir
+        val file = File(recDir, "voice_msg_${System.currentTimeMillis()}.m4a")
+        voiceOutputFile = file
+        
+        try {
+            @Suppress("DEPRECATION")
+            mediaRecorder = if (android.os.Build.VERSION.SDK_INT >= 31)
+                MediaRecorder(this)
+            else MediaRecorder()
+            
+            mediaRecorder!!.apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                setAudioSamplingRate(44100)
+                setAudioEncodingBitRate(128000)
+                setOutputFile(file.absolutePath)
+                prepare()
+                start()
+            }
+            isRecording = true
+            val btnRecordVoice = findViewById<ImageButton>(R.id.btnRecordVoice)
+            btnRecordVoice.setColorFilter(android.graphics.Color.parseColor("#FF3B30"))
+            val editMessage = findViewById<EditText>(R.id.editMessage)
+            editMessage.isEnabled = false
+            editMessage.hint = "🔴 Recording... Tap Mic again to Send"
+            Toast.makeText(this, "Recording started...", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Failed to start recording: ${e.message}", Toast.LENGTH_SHORT).show()
+            e.printStackTrace()
+        }
+    }
+
+    private fun stopRecording(shouldSend: Boolean) {
+        if (!isRecording) return
+        
+        try {
+            mediaRecorder?.stop()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            mediaRecorder?.release()
+            mediaRecorder = null
+            isRecording = false
+        }
+        
+        val btnRecordVoice = findViewById<ImageButton>(R.id.btnRecordVoice)
+        btnRecordVoice.clearColorFilter()
+        val editMessage = findViewById<EditText>(R.id.editMessage)
+        editMessage.isEnabled = true
+        editMessage.hint = "Type a secure message..."
+        
+        val file = voiceOutputFile
+        if (shouldSend && file != null && file.exists()) {
+            uploadAndSendFile(Uri.fromFile(file), "voice")
+        }
+        voiceOutputFile = null
+    }
+
+    private fun uploadAndSendFile(uri: Uri, type: String) {
+        val progressDialog = AlertDialog.Builder(this)
+            .setMessage("Uploading secure asset...")
+            .setCancelable(false)
+            .create()
+        progressDialog.show()
+        
+        val storageRef = FirebaseStorage.getInstance().getReference("uploads/${UUID.randomUUID()}")
+        storageRef.putFile(uri)
+            .addOnSuccessListener { _ ->
+                storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                    progressDialog.dismiss()
+                    val myUid = FirebaseAuth.getInstance().currentUser!!.uid
+                    val user = FirebaseAuth.getInstance().currentUser
+                    val senderName = user?.displayName ?: "Unknown Agent"
+                    sendMessage(downloadUri.toString(), type, false, senderName, myUid, false)
+                }.addOnFailureListener { e ->
+                    progressDialog.dismiss()
+                    Toast.makeText(this, "Failed to get download URL: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .addOnFailureListener { e ->
+                progressDialog.dismiss()
+                Toast.makeText(this, "Upload failed: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
     }
 }

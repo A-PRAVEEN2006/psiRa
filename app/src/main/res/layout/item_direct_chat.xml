@@ -18,7 +18,7 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/ic_chat"
-            app:tint="#00FF00"/>
+            app:tint="?attr/colorAccent"/>
         
         <View
             android:id="@+id/presenceDot"

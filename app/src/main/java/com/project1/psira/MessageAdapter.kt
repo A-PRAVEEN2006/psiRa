@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.database.FirebaseDatabase
+import com.bumptech.glide.Glide
 
 class MessageAdapter(
     private val messageList: List<Message>,
@@ -101,11 +102,17 @@ class MessageAdapter(
             "image" -> {
                 holder.ivMessageMedia?.visibility = View.VISIBLE
                 holder.tvFileName?.visibility = View.GONE
-                // Using a placeholder as loading from URL requires Glide/Picasso usually
-                holder.ivMessageMedia?.setImageResource(android.R.drawable.ic_menu_gallery)
+                holder.ivMessageMedia?.let { imageView ->
+                    Glide.with(context)
+                        .load(message.content)
+                        .placeholder(android.R.drawable.ic_menu_gallery)
+                        .error(android.R.drawable.ic_menu_report_image)
+                        .into(imageView)
+                }
             }
             "doc" -> {
                 holder.ivMessageMedia?.visibility = View.GONE
+                holder.tvFileName?.visibility = View.VISIBLE
                 holder.tvFileName?.text = "Encrypted Doc: ${message.content?.takeLast(10)}"
             }
         }
