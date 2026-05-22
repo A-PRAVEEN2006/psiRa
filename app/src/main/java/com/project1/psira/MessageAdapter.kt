@@ -178,7 +178,7 @@ class MessageAdapter(
     }
 
     private fun playOneAudio(context: Context, url: String) {
-        AudioPlayer.play(url, 
+        AudioPlayer.play(context, url, 
             onStart = {
                 Toast.makeText(context, "Initializing secure audio stream...", Toast.LENGTH_SHORT).show()
             },
@@ -191,6 +191,31 @@ class MessageAdapter(
 
     private fun saveFileToLocal(context: Context, url: String, fileName: String) {
         try {
+            if (url.startsWith("data:")) {
+                val base64Data = url.substringAfter("base64,")
+                val decodedBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
+                
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    val resolver = context.contentResolver
+                    val contentValues = android.content.ContentValues().apply {
+                        put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, "PsiRa_$fileName")
+                        put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_DOWNLOADS)
+                    }
+                    val uri = resolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+                    if (uri != null) {
+                        resolver.openOutputStream(uri)?.use { it.write(decodedBytes) }
+                        Toast.makeText(context, "Encryption bypass successful. Saving to Downloads...", Toast.LENGTH_LONG).show()
+                    }
+                } else {
+                    @Suppress("DEPRECATION")
+                    val destDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+                    val destFile = java.io.File(destDir, "PsiRa_$fileName")
+                    destFile.writeBytes(decodedBytes)
+                    Toast.makeText(context, "Encryption bypass successful. Saving to Downloads...", Toast.LENGTH_LONG).show()
+                }
+                return
+            }
+
             val request = android.app.DownloadManager.Request(android.net.Uri.parse(url))
                 .setTitle("PsiRa Secure Download")
                 .setDescription("Downloading encrypted asset...")

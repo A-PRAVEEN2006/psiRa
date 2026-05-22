@@ -42,7 +42,7 @@ class ChatActivity : BaseActivity() {
     private val pickMediaLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri != null) {
             val type = if (contentResolver.getType(uri)?.startsWith("image/") == true) "image" else "doc"
-            uploadAndSendFile(uri, type)
+            encodeAndSendBase64(uri, type)
         }
     }
 
@@ -347,36 +347,64 @@ class ChatActivity : BaseActivity() {
         
         val file = voiceOutputFile
         if (shouldSend && file != null && file.exists()) {
-            uploadAndSendFile(Uri.fromFile(file), "voice")
+            encodeAndSendBase64(Uri.fromFile(file), "voice")
         }
         voiceOutputFile = null
     }
 
-    private fun uploadAndSendFile(uri: Uri, type: String) {
+    private fun encodeAndSendBase64(uri: Uri, type: String) {
         val progressDialog = AlertDialog.Builder(this)
-            .setMessage("Uploading secure asset...")
+            .setMessage("Encrypting asset...")
             .setCancelable(false)
             .create()
         progressDialog.show()
         
-        val storageRef = FirebaseStorage.getInstance().getReference("uploads/${UUID.randomUUID()}")
-        storageRef.putFile(uri)
-            .addOnSuccessListener { _ ->
-                storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
+        Thread {
+            try {
+                var base64String = ""
+                if (type == "image") {
+                    @Suppress("DEPRECATION")
+                    val bitmap = android.provider.MediaStore.Images.Media.getBitmap(contentResolver, uri)
+                    
+                    val maxDim = 800
+                    val width = bitmap.width
+                    val height = bitmap.height
+                    val scaledBitmap = if (width > maxDim || height > maxDim) {
+                        val ratio = width.toFloat() / height.toFloat()
+                        val newWidth = if (ratio > 1) maxDim else (maxDim * ratio).toInt()
+                        val newHeight = if (ratio > 1) (maxDim / ratio).toInt() else maxDim
+                        android.graphics.Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+                    } else bitmap
+
+                    val baos = java.io.ByteArrayOutputStream()
+                    scaledBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 60, baos)
+                    val b = baos.toByteArray()
+                    base64String = "data:image/jpeg;base64," + android.util.Base64.encodeToString(b, android.util.Base64.DEFAULT)
+                } else if (type == "voice") {
+                    val inputStream = contentResolver.openInputStream(uri)
+                    val bytes = inputStream?.readBytes() ?: ByteArray(0)
+                    base64String = "data:audio/mp4;base64," + android.util.Base64.encodeToString(bytes, android.util.Base64.DEFAULT)
+                } else {
+                    val inputStream = contentResolver.openInputStream(uri)
+                    val bytes = inputStream?.readBytes() ?: ByteArray(0)
+                    base64String = "data:application/pdf;base64," + android.util.Base64.encodeToString(bytes, android.util.Base64.DEFAULT)
+                }
+
+                runOnUiThread {
                     progressDialog.dismiss()
                     val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
                     val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
                     val impersonatingName = sharedPref.getString("IMPERSONATING_NAME", null)
                     val senderName = impersonatingName ?: user?.displayName ?: "Unknown Agent"
-                    sendMessage(downloadUri.toString(), type, false, senderName, false)
-                }.addOnFailureListener { e ->
+                    sendMessage(base64String, type, false, senderName, false)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                runOnUiThread {
                     progressDialog.dismiss()
-                    Toast.makeText(this, "Failed to get download URL: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@ChatActivity, "Encryption failed: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
-            .addOnFailureListener { e ->
-                progressDialog.dismiss()
-                Toast.makeText(this, "Upload failed: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
+        }.start()
     }
 }
