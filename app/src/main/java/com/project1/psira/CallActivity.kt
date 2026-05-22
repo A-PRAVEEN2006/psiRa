@@ -24,6 +24,7 @@ class CallActivity : AppCompatActivity() {
     private var isMuted = false
     private var isSpeakerOn = false
     private var targetName = "Agent"
+    private var callConnectedTime = 0L
 
     private var rtcClient: WebRTCClient? = null
     private lateinit var tvStatus: TextView
@@ -128,6 +129,7 @@ class CallActivity : AppCompatActivity() {
                     runOnUiThread {
                         tvStatus.text = "SECURE CHANNEL ESTABLISHED"
                         tvStatus.setTextColor(android.graphics.Color.GREEN)
+                        callConnectedTime = System.currentTimeMillis()
                     }
                 }
                 override fun onCallEnded() {
@@ -230,6 +232,21 @@ class CallActivity : AppCompatActivity() {
     private fun terminateCall() {
         if (!isCallActive) return
         isCallActive = false
+
+        val timestamp = System.currentTimeMillis()
+        val duration = if (callConnectedTime > 0L) {
+            (System.currentTimeMillis() - callConnectedTime) / 1000
+        } else {
+            0L
+        }
+        val type = if (callConnectedTime > 0L) {
+            callMode
+        } else {
+            if (callMode == "OUTGOING") "OUTGOING" else "MISSED"
+        }
+        val logUid = if (callMode == "OUTGOING") targetUid else callerUid
+        CallHistoryActivity.saveCallLog(this, targetName, logUid, timestamp, duration, type)
+
         audioManager.mode = android.media.AudioManager.MODE_NORMAL
         val nodeUid = if (callMode == "OUTGOING") targetUid else myUid
         db.getReference("calls").child(nodeUid).removeValue()
@@ -242,6 +259,10 @@ class CallActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        if (!isCallActive) rtcClient?.close()
+        if (isCallActive) {
+            terminateCall()
+        } else {
+            rtcClient?.close()
+        }
     }
 }

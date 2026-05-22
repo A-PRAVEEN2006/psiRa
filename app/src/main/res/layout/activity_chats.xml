@@ -5,23 +5,46 @@
     android:layout_height="match_parent"
     android:background="?android:attr/colorBackground">
 
-    <TextView
-        android:id="@+id/tvChatsHeader"
+    <RelativeLayout
+        android:id="@+id/layoutChatsHeader"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Intelligence Hub"
-        android:textColor="?attr/colorPrimary"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:padding="16dp"
-        android:letterSpacing="0.05"
-        android:layout_alignParentTop="true"/>
+        android:layout_height="64dp"
+        android:paddingHorizontal="16dp"
+        android:layout_alignParentTop="true"
+        android:background="#0A0A0A"
+        android:elevation="4dp">
+
+        <TextView
+            android:id="@+id/tvChatsHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:text="Secure Terminal"
+            android:textColor="?attr/colorAccent"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.03" />
+
+        <ImageView
+            android:id="@+id/btnCallHistory"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:src="@android:drawable/ic_menu_call"
+            android:tint="?attr/colorAccent"
+            android:padding="8dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Call Logs" />
+    </RelativeLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvChats"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/tvChatsHeader"
+        android:layout_below="@id/layoutChatsHeader"
         android:layout_above="@id/bottomNavigationView"
         android:padding="8dp"/>
 

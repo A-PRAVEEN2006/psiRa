@@ -131,6 +131,10 @@ class ChatsActivity : BaseActivity() {
                 }
             }
         }
+
+        findViewById<android.view.View>(R.id.btnCallHistory).setOnClickListener {
+            startActivity(Intent(this, CallHistoryActivity::class.java))
+        }
     }
 
     override fun onResume() {
