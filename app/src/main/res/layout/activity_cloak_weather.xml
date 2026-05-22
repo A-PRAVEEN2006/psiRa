@@ -1,42 +1,115 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#4FC3F7"
-    android:padding="24dp">
+    android:orientation="vertical"
+    android:background="#0D1117">
 
-    <TextView
-        android:id="@+id/tvCity"
-        android:layout_width="wrap_content"
+    <!-- Header toolbar -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="#161B22"
+        android:paddingHorizontal="16dp">
+
+        <TextView
+            android:id="@+id/tvCity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:text="💱  Exchange Rates"
+            android:textColor="#E6EDF3"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium" />
+
+        <ImageView
+            android:id="@+id/ivWeatherRefresh"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:padding="4dp"
+            android:src="@drawable/ic_cloak_weather"
+            android:tint="#58A6FF" />
+
+    </RelativeLayout>
+
+    <!-- Base currency pill -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="New York"
-        android:textColor="#FFFFFF"
-        android:textSize="28sp" />
+        android:orientation="vertical"
+        android:gravity="center"
+        android:paddingTop="24dp"
+        android:paddingBottom="16dp"
+        android:background="#161B22"
+        android:layout_marginTop="1dp">
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="BASE CURRENCY"
+            android:textColor="#8B949E"
+            android:textSize="11sp"
+            android:letterSpacing="0.1" />
+
+        <TextView
+            android:id="@+id/tvTemp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1 USD"
+            android:textColor="#58A6FF"
+            android:textSize="40sp"
+            android:textStyle="bold"
+            android:layout_marginTop="4dp" />
+
+    </LinearLayout>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#21262D"
+        android:layout_marginTop="8dp" />
+
+    <!-- Rates card -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="LIVE RATES"
+            android:textColor="#8B949E"
+            android:textSize="11sp"
+            android:letterSpacing="0.1"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:id="@+id/tvCurrencyDesc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tap ↻ to load rates"
+            android:textColor="#C9D1D9"
+            android:textSize="17sp"
+            android:lineSpacingExtra="12dp"
+            android:fontFamily="monospace" />
+
+    </LinearLayout>
+
+    <!-- Footer -->
     <TextView
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/tvCity"
-        android:text="Mostly Sunny"
-        android:textColor="#E0E0E0" />
+        android:text="Data via open.er-api.com • Tap ↻ to refresh"
+        android:textColor="#484F58"
+        android:textSize="11sp"
+        android:gravity="center"
+        android:padding="12dp" />
 
-    <TextView
-        android:id="@+id/tvTemp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:text="24°"
-        android:textColor="#FFFFFF"
-        android:textSize="120sp" />
-
-    <ImageView
-        android:id="@+id/ivWeatherRefresh"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="40dp"
-        android:src="@drawable/ic_cloak_weather"
-        android:tint="#FFFFFF" />
-
-</RelativeLayout>
+</LinearLayout>

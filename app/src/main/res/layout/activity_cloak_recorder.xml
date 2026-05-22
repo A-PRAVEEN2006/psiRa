@@ -1,44 +1,122 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000000"
-    android:padding="32dp">
+    android:orientation="vertical"
+    android:background="#1C1C1E">
 
-    <TextView
-        android:id="@+id/tvTimer"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="100dp"
-        android:text="00:00:00"
-        android:textColor="#FFFFFF"
-        android:textSize="48sp" />
+    <!-- ── Top Bar ── -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="#1C1C1E"
+        android:paddingHorizontal="20dp">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/tvTimer"
-        android:layout_centerHorizontal="true"
-        android:text="Standard Quality Recording"
-        android:textColor="#888888" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:text="Voice Memos"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            android:fontFamily="sans-serif-medium" />
 
-    <com.project1.psira.RadarPulseView
-        android:id="@+id/pulseView"
-        android:layout_width="200dp"
-        android:layout_height="200dp"
-        android:layout_centerInParent="true" />
+        <TextView
+            android:id="@+id/tvRecordingCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:text="0 memos"
+            android:textColor="#8E8E93"
+            android:textSize="13sp" />
+    </RelativeLayout>
 
-    <ImageButton
-        android:id="@+id/btnRecord"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="50dp"
-        android:background="@drawable/presence_online"
-        android:backgroundTint="#FF0000"
-        android:scaleType="centerInside"
-        android:src="@drawable/ic_cloak_recorder" />
+    <!-- ── Waveform / recording status area ── -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="#2C2C2E">
 
-</RelativeLayout>
+        <TextView
+            android:id="@+id/tvTimer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="00:00"
+            android:textColor="#FFFFFF"
+            android:textSize="40sp"
+            android:fontFamily="monospace" />
+
+        <TextView
+            android:id="@+id/tvRecordStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tap to record"
+            android:textColor="#8E8E93"
+            android:textSize="13sp"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+
+    <!-- ── Record button row ── -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:background="#1C1C1E">
+
+        <ImageButton
+            android:id="@+id/btnRecord"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:background="@drawable/bg_circle_red"
+            android:src="@drawable/ic_cloak_recorder"
+            android:tint="#FFFFFF"
+            android:scaleType="centerInside"
+            android:padding="18dp"
+            android:contentDescription="Record" />
+    </LinearLayout>
+
+    <!-- ── Divider ── -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#3A3A3C" />
+
+    <!-- ── Recordings list ── -->
+    <ListView
+        android:id="@+id/listRecordings"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:divider="#3A3A3C"
+        android:dividerHeight="1dp" />
+
+    <!-- ── Empty state ── -->
+    <LinearLayout
+        android:id="@+id/layoutEmptyRecorder"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🎙"
+            android:textSize="40sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No recordings yet"
+            android:textColor="#8E8E93"
+            android:textSize="15sp"
+            android:layout_marginTop="8dp" />
+    </LinearLayout>
+
+</LinearLayout>

@@ -85,59 +85,38 @@ class SettingsActivity : BaseActivity() {
         val btnThemeSelection = findViewById<Button>(R.id.btnThemeSelection)
         btnThemeSelection.setOnClickListener { showThemeSelector() }
 
-        // ── TOR Toggle ────────────────────────────────────────────────────────
-        val switchTor   = findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.switchTorMode)
-        val tvTorStatus = findViewById<android.widget.TextView>(R.id.tvTorStatus)
-        val layoutOff   = findViewById<android.view.View>(R.id.layoutTorOff)
-        val layoutOn    = findViewById<android.view.View>(R.id.layoutTorOn)
-
-        val isTorOn = sharedPref.getBoolean("TOR_MODE", false)
-        switchTor.isChecked = isTorOn
-        updateTorUi(tvTorStatus, layoutOff, layoutOn, isTorOn)
-
-        switchTor.setOnCheckedChangeListener { _, isChecked ->
-            sharedPref.edit().putBoolean("TOR_MODE", isChecked).apply()
-            updateTorUi(tvTorStatus, layoutOff, layoutOn, isChecked)
-            applyTorProxy(isChecked)
-
-            val msg = if (isChecked)
-                "🧅 TOR Mode ON — Your IP is now hidden. Speed reduced ~3×."
-            else
-                "⚡ Direct Mode ON — Full speed. E2EE still active."
-            Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
-        }
-
-        // Verify TOR button
-        val btnVerify = findViewById<Button>(R.id.btnVerifyTor)
-        btnVerify.setOnClickListener {
-            btnVerify.isEnabled = false
-            btnVerify.text = "⏳ CHECKING..."
-            verifyTorConnection { result ->
-                runOnUiThread {
-                    btnVerify.isEnabled = true
-                    btnVerify.text = "🔍 VERIFY TOR CONNECTION"
-                    showTorVerifyResult(result)
+        // ── TOR Settings ──────────────────────────────────────────────────────
+        val btnTorSettings = findViewById<Button>(R.id.btnTorSettings)
+        btnTorSettings.setOnClickListener {
+            val isTorOnNow = sharedPref.getBoolean("TOR_MODE", false)
+            val toggleLabel = if (isTorOnNow) "Disable Tor Mode (Use Direct)" else "Enable Tor Mode (Anonymize IP)"
+            val options = listOf(
+                toggleLabel,
+                "Verify Tor Connection Status"
+            )
+            PsiRaDialogs.showOptionsSheet(this, "TOR NETWORK SETTINGS", options) { index ->
+                when (index) {
+                    0 -> {
+                        val newTorMode = !isTorOnNow
+                        sharedPref.edit().putBoolean("TOR_MODE", newTorMode).apply()
+                        applyTorProxy(newTorMode)
+                        
+                        val msg = if (newTorMode)
+                            "🧅 TOR Mode ON — Your IP is now hidden. Speed reduced ~3×."
+                        else
+                            "⚡ Direct Mode ON — Full speed. E2EE still active."
+                        Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+                    }
+                    1 -> {
+                        Toast.makeText(this, "Verifying Tor routing...", Toast.LENGTH_SHORT).show()
+                        verifyTorConnection { result ->
+                            runOnUiThread {
+                                showTorVerifyResult(result)
+                            }
+                        }
+                    }
                 }
             }
-        }
-    }
-
-    private fun updateTorUi(
-        tvStatus: android.widget.TextView,
-        layoutOff: android.view.View,
-        layoutOn: android.view.View,
-        torEnabled: Boolean
-    ) {
-        if (torEnabled) {
-            tvStatus.text  = "🧅 ON — Routing through TOR (E2EE + Anonymous)"
-            tvStatus.setTextColor(android.graphics.Color.parseColor("#CE93D8"))
-            layoutOn.alpha  = 1.0f
-            layoutOff.alpha = 0.4f
-        } else {
-            tvStatus.text  = "● OFF — Direct connection (E2EE active)"
-            tvStatus.setTextColor(android.graphics.Color.parseColor("#88AA99"))
-            layoutOn.alpha  = 0.4f
-            layoutOff.alpha = 1.0f
         }
     }
 
@@ -389,8 +368,8 @@ class SettingsActivity : BaseActivity() {
             THE SPECTRE ENCLAVE:
             A premium, high-fidelity secure communication network.
             
-            10-MODULE DECOY SYSTEM:
-            Active Camouflage Disguises including functional Clock, Calculator, FM Radio, and Weather modules. Each decoy operates as a legitimate utility while masking the entrance to the Spectre Enclave.
+            7-MODULE DECOY SYSTEM:
+            Active Camouflage Disguises including functional Clock, Calculator, Diary, Voice Memos, Day Planner, Currency Rates, and Unit Converter. Each decoy operates as a legitimate utility while masking the entrance to the Spectre Enclave.
             
             SECURITY PROTOCOLS:
             • 10-Session Logic Guard
@@ -408,16 +387,13 @@ class SettingsActivity : BaseActivity() {
         val guide = """
             DECOY TRIGGER LOGICS:
             
-            1. CLOCK: Set the hands exactly to 10:10.
-            2. CALCULATOR: Long-Press the '=' button.
-            3. NOTEPAD: Double-Tap the 'NOTES' title.
-            4. RECORDER: Long-Press the 'Red' button.
-            5. COMPASS: Tap any direction for vectors.
-            6. CALENDAR: Long-Press the calendar area.
-            7. WEATHER: Double-Tap the City Name.
-            8. CONVERTER: Long-Press the 'Convert' icon.
-            9. FLASHLIGHT: Long-Press the physical switch.
-            10. FM RADIO: Tune exactly to 107.7 FM.
+            1. CLOCK: Set the hands exactly to your secret time.
+            2. CALCULATOR: Enter your secret equation and press [ = ].
+            3. DIARY: Type your secret password and tap 'Save'.
+            4. VOICE MEMOS: Tap the RED record button your secret number of times.
+            5. DAY PLANNER: Tap your secret date on the planner calendar.
+            6. CURRENCY: Tap the refresh icon your secret number of times.
+            7. UNIT CONVERTER: Enter your secret number and tap the convert button.
             
             BYPASS LIMIT: After 10 auto-entries, the disguise will force a manual password verification.
         """.trimIndent()

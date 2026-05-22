@@ -9,7 +9,7 @@
         android:id="@+id/tvMonth"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="April 2026"
+        android:text="Day Planner"
         android:textSize="24sp"
         android:textColor="#000000"
         android:gravity="center"

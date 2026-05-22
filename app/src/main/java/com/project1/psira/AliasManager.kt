@@ -11,12 +11,9 @@ object AliasManager {
         "LauncherCalculator",
         "LauncherNotepad",
         "LauncherRecorder",
-        "LauncherCompass",
         "LauncherCalendar",
         "LauncherWeather",
-        "LauncherConverter",
-        "LauncherFlashlight",
-        "LauncherRadio"
+        "LauncherConverter"
     )
 
     fun applyCloak(context: Context, cloakType: String) {
@@ -25,17 +22,14 @@ object AliasManager {
 
         // Map cloakType to Alias name
         val targetAlias = when (cloakType) {
-            "CLOCK" -> "LauncherClock"
+            "CLOCK"      -> "LauncherClock"
             "CALCULATOR" -> "LauncherCalculator"
-            "NOTEPAD" -> "LauncherNotepad"
-            "RECORDER" -> "LauncherRecorder"
-            "COMPASS" -> "LauncherCompass"
-            "CALENDAR" -> "LauncherCalendar"
-            "WEATHER" -> "LauncherWeather"
-            "CONVERTER" -> "LauncherConverter"
-            "FLASHLIGHT" -> "LauncherFlashlight"
-            "RADIO" -> "LauncherRadio"
-            else -> "LauncherClock"
+            "NOTEPAD"    -> "LauncherNotepad"
+            "RECORDER"   -> "LauncherRecorder"
+            "CALENDAR"   -> "LauncherCalendar"
+            "WEATHER"    -> "LauncherWeather"
+            "CONVERTER"  -> "LauncherConverter"
+            else         -> "LauncherClock"
         }
 
         // Disable all and enable target

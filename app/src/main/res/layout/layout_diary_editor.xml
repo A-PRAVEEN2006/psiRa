@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFFFFF">
+
+    <!-- ── Top Bar ── -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="#FFFFFF"
+        android:elevation="2dp"
+        android:paddingHorizontal="16dp">
+
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_centerVertical="true"
+            android:src="@android:drawable/ic_media_previous"
+            android:tint="#007AFF"
+            android:contentDescription="Back"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="4dp" />
+
+        <TextView
+            android:id="@+id/tvEditorDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="Today"
+            android:textColor="#8E8E93"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/btnSaveEntry"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:text="Save"
+            android:textColor="#007AFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:padding="4dp"
+            android:clickable="true"
+            android:focusable="true" />
+    </RelativeLayout>
+
+    <!-- ── Mood row ── -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:background="#F9F9F9"
+        android:layout_marginBottom="1dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Mood:"
+            android:textSize="13sp"
+            android:textColor="#8E8E93"
+            android:layout_marginEnd="8dp" />
+
+        <TextView android:id="@+id/moodHappy"   android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:text="😊" android:textSize="20sp" android:clickable="true" android:focusable="true" />
+        <TextView android:id="@+id/moodNeutral" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:text="😐" android:textSize="20sp" android:clickable="true" android:focusable="true" />
+        <TextView android:id="@+id/moodSad"     android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:text="😔" android:textSize="20sp" android:clickable="true" android:focusable="true" />
+        <TextView android:id="@+id/moodAngry"   android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:text="😠" android:textSize="20sp" android:clickable="true" android:focusable="true" />
+        <TextView android:id="@+id/moodExcited" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:text="🤩" android:textSize="20sp" android:clickable="true" android:focusable="true" />
+
+        <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/tvSelectedMood"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="13sp"
+            android:textColor="#007AFF" />
+    </LinearLayout>
+
+    <!-- ── Title ── -->
+    <EditText
+        android:id="@+id/etEntryTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Title (optional)"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="#1C1C1E"
+        android:textColorHint="#C7C7CC"
+        android:background="@null"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="8dp"
+        android:inputType="textCapSentences"
+        android:imeOptions="actionNext"
+        android:maxLines="2" />
+
+    <!-- ── Divider ── -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#F0F0F0"
+        android:layout_marginHorizontal="20dp" />
+
+    <!-- ── Body ── -->
+    <EditText
+        android:id="@+id/etEntryBody"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:hint="What's on your mind…"
+        android:textSize="16sp"
+        android:textColor="#1C1C1E"
+        android:textColorHint="#C7C7CC"
+        android:background="@null"
+        android:gravity="top"
+        android:padding="20dp"
+        android:lineSpacingExtra="6dp"
+        android:inputType="textMultiLine|textCapSentences" />
+
+    <!-- ── Word count bar ── -->
+    <TextView
+        android:id="@+id/tvWordCount"
+        android:layout_width="match_parent"
+        android:layout_height="32dp"
+        android:gravity="end|center_vertical"
+        android:paddingHorizontal="16dp"
+        android:text="0 words"
+        android:textSize="11sp"
+        android:textColor="#C7C7CC"
+        android:background="#F9F9F9" />
+
+</LinearLayout>

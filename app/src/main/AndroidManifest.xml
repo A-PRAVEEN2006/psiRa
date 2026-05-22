@@ -79,7 +79,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@drawable/ic_cloak_notepad"
-            android:label="Notepad"
+            android:label="Diary"
             android:targetActivity=".DisguiseActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -92,20 +92,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@drawable/ic_cloak_recorder"
-            android:label="Recorder"
-            android:targetActivity=".DisguiseActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
-        <activity-alias
-            android:name=".LauncherCompass"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@drawable/ic_cloak_compass"
-            android:label="Compass"
+            android:label="Voice Memos"
             android:targetActivity=".DisguiseActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -118,7 +105,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@drawable/ic_cloak_calendar"
-            android:label="Calendar"
+            android:label="Day Planner"
             android:targetActivity=".DisguiseActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -131,7 +118,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@drawable/ic_cloak_weather"
-            android:label="Weather"
+            android:label="Currency"
             android:targetActivity=".DisguiseActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -152,31 +139,7 @@
             </intent-filter>
         </activity-alias>
 
-        <activity-alias
-            android:name=".LauncherFlashlight"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@drawable/ic_cloak_flashlight"
-            android:label="Flashlight"
-            android:targetActivity=".DisguiseActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
 
-        <activity-alias
-            android:name=".LauncherRadio"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@drawable/ic_cloak_radio"
-            android:label="Radio"
-            android:targetActivity=".DisguiseActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
 
         <activity android:name=".SplashActivity" android:exported="false" />
         <activity android:name=".MainActivity" android:exported="false" android:launchMode="singleTask" android:windowSoftInputMode="adjustResize" />

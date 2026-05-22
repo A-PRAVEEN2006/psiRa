@@ -33,15 +33,12 @@ open class DisguiseActivity : BaseActivity() {
         
         when (cloakType) {
             "CALCULATOR" -> setupCalculator()
-            "NOTEPAD" -> setupNotepad()
-            "RECORDER" -> setupRecorder()
-            "COMPASS" -> setupCompass()
-            "CALENDAR" -> setupCalendar()
-            "WEATHER" -> setupWeather()
-            "CONVERTER" -> setupConverter()
-            "FLASHLIGHT" -> setupFlashlight()
-            "RADIO" -> setupRadio()
-            else -> setupClock()
+            "NOTEPAD"    -> setupNotepad()
+            "RECORDER"   -> setupRecorder()
+            "CALENDAR"   -> setupCalendar()
+            "WEATHER"    -> setupCurrency()
+            "CONVERTER"  -> setupConverter()
+            else         -> setupClock()
         }
     }
 
@@ -264,66 +261,386 @@ open class DisguiseActivity : BaseActivity() {
         return result
     }
 
+    // ─── DIARY ────────────────────────────────────────────────────────────────
     private fun setupNotepad() {
         setContentView(R.layout.activity_cloak_notepad)
-        val etContent = findViewById<EditText>(R.id.etNoteContent)
-        
-        findViewById<Button>(R.id.btnSaveNote).setOnClickListener {
-            val content = etContent.text.toString().trim()
-            handleInput(content, "NOTEPAD")
-            Toast.makeText(this, "Note Saved Externally", Toast.LENGTH_SHORT).show()
+
+        val prefs        = getSharedPreferences("DiaryPrefs", android.content.Context.MODE_PRIVATE)
+        val listView     = findViewById<android.widget.ListView>(R.id.listDiaryEntries)
+        val btnNew       = findViewById<android.widget.ImageView>(R.id.btnNewEntry)
+        val etSearch     = findViewById<EditText>(R.id.etSearch)
+        val emptyLayout  = findViewById<android.view.View>(R.id.layoutEmptyDiary)
+
+        // Entry = "MOOD|TITLE|BODY|TIMESTAMP" stored as JSON array in SharedPrefs
+        data class DiaryEntry(val mood: String, val title: String, val body: String, val timestamp: Long)
+
+        fun loadEntries(): MutableList<DiaryEntry> {
+            val json = prefs.getString("entries", "[]") ?: "[]"
+            val list = mutableListOf<DiaryEntry>()
+            try {
+                val arr = org.json.JSONArray(json)
+                for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    list.add(DiaryEntry(o.getString("mood"), o.getString("title"),
+                        o.getString("body"), o.getLong("ts")))
+                }
+            } catch (_: Exception) {}
+            return list
         }
+
+        fun saveEntries(list: List<DiaryEntry>) {
+            val arr = org.json.JSONArray()
+            list.forEach { e ->
+                val o = org.json.JSONObject()
+                o.put("mood", e.mood); o.put("title", e.title)
+                o.put("body", e.body); o.put("ts", e.timestamp)
+                arr.put(o)
+            }
+            prefs.edit().putString("entries", arr.toString()).apply()
+        }
+
+        fun formatDate(ts: Long): String {
+            val sdf = java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.getDefault())
+            return sdf.format(java.util.Date(ts))
+        }
+
+        var allEntries = loadEntries()
+        var filteredEntries = allEntries.toMutableList()
+        var selectedMood = "📔"
+
+        // ── Adapter ──
+        fun buildAdapter(entries: List<DiaryEntry>): android.widget.BaseAdapter {
+            return object : android.widget.BaseAdapter() {
+                override fun getCount() = entries.size
+                override fun getItem(pos: Int) = entries[pos]
+                override fun getItemId(pos: Int) = pos.toLong()
+                override fun getView(pos: Int, convert: android.view.View?, parent: android.view.ViewGroup?): android.view.View {
+                    val v = convert ?: android.view.LayoutInflater.from(this@DisguiseActivity)
+                        .inflate(R.layout.item_diary_entry, parent, false)
+                    val e = entries[pos]
+                    v.findViewById<TextView>(R.id.tvEntryMood).text    = e.mood
+                    v.findViewById<TextView>(R.id.tvEntryTitle).text   = e.title.ifEmpty { "Untitled" }
+                    v.findViewById<TextView>(R.id.tvEntryPreview).text = e.body.take(120)
+                    v.findViewById<TextView>(R.id.tvEntryDate).text    = formatDate(e.timestamp)
+                    return v
+                }
+            }
+        }
+
+        fun refreshList(query: String = "") {
+            filteredEntries = if (query.isBlank()) allEntries.toMutableList()
+            else allEntries.filter {
+                it.title.contains(query, true) || it.body.contains(query, true)
+            }.toMutableList()
+            listView.adapter = buildAdapter(filteredEntries)
+            emptyLayout.visibility = if (filteredEntries.isEmpty()) android.view.View.VISIBLE else android.view.View.GONE
+            listView.visibility    = if (filteredEntries.isEmpty()) android.view.View.GONE else android.view.View.VISIBLE
+        }
+
+        refreshList()
+
+        // ── Open editor ──
+        fun openEditor(existing: DiaryEntry? = null) {
+            val editorView = android.view.LayoutInflater.from(this)
+                .inflate(R.layout.layout_diary_editor, null)
+
+            val etTitle    = editorView.findViewById<EditText>(R.id.etEntryTitle)
+            val etBody     = editorView.findViewById<EditText>(R.id.etEntryBody)
+            val tvDate     = editorView.findViewById<TextView>(R.id.tvEditorDate)
+            val tvWordCnt  = editorView.findViewById<TextView>(R.id.tvWordCount)
+            val tvMoodDisp = editorView.findViewById<TextView>(R.id.tvSelectedMood)
+            val btnBack    = editorView.findViewById<android.widget.ImageView>(R.id.btnBack)
+            val btnSave    = editorView.findViewById<TextView>(R.id.btnSaveEntry)
+
+            val moodIds = listOf(R.id.moodHappy, R.id.moodNeutral, R.id.moodSad, R.id.moodAngry, R.id.moodExcited)
+            val moods   = listOf("😊", "😐", "😔", "😠", "🤩")
+
+            selectedMood = existing?.mood ?: "📔"
+            tvDate.text  = if (existing != null) formatDate(existing.timestamp)
+                           else java.text.SimpleDateFormat("EEEE, d MMM yyyy", java.util.Locale.getDefault()).format(java.util.Date())
+            etTitle.setText(existing?.title ?: "")
+            etBody.setText(existing?.body   ?: "")
+            tvMoodDisp.text = selectedMood
+
+            moodIds.forEachIndexed { i, id ->
+                editorView.findViewById<TextView>(id).setOnClickListener {
+                    selectedMood = moods[i]
+                    tvMoodDisp.text = selectedMood
+                }
+            }
+
+            etBody.addTextChangedListener(object : android.text.TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+                override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {
+                    val words = s?.trim()?.split(Regex("\\s+"))?.filter { it.isNotEmpty() }?.size ?: 0
+                    tvWordCnt.text = "$words word${if (words == 1) "" else "s"}"
+                }
+                override fun afterTextChanged(s: android.text.Editable?) {}
+            })
+
+            // Replace main content view
+            setContentView(editorView)
+
+            btnBack.setOnClickListener {
+                setContentView(R.layout.activity_cloak_notepad)
+                // re-bind after re-inflate
+                val lv2    = findViewById<android.widget.ListView>(R.id.listDiaryEntries)
+                val new2   = findViewById<android.widget.ImageView>(R.id.btnNewEntry)
+                val es2    = findViewById<EditText>(R.id.etSearch)
+                val emp2   = findViewById<android.view.View>(R.id.layoutEmptyDiary)
+                allEntries = loadEntries()
+                fun refreshList2(q: String = "") {
+                    val fil = if (q.isBlank()) allEntries.toMutableList()
+                    else allEntries.filter { it.title.contains(q, true) || it.body.contains(q, true) }.toMutableList()
+                    lv2.adapter = buildAdapter(fil)
+                    emp2.visibility = if (fil.isEmpty()) android.view.View.VISIBLE else android.view.View.GONE
+                    lv2.visibility  = if (fil.isEmpty()) android.view.View.GONE else android.view.View.VISIBLE
+                }
+                refreshList2()
+                new2.setOnClickListener { openEditor() }
+                lv2.setOnItemClickListener  { _, _, pos, _ -> openEditor(allEntries[pos]) }
+                lv2.setOnItemLongClickListener { _, _, pos, _ ->
+                    val entry = allEntries[pos]
+                    // check unlock
+                    handleInput(entry.body.trim(), "NOTEPAD")
+                    // delete option
+                    androidx.appcompat.app.AlertDialog.Builder(this)
+                        .setTitle("Delete entry?")
+                        .setMessage("\"${entry.title.ifEmpty { "Untitled" }}\" will be deleted.")
+                        .setPositiveButton("Delete") { _, _ ->
+                            allEntries.removeAt(pos)
+                            saveEntries(allEntries)
+                            refreshList2()
+                        }
+                        .setNegativeButton("Cancel", null).show()
+                    true
+                }
+                es2.addTextChangedListener(object : android.text.TextWatcher {
+                    override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+                    override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) { refreshList2(s.toString()) }
+                    override fun afterTextChanged(s: android.text.Editable?) {}
+                })
+            }
+
+            btnSave.setOnClickListener {
+                val title = etTitle.text.toString().trim()
+                val body  = etBody.text.toString().trim()
+                if (body.isEmpty() && title.isEmpty()) {
+                    Toast.makeText(this, "Nothing to save.", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                // Check unlock secret BEFORE saving
+                handleInput(body, "NOTEPAD")
+
+                val ts    = existing?.timestamp ?: System.currentTimeMillis()
+                val entry = DiaryEntry(selectedMood, title, body, ts)
+                if (existing != null) {
+                    val idx = allEntries.indexOfFirst { it.timestamp == existing.timestamp }
+                    if (idx >= 0) allEntries[idx] = entry else allEntries.add(0, entry)
+                } else {
+                    allEntries.add(0, entry)
+                }
+                saveEntries(allEntries)
+                Toast.makeText(this, "Entry saved.", Toast.LENGTH_SHORT).show()
+                btnBack.performClick()
+            }
+        }
+
+        // ── Main list interactions ──
+        listView.setOnItemClickListener  { _, _, pos, _ -> openEditor(filteredEntries[pos]) }
+        listView.setOnItemLongClickListener { _, _, pos, _ ->
+            val entry = filteredEntries[pos]
+            handleInput(entry.body.trim(), "NOTEPAD")
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Delete entry?")
+                .setMessage("\"${entry.title.ifEmpty { "Untitled" }}\" will be deleted.")
+                .setPositiveButton("Delete") { _, _ ->
+                    allEntries.remove(entry)
+                    saveEntries(allEntries)
+                    refreshList(etSearch.text.toString())
+                }
+                .setNegativeButton("Cancel", null).show()
+            true
+        }
+        btnNew.setOnClickListener { openEditor() }
+        etSearch.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) { refreshList(s.toString()) }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
     }
 
+    // ─── VOICE MEMOS ─────────────────────────────────────────────────────────
     private fun setupRecorder() {
         setContentView(R.layout.activity_cloak_recorder)
-        val btn = findViewById<ImageButton>(R.id.btnRecord)
-        val tvTimer = findViewById<TextView>(R.id.tvTimer)
+
+        val tvTimer      = findViewById<TextView>(R.id.tvTimer)
+        val tvStatus     = findViewById<TextView>(R.id.tvRecordStatus)
+        val tvCount      = findViewById<TextView>(R.id.tvRecordingCount)
+        val btnRecord    = findViewById<android.widget.ImageButton>(R.id.btnRecord)
+        val listView     = findViewById<android.widget.ListView>(R.id.listRecordings)
+        val emptyLayout  = findViewById<android.view.View>(R.id.layoutEmptyRecorder)
+
+        var mediaRecorder: android.media.MediaRecorder? = null
+        var mediaPlayer:   android.media.MediaPlayer?   = null
         var isRecording = false
-        var startTimeToken = 0L
-        var tapCount = 0
+        var playingFile: String? = null
+        var recordStart = 0L
+        var longPressCount = 0
         val handler = android.os.Handler(android.os.Looper.getMainLooper())
-        
-        val timerRunnable = object : Runnable {
-            override fun run() {
-                val sec = (System.currentTimeMillis() - startTimeToken) / 1000
-                tvTimer.text = String.format("%02d:%02d:%02d", sec/3600, (sec%3600)/60, sec%60)
-                handler.postDelayed(this, 1000)
+
+        // Recordings stored in app's files dir
+        val recDir = getExternalFilesDir(null) ?: filesDir
+
+        data class Recording(val file: java.io.File, val name: String, val durationSec: Int, val date: Long)
+
+        fun loadRecordings(): MutableList<Recording> {
+            return recDir.listFiles { f -> f.extension == "m4a" }
+                ?.sortedByDescending { it.lastModified() }
+                ?.map { f ->
+                    // Duration stored in filename: "VoiceMemo_<ts>_<dur>.m4a"
+                    val parts = f.nameWithoutExtension.split("_")
+                    val dur = parts.getOrNull(2)?.toIntOrNull() ?: 0
+                    Recording(f, f.nameWithoutExtension.replace("_", " "), dur, f.lastModified())
+                }?.toMutableList() ?: mutableListOf()
+        }
+
+        fun formatDur(sec: Int): String = "%d:%02d".format(sec / 60, sec % 60)
+        fun formatDate(ts: Long): String {
+            val today = java.util.Calendar.getInstance()
+            val d = java.util.Calendar.getInstance().also { it.timeInMillis = ts }
+            return if (today.get(java.util.Calendar.DATE) == d.get(java.util.Calendar.DATE)) "Today"
+            else java.text.SimpleDateFormat("d MMM", java.util.Locale.getDefault()).format(java.util.Date(ts))
+        }
+
+        var allRecs = loadRecordings()
+
+        fun stopPlayer() {
+            mediaPlayer?.stop()
+            mediaPlayer?.release()
+            mediaPlayer = null
+            playingFile = null
+        }
+
+        fun refreshList() {
+            allRecs = loadRecordings()
+            val count = allRecs.size
+            tvCount.text = "$count memo${if (count == 1) "" else "s"}"
+            emptyLayout.visibility = if (count == 0) android.view.View.VISIBLE else android.view.View.GONE
+            listView.visibility    = if (count == 0) android.view.View.GONE else android.view.View.VISIBLE
+
+            listView.adapter = object : android.widget.BaseAdapter() {
+                override fun getCount() = allRecs.size
+                override fun getItem(p: Int) = allRecs[p]
+                override fun getItemId(p: Int) = p.toLong()
+                override fun getView(pos: Int, convert: android.view.View?, parent: android.view.ViewGroup?): android.view.View {
+                    val v = convert ?: android.view.LayoutInflater.from(this@DisguiseActivity)
+                        .inflate(R.layout.item_recording, parent, false)
+                    val rec = allRecs[pos]
+                    v.findViewById<TextView>(R.id.tvRecordingName).text = "Voice Memo ${pos + 1}"
+                    v.findViewById<TextView>(R.id.tvRecordingInfo).text =
+                        "${formatDur(rec.durationSec)}  •  ${formatDate(rec.date)}"
+
+                    val ivPlay = v.findViewById<android.widget.ImageView>(R.id.ivPlayPause)
+                    val isPlaying = playingFile == rec.file.absolutePath
+                    ivPlay.setImageResource(if (isPlaying) android.R.drawable.ic_media_pause
+                                            else android.R.drawable.ic_media_play)
+
+                    ivPlay.setOnClickListener {
+                        if (isRecording) return@setOnClickListener
+                        if (playingFile == rec.file.absolutePath) {
+                            stopPlayer()
+                        } else {
+                            stopPlayer()
+                            mediaPlayer = android.media.MediaPlayer().apply {
+                                setDataSource(rec.file.absolutePath)
+                                prepare()
+                                start()
+                                setOnCompletionListener { stopPlayer(); refreshList() }
+                            }
+                            playingFile = rec.file.absolutePath
+                        }
+                        refreshList()
+                    }
+
+                    v.findViewById<android.widget.ImageView>(R.id.ivDeleteRecording).setOnClickListener {
+                        stopPlayer()
+                        rec.file.delete()
+                        refreshList()
+                    }
+                    return v
+                }
             }
         }
-        
-        btn?.setOnClickListener {
-            tapCount++
-            handleInput(tapCount.toString(), "RECORDER")
-            
-            isRecording = !isRecording
-            if (isRecording) { 
-                startTimeToken = System.currentTimeMillis()
-                handler.post(timerRunnable)
-                btn.animate().scaleX(1.1f).scaleY(1.1f).start() 
-            } else { 
-                handler.removeCallbacks(timerRunnable)
-                btn.animate().scaleX(1.0f).scaleY(1.0f).start() 
+
+        refreshList()
+
+        // ── Timer runnable ──
+        val timerRunnable = object : Runnable {
+            override fun run() {
+                val elapsed = ((System.currentTimeMillis() - recordStart) / 1000).toInt()
+                tvTimer.text = "%02d:%02d".format(elapsed / 60, elapsed % 60)
+                handler.postDelayed(this, 500)
             }
+        }
+
+        // ── Record button ──
+        btnRecord.setOnClickListener {
+            if (isRecording) {
+                // Stop recording
+                val elapsed = ((System.currentTimeMillis() - recordStart) / 1000).toInt()
+                try { mediaRecorder?.stop() } catch (_: Exception) {}
+                mediaRecorder?.release()
+                mediaRecorder = null
+                handler.removeCallbacks(timerRunnable)
+                isRecording = false
+                tvTimer.text = "00:00"
+                tvStatus.text = "Tap to record"
+                btnRecord.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                    android.graphics.Color.parseColor("#FF3B30")))
+                refreshList()
+            } else {
+                // Start recording
+                stopPlayer()
+                longPressCount = 0  // reset on normal tap
+                val ts   = System.currentTimeMillis()
+                val file = java.io.File(recDir, "VoiceMemo_${ts}_0.m4a")
+                try {
+                    @Suppress("DEPRECATION")
+                    mediaRecorder = if (android.os.Build.VERSION.SDK_INT >= 31)
+                        android.media.MediaRecorder(this)
+                    else android.media.MediaRecorder()
+                    mediaRecorder!!.apply {
+                        setAudioSource(android.media.MediaRecorder.AudioSource.MIC)
+                        setOutputFormat(android.media.MediaRecorder.OutputFormat.MPEG_4)
+                        setAudioEncoder(android.media.MediaRecorder.AudioEncoder.AAC)
+                        setAudioSamplingRate(44100)
+                        setAudioEncodingBitRate(128000)
+                        setOutputFile(file.absolutePath)
+                        prepare()
+                        start()
+                    }
+                    recordStart = System.currentTimeMillis()
+                    isRecording = true
+                    tvStatus.text = "● Recording…"
+                    btnRecord.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                        android.graphics.Color.parseColor("#636366")))
+                    handler.post(timerRunnable)
+                } catch (e: Exception) {
+                    Toast.makeText(this, "Microphone unavailable.", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        // ── Long-press record = unlock check ──
+        btnRecord.setOnLongClickListener {
+            longPressCount++
+            vibrate(40)
+            handleInput(longPressCount.toString(), "RECORDER")
+            true
         }
     }
 
-    private fun setupCompass() {
-        setContentView(R.layout.activity_cloak_compass)
-        val compassImg = findViewById<ImageView>(R.id.ivCompass)
-        var sequence = ""
-        
-        val sequenceListener = View.OnClickListener { v ->
-            val dir = (v as Button).text.toString()
-            sequence += dir
-            handleInput(sequence, "COMPASS")
-            compassImg?.animate()?.rotation(when(dir){"N"->0f;"E"->90f;"S"->180f;"W"->270f;else->0f})?.setDuration(500)?.start()
-        }
-        findViewById<Button>(R.id.btnNorth)?.setOnClickListener(sequenceListener)
-        findViewById<Button>(R.id.btnSouth)?.setOnClickListener(sequenceListener)
-        findViewById<Button>(R.id.btnEast)?.setOnClickListener(sequenceListener)
-        findViewById<Button>(R.id.btnWest)?.setOnClickListener(sequenceListener)
-    }
 
     private fun setupCalendar() {
         setContentView(R.layout.activity_cloak_calendar)
@@ -334,15 +651,68 @@ open class DisguiseActivity : BaseActivity() {
         }
     }
 
-    private fun setupWeather() {
+    private fun setupCurrency() {
         setContentView(R.layout.activity_cloak_weather)
+        val tvCity    = findViewById<TextView>(R.id.tvCity)
+        val tvTemp    = findViewById<TextView>(R.id.tvTemp)
+        val tvDesc    = findViewById<android.widget.TextView>(R.id.tvCurrencyDesc)
         val ivRefresh = findViewById<ImageView>(R.id.ivWeatherRefresh)
-        var tapCount = 0
+        var tapCount  = 0
+
+        tvCity.text = "💱  Exchange Rates"
+        tvTemp.text = "--"
+        tvDesc?.text = "Tap ↻ to refresh"
+
+        fun fetchRates() {
+            tvTemp.text = "…"
+            Thread {
+                try {
+                    val url  = java.net.URL("https://open.er-api.com/v6/latest/USD")
+                    val conn = url.openConnection() as java.net.HttpURLConnection
+                    conn.connectTimeout = 8_000
+                    conn.readTimeout    = 8_000
+                    val json = conn.inputStream.bufferedReader().readText()
+                    conn.disconnect()
+
+                    // Parse a few key pairs from the JSON manually (no extra lib needed)
+                    fun parseRate(key: String): String {
+                        val pattern = Regex("\"$key\"\\s*:\\s*([0-9.]+)")
+                        return pattern.find(json)?.groupValues?.get(1)
+                            ?.toDoubleOrNull()?.let { "%.4f".format(it) } ?: "N/A"
+                    }
+
+                    val eur = parseRate("EUR")
+                    val gbp = parseRate("GBP")
+                    val inr = parseRate("INR")
+                    val jpy = parseRate("JPY")
+                    val aed = parseRate("AED")
+
+                    runOnUiThread {
+                        tvTemp.text = "1 USD"
+                        tvDesc?.text =
+                            "EUR  $eur\n" +
+                            "GBP  $gbp\n" +
+                            "INR  $inr\n" +
+                            "JPY  $jpy\n" +
+                            "AED  $aed"
+                    }
+                } catch (e: Exception) {
+                    runOnUiThread {
+                        tvTemp.text  = "--"
+                        tvDesc?.text = "No connection"
+                    }
+                }
+            }.start()
+        }
+
+        fetchRates()
+
         ivRefresh?.setOnClickListener {
             tapCount++
             handleInput(tapCount.toString(), "WEATHER")
             vibrate(20)
             it.animate().rotationBy(360f).setDuration(500).start()
+            fetchRates()
         }
     }
 
@@ -358,39 +728,6 @@ open class DisguiseActivity : BaseActivity() {
         }
     }
 
-    private fun setupFlashlight() {
-        setContentView(R.layout.activity_cloak_flashlight)
-        val switch = findViewById<ImageView>(R.id.ivFlashlightSwitch)
-        val beam = findViewById<View>(R.id.vFlashlightBeam)
-        var isOn = false
-        var toggleCount = 0
-        val cameraManager = getSystemService(Context.CAMERA_SERVICE) as android.hardware.camera2.CameraManager
-        val cameraId = try { cameraManager.cameraIdList[0] } catch (e: Exception) { null }
- 
-        switch?.setOnClickListener {
-            isOn = !isOn
-            toggleCount++
-            handleInput(toggleCount.toString(), "FLASHLIGHT")
-            
-            switch.rotation = if (isOn) 180f else 0f
-            switch.setColorFilter(if (isOn) android.graphics.Color.YELLOW else android.graphics.Color.GRAY)
-            beam?.visibility = if (isOn) View.VISIBLE else View.GONE
-            if (cameraId != null) try { cameraManager.setTorchMode(cameraId, isOn) } catch (e: Exception) {}
-        }
-    }
-
-    private fun setupRadio() {
-        setContentView(R.layout.activity_cloak_radio)
-        val tvFreq = findViewById<TextView>(R.id.tvFrequency)
-        findViewById<SeekBar>(R.id.seekBarFrequency)?.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: SeekBar?, p: Int, b: Boolean) {
-                tvFreq?.text = String.format("%.1f", p/10.0)
-                handleInput(p.toString(), "RADIO")
-            }
-            override fun onStartTrackingTouch(sb: SeekBar?) {}
-            override fun onStopTrackingTouch(sb: SeekBar?) {}
-        })
-    }
 
     private fun unlock(goToSettings: Boolean = false) {
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)

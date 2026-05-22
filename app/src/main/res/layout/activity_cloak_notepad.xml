@@ -3,46 +3,95 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#FFFFFF">
+    android:background="#FAFAFA">
 
+    <!-- ── Top Bar ── -->
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="#F8F8F8"
+        android:layout_height="56dp"
+        android:background="#FFFFFF"
+        android:elevation="2dp"
         android:paddingHorizontal="16dp">
 
         <TextView
-            android:id="@+id/tvNotepadLabel"
+            android:id="@+id/tvDiaryTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
-            android:text="Notes"
-            android:textColor="#000000"
+            android:text="Diary"
+            android:textColor="#1C1C1E"
             android:textSize="20sp"
             android:fontFamily="sans-serif-medium" />
 
-        <Button
-            android:id="@+id/btnSaveNote"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+        <ImageView
+            android:id="@+id/btnNewEntry"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:text="Done"
-            android:textAllCaps="false"
-            android:textColor="#007AFF"
-            style="@style/Widget.AppCompat.Button.Borderless" />
+            android:src="@android:drawable/ic_input_add"
+            android:tint="#007AFF"
+            android:contentDescription="New entry"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="4dp" />
     </RelativeLayout>
 
+    <!-- ── Search bar ── -->
     <EditText
-        android:id="@+id/etNoteContent"
+        android:id="@+id/etSearch"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="top"
-        android:padding="20dp"
-        android:hint="Start typing..."
-        android:background="@null"
-        android:textColor="#333333"
-        android:textSize="18sp"
-        android:lineSpacingExtra="4dp" />
+        android:layout_height="40dp"
+        android:layout_margin="12dp"
+        android:background="#EFEFEF"
+        android:hint="🔍  Search entries…"
+        android:textSize="14sp"
+        android:textColor="#1C1C1E"
+        android:textColorHint="#8E8E93"
+        android:paddingHorizontal="14dp"
+        android:inputType="text"
+        android:imeOptions="actionSearch" />
+
+    <!-- ── Entries list ── -->
+    <ListView
+        android:id="@+id/listDiaryEntries"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:divider="#F0F0F0"
+        android:dividerHeight="1dp" />
+
+    <!-- ── Empty state ── -->
+    <LinearLayout
+        android:id="@+id/layoutEmptyDiary"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📔"
+            android:textSize="48sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No entries yet"
+            android:textSize="16sp"
+            android:textColor="#8E8E93"
+            android:layout_marginTop="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tap + to write your first entry"
+            android:textSize="13sp"
+            android:textColor="#C7C7CC"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
 
 </LinearLayout>
