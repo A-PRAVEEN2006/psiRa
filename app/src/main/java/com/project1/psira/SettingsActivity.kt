@@ -16,35 +16,22 @@ class SettingsActivity : BaseActivity() {
         window.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE, android.view.WindowManager.LayoutParams.FLAG_SECURE)
         setContentView(R.layout.activity_settings)
 
-        val btnConfigureCloak = findViewById<View>(R.id.btnConfigureCloak)
-        val btnSecurityFamily = findViewById<View>(R.id.btnSecurityFamily)
         val btnChangeName     = findViewById<View>(R.id.btnChangeName)
-        val btnSystemFamily   = findViewById<View>(R.id.btnSystemFamily)
+        val btnChangePassword = findViewById<View>(R.id.btnChangePassword)
+        val btnConfigureCloak = findViewById<View>(R.id.btnConfigureCloak)
+        val btnLogicConfig    = findViewById<View>(R.id.btnLogicConfig)
+        val btnPanicCode      = findViewById<View>(R.id.btnPanicCode)
+        val btnDoubleLayer    = findViewById<View>(R.id.btnDoubleLayer)
+        val btnThemeSelection = findViewById<View>(R.id.btnThemeSelection)
+        val btnToggleTor      = findViewById<View>(R.id.btnToggleTor)
+        val btnVerifyTor      = findViewById<View>(R.id.btnVerifyTor)
+        val btnWipeCache      = findViewById<View>(R.id.btnWipeCache)
+        val btnDecoyBriefing  = findViewById<View>(R.id.btnDecoyBriefing)
+        val btnReportAgent    = findViewById<View>(R.id.btnReportAgent)
+        val btnAbout          = findViewById<View>(R.id.btnAbout)
 
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
 
-        // 1. STEALTH MASK - SEPARATE
-        btnConfigureCloak.setOnClickListener { showMaskSelector() }
-
-        // 2. SECURITY SETTINGS
-        btnSecurityFamily.setOnClickListener {
-            val options = listOf(
-                "Change Main App Password",
-                "Configure Disguise Codes",
-                "Set Self-Destruct Code",
-                "Enable Double Protection"
-            )
-            PsiRaDialogs.showOptionsSheet(this, "SECURITY SETTINGS", options) { index ->
-                when (index) {
-                    0 -> showStealthPasscodeEditor()
-                    1 -> showLogicConfigSelector()
-                    2 -> showPanicCodeEditor()
-                    3 -> toggleDoubleLayer()
-                }
-            }
-        }
-
-        // 3. PROFILE SETTINGS
         btnChangeName.setOnClickListener {
             val input = EditText(this)
             val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
@@ -63,60 +50,38 @@ class SettingsActivity : BaseActivity() {
             }
         }
 
-        // 4. GENERAL SETTINGS
-        btnSystemFamily.setOnClickListener {
-            val options = listOf(
-                "Clear Local Data",
-                "About This App",
-                "How to use Disguises",
-                "Report an Agent"
-            )
-            PsiRaDialogs.showOptionsSheet(this, "SYSTEM SETTINGS", options) { index ->
-                when (index) {
-                    0 -> wipeCache()
-                    1 -> showAbout()
-                    2 -> showDecoyBriefing()
-                    3 -> showReportAgentDialog()
-                }
-            }
-        }
-
-        val btnThemeSelection = findViewById<View>(R.id.btnThemeSelection)
+        btnChangePassword.setOnClickListener { showStealthPasscodeEditor() }
+        btnConfigureCloak.setOnClickListener { showMaskSelector() }
+        btnLogicConfig.setOnClickListener { showLogicConfigSelector() }
+        btnPanicCode.setOnClickListener { showPanicCodeEditor() }
+        btnDoubleLayer.setOnClickListener { toggleDoubleLayer() }
         btnThemeSelection.setOnClickListener { showThemeSelector() }
 
-        // ── TOR Settings ──────────────────────────────────────────────────────
-        val btnTorSettings = findViewById<View>(R.id.btnTorSettings)
-        btnTorSettings.setOnClickListener {
+        btnToggleTor.setOnClickListener {
             val isTorOnNow = sharedPref.getBoolean("TOR_MODE", false)
-            val toggleLabel = if (isTorOnNow) "Disable Tor Mode (Use Direct)" else "Enable Tor Mode (Anonymize IP)"
-            val options = listOf(
-                toggleLabel,
-                "Verify Tor Connection Status"
-            )
-            PsiRaDialogs.showOptionsSheet(this, "TOR NETWORK SETTINGS", options) { index ->
-                when (index) {
-                    0 -> {
-                        val newTorMode = !isTorOnNow
-                        sharedPref.edit().putBoolean("TOR_MODE", newTorMode).apply()
-                        applyTorProxy(newTorMode)
-                        
-                        val msg = if (newTorMode)
-                            "🧅 TOR Mode ON — Your IP is now hidden. Speed reduced ~3×."
-                        else
-                            "⚡ Direct Mode ON — Full speed. E2EE still active."
-                        Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
-                    }
-                    1 -> {
-                        Toast.makeText(this, "Verifying Tor routing...", Toast.LENGTH_SHORT).show()
-                        verifyTorConnection { result ->
-                            runOnUiThread {
-                                showTorVerifyResult(result)
-                            }
-                        }
-                    }
+            val newTorMode = !isTorOnNow
+            sharedPref.edit().putBoolean("TOR_MODE", newTorMode).apply()
+            applyTorProxy(newTorMode)
+            val msg = if (newTorMode)
+                "🧅 TOR Mode ON — Your IP is now hidden. Speed reduced ~3×."
+            else
+                "⚡ Direct Mode ON — Full speed. E2EE still active."
+            Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+        }
+
+        btnVerifyTor.setOnClickListener {
+            Toast.makeText(this, "Verifying Tor routing...", Toast.LENGTH_SHORT).show()
+            verifyTorConnection { result ->
+                runOnUiThread {
+                    showTorVerifyResult(result)
                 }
             }
         }
+
+        btnWipeCache.setOnClickListener { wipeCache() }
+        btnDecoyBriefing.setOnClickListener { showDecoyBriefing() }
+        btnReportAgent.setOnClickListener { showReportAgentDialog() }
+        btnAbout.setOnClickListener { showAbout() }
     }
 
     /**
