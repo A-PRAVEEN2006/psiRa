@@ -32,14 +32,23 @@ object PsiRaDialogs {
             container.addView(optionalView)
         }
         
-        val btnConfirm = view.findViewById<Button>(R.id.btnConfirm)
+        val btnConfirm = view.findViewById<android.widget.Button>(R.id.btnConfirm)
         btnConfirm.text = confirmText
+        val isDangerous = confirmText.contains("WIPE", true) || 
+                          confirmText.contains("DELETE", true) || 
+                          confirmText.contains("DESTROY", true) || 
+                          confirmText.contains("SHRED", true) || 
+                          confirmText.contains("REMOVE", true)
+        val bgRes = if (isDangerous) R.drawable.bg_rounded_danger else R.drawable.bg_rounded_primary
+        btnConfirm.setBackgroundResource(bgRes)
+        
         btnConfirm.setOnClickListener {
             onConfirm()
             dialog.dismiss()
         }
         
-        view.findViewById<Button>(R.id.btnCancel).setOnClickListener {
+        val btnCancel = view.findViewById<android.widget.Button>(R.id.btnCancel)
+        btnCancel.setOnClickListener {
             dialog.dismiss()
         }
         

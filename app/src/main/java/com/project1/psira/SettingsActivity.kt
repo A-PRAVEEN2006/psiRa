@@ -33,11 +33,23 @@ class SettingsActivity : BaseActivity() {
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
 
         btnChangeName.setOnClickListener {
-            val input = EditText(this)
+            val pad = (16 * resources.displayMetrics.density).toInt()
+            val padV = (14 * resources.displayMetrics.density).toInt()
+            val input = EditText(this).apply {
+                layoutParams = android.view.ViewGroup.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+                val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+                setText(user?.displayName ?: "")
+                hint = "Your Name"
+                setTextColor(android.graphics.Color.WHITE)
+                setHintTextColor(android.graphics.Color.GRAY)
+                setBackgroundResource(R.drawable.bg_rounded_input)
+                setPadding(pad, padV, pad, padV)
+                setSingleLine(true)
+            }
             val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
-            input.setText(user?.displayName ?: "")
-            input.hint = "Your Name"
-            input.setTextColor(android.graphics.Color.WHITE)
             PsiRaDialogs.showDeleteSheet(this, "PROFILE SETTINGS", "Change your public name in the chat.", "SAVE", input) {
                 val newName = input.text.toString().trim()
                 if (newName.isNotEmpty()) {
@@ -204,19 +216,17 @@ class SettingsActivity : BaseActivity() {
             )
         }
 
+        val pad = (16 * resources.displayMetrics.density).toInt()
+        val padTop = (12 * resources.displayMetrics.density).toInt()
         val tv = android.widget.TextView(this).apply {
             text     = message
-            setPadding(48, 32, 48, 16)
+            setPadding(pad, padTop, pad, pad)
             setTextColor(android.graphics.Color.parseColor(color))
-            textSize = 13f
+            textSize = 14f
             setLineSpacing(4f, 1f)
         }
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle(title)
-            .setView(tv)
-            .setPositiveButton("CLOSE", null)
-            .show()
+        PsiRaDialogs.showDeleteSheet(this, title, "", "CLOSE", tv) {}
     }
 
     private fun showMaskSelector() {
@@ -239,10 +249,21 @@ class SettingsActivity : BaseActivity() {
 
     private fun showStealthPasscodeEditor() {
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
-        val input = EditText(this)
-        input.hint = "New Password"
-        input.setText(sharedPref.getString("VAULT_PASS", "unlockpsira"))
-        input.setTextColor(android.graphics.Color.WHITE)
+        val pad = (16 * resources.displayMetrics.density).toInt()
+        val padV = (14 * resources.displayMetrics.density).toInt()
+        val input = EditText(this).apply {
+            layoutParams = android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            hint = "New Password"
+            setText(sharedPref.getString("VAULT_PASS", "unlockpsira"))
+            setTextColor(android.graphics.Color.WHITE)
+            setHintTextColor(android.graphics.Color.GRAY)
+            setBackgroundResource(R.drawable.bg_rounded_input)
+            setPadding(pad, padV, pad, padV)
+            setSingleLine(true)
+        }
         PsiRaDialogs.showDeleteSheet(this, "APP PASSWORD", "Set the code to unlock the app from your disguise.", "SAVE", input) {
             val v = input.text.toString().trim()
             if (v.isNotEmpty()) {
@@ -258,10 +279,22 @@ class SettingsActivity : BaseActivity() {
 
     private fun showPanicCodeEditor() {
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
-        val input = EditText(this)
-        input.hint = "4-Digit PIN"
-        input.setText(sharedPref.getString("PANIC_PASSCODE", ""))
-        input.setTextColor(android.graphics.Color.WHITE)
+        val pad = (16 * resources.displayMetrics.density).toInt()
+        val padV = (14 * resources.displayMetrics.density).toInt()
+        val input = EditText(this).apply {
+            layoutParams = android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            hint = "4-Digit PIN"
+            setText(sharedPref.getString("PANIC_PASSCODE", ""))
+            setTextColor(android.graphics.Color.WHITE)
+            setHintTextColor(android.graphics.Color.GRAY)
+            setBackgroundResource(R.drawable.bg_rounded_input)
+            setPadding(pad, padV, pad, padV)
+            setSingleLine(true)
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+        }
         PsiRaDialogs.showDeleteSheet(this, "SELF-DESTRUCT CODE", "If you enter this code into any disguise, all your local data will be deleted.", "SAVE", input) {
             val v = input.text.toString().trim()
             if (v.isNotEmpty()) { sharedPref.edit { putString("PANIC_PASSCODE", v) }; Toast.makeText(this, "Self-Destruct PIN set!", Toast.LENGTH_SHORT).show() }
@@ -284,16 +317,36 @@ class SettingsActivity : BaseActivity() {
     }
 
     private fun showReportAgentDialog() {
-        val input = EditText(this)
-        input.hint = "Agent ID (e.g. 12345)"
-        input.setTextColor(android.graphics.Color.WHITE)
-        input.inputType = android.text.InputType.TYPE_CLASS_NUMBER
+        val pad = (16 * resources.displayMetrics.density).toInt()
+        val padV = (14 * resources.displayMetrics.density).toInt()
+        val input = EditText(this).apply {
+            layoutParams = android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            hint = "Agent ID (e.g. 12345)"
+            setTextColor(android.graphics.Color.WHITE)
+            setHintTextColor(android.graphics.Color.GRAY)
+            setBackgroundResource(R.drawable.bg_rounded_input)
+            setPadding(pad, padV, pad, padV)
+            setSingleLine(true)
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+        }
         PsiRaDialogs.showDeleteSheet(this, "REPORT AGENT", "Enter the Agent ID of the user breaking rules.", "NEXT", input) {
             val agentId = input.text.toString().trim()
             if (agentId.isNotEmpty()) {
-                val reasonInput = EditText(this)
-                reasonInput.hint = "Reason"
-                reasonInput.setTextColor(android.graphics.Color.WHITE)
+                val reasonInput = EditText(this).apply {
+                    layoutParams = android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                    )
+                    hint = "Reason"
+                    setTextColor(android.graphics.Color.WHITE)
+                    setHintTextColor(android.graphics.Color.GRAY)
+                    setBackgroundResource(R.drawable.bg_rounded_input)
+                    setPadding(pad, padV, pad, padV)
+                    setSingleLine(true)
+                }
                 PsiRaDialogs.showDeleteSheet(this, "REPORT REASON", "Why are you reporting User $agentId?", "SUBMIT", reasonInput) {
                     val reason = reasonInput.text.toString().trim()
                     
