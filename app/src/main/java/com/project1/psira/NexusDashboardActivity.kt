@@ -158,12 +158,7 @@ class NexusDashboardActivity : BaseActivity() {
 
 
 
-        val btnBluetooth = findViewById<Button>(R.id.btnBluetooth)
         val btnWifiMesh = findViewById<Button>(R.id.btnWifiMesh)
-
-        btnBluetooth.setOnClickListener {
-            startActivity(Intent(this, BluetoothChatActivity::class.java))
-        }
 
         btnWifiMesh.setOnClickListener {
             startActivity(Intent(this, WifiDirectChatActivity::class.java))
@@ -206,7 +201,6 @@ class NexusDashboardActivity : BaseActivity() {
         val tvStatus = findViewById<TextView>(R.id.tvStatusIndicator)
         val btnGlobal = findViewById<Button>(R.id.btnGlobal)
         val btnWalkie = findViewById<Button>(R.id.btnWalkie)
-        val btnBluetooth = findViewById<Button>(R.id.btnBluetooth)
         val btnWifiMesh = findViewById<Button>(R.id.btnWifiMesh)
         val nexusTitle = findViewById<TextView>(R.id.nexusTitle)
         
@@ -222,7 +216,6 @@ class NexusDashboardActivity : BaseActivity() {
             btnWalkie.setBackgroundColor(android.graphics.Color.parseColor("#B71C1C"))
             btnWalkie.setTextColor(android.graphics.Color.WHITE)
 
-            btnBluetooth.setBackgroundColor(android.graphics.Color.parseColor("#1976D2")) // Active Blue
             btnWifiMesh.setBackgroundColor(android.graphics.Color.parseColor("#0097A7")) // Active Cyan
         } else {
             tvStatus.text = "STATUS: ONLINE"
@@ -236,7 +229,6 @@ class NexusDashboardActivity : BaseActivity() {
             btnWalkie.setBackgroundColor(android.graphics.Color.parseColor("#16213E"))
             btnWalkie.setTextColor(android.graphics.Color.parseColor("#7B61FF"))
 
-            btnBluetooth.setBackgroundColor(android.graphics.Color.parseColor("#0D47A1"))
             btnWifiMesh.setBackgroundColor(android.graphics.Color.parseColor("#006064"))
         }
     }

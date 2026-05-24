@@ -122,7 +122,10 @@ class DirectChatActivity : BaseActivity() {
         ECDHKeyManager.deriveSharedKey(
             this, targetUid!!,
             onReady = { _ ->
-                runOnUiThread { secureStatusText.text = "🔒 E2EE DIRECT LINK: $displayName" }
+                runOnUiThread { 
+                    secureStatusText.text = "🔒 E2EE DIRECT LINK: $displayName" 
+                    reDecryptMessages()
+                }
             },
             onError = { err ->
                 runOnUiThread {
@@ -403,5 +406,23 @@ class DirectChatActivity : BaseActivity() {
                 }
             }
         }.start()
+    }
+
+    private fun reDecryptMessages() {
+        val target = targetUid ?: return
+        var updated = false
+        for (i in 0 until messageList.size) {
+            val msg = messageList[i]
+            if (msg.type == "text") {
+                val decrypted = ECDHKeyManager.decryptFromContact(this, target, msg.content ?: "")
+                if (decrypted != msg.content) {
+                    messageList[i] = msg.copy(content = decrypted)
+                    updated = true
+                }
+            }
+        }
+        if (updated) {
+            messageAdapter.notifyDataSetChanged()
+        }
     }
 }

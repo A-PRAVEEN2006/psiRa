@@ -334,7 +334,7 @@ class SettingsActivity : BaseActivity() {
                     val reason = reasonInput.text.toString().trim()
                     
                     // Fetch last 5 messages for context
-                    FirebaseDatabase.getInstance().getReference("messages").child("global_chat")
+                    FirebaseDatabase.getInstance().getReference("global_protocol")
                         .limitToLast(5).get().addOnSuccessListener { snapshot ->
                             val messages = snapshot.children.mapNotNull { 
                                 it.child("sender").getValue(String::class.java) + ": " + it.child("content").getValue(String::class.java)

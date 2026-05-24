@@ -37,12 +37,12 @@ object ECDHKeyManager {
      * Once both devices have ECDH keys, all messages use the derived key instead.
      */
     private val SHARED_FALLBACK_KEY = javax.crypto.spec.SecretKeySpec(
-        "PsiRa_SharedNet_32ByteSecureKey!".toByteArray(Charsets.UTF_8),
+        "PsiRa_SharedNet__32ByteSecureKey".toByteArray(Charsets.UTF_8),
         "AES"
     )
 
-    // In-memory cache of derived keys — avoids re-computing on every message
-    private val sharedKeyCache = HashMap<String, SecretKey>()
+    // Cache stores Pair(theirPublicKeyB64, derivedSecretKey)
+    private val sharedKeyCache = HashMap<String, Pair<String, SecretKey>>()
 
     // ── Key Pair Lifecycle ────────────────────────────────────────────────────
 
@@ -52,8 +52,19 @@ object ECDHKeyManager {
      */
     fun initializeKeys(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        var keysValid = false
         if (prefs.getString(PREF_PRIV_KEY, null) != null) {
-            // Keys already exist — re-upload public key in case it was lost
+            try {
+                loadPrivateKey(context)
+                keysValid = true
+            } catch (e: Exception) {
+                // Stored key cannot be decrypted (Keystore invalidated/reset).
+                // Force regeneration of new EC keys.
+            }
+        }
+
+        if (keysValid) {
+            // Keys already exist and are valid — re-upload public key in case it was lost
             uploadPublicKey(context)
             return
         }
@@ -98,16 +109,21 @@ object ECDHKeyManager {
         onReady: (SecretKey) -> Unit,
         onError: (String) -> Unit
     ) {
-        sharedKeyCache[contactUid]?.let { onReady(it); return }
-
         fetchContactPublicKey(contactUid) { theirPubB64 ->
             if (theirPubB64 == null) {
                 onError("Contact has no E2EE key. Ask them to open the app once.")
                 return@fetchContactPublicKey
             }
+            
+            val cached = sharedKeyCache[contactUid]
+            if (cached != null && cached.first == theirPubB64) {
+                onReady(cached.second)
+                return@fetchContactPublicKey
+            }
+
             try {
                 val key = computeSharedKey(context, theirPubB64)
-                sharedKeyCache[contactUid] = key
+                sharedKeyCache[contactUid] = Pair(theirPubB64, key)
                 onReady(key)
             } catch (e: Exception) {
                 onError("Key derivation failed: ${e.message}")
@@ -144,7 +160,7 @@ object ECDHKeyManager {
         ciphertext: String
     ): String {
         // 1. Try ECDH-derived key first (best security)
-        val ecdhKey = sharedKeyCache[contactUid]
+        val ecdhKey = sharedKeyCache[contactUid]?.second
         if (ecdhKey != null) {
             try { return AESEncryption.decryptWithKey(ciphertext, ecdhKey) } catch (_: Exception) {}
         }

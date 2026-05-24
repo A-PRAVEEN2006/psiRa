@@ -155,7 +155,6 @@
         <activity android:name=".StealthDetailActivity" android:exported="false" />
         <activity android:name=".NoteEditorActivity" android:exported="false" />
         <activity android:name=".GodDashboardActivity" android:exported="false" />
-        <activity android:name=".BluetoothChatActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".WifiDirectChatActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".NexusLinkActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".CallActivity" android:exported="false" android:screenOrientation="portrait"/>

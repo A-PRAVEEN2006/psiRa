@@ -268,7 +268,7 @@ class ChatActivity : BaseActivity() {
         if (type == "text") {
             try {
                 val textToSend = if (encodeCipher) PsiRaConverter.encode(content) else content
-                val encrypted = AESEncryption.encrypt(textToSend)
+                val encrypted = AESEncryption.encryptWithKey(textToSend, AESEncryption.GLOBAL_GROUP_KEY)
                 db.push().setValue(Message(null, senderName, encrypted, isBurnable, type)).addOnFailureListener { e ->
                      Toast.makeText(this, "Transmission failed: ${e.message}", Toast.LENGTH_LONG).show()
                 }

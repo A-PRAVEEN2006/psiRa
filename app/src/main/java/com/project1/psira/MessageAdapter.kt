@@ -82,11 +82,10 @@ class MessageAdapter(
             "text" -> {
                 val displayText = if (alreadyDecrypted) {
                     // Already decrypted by the activity — show as-is
-                    // (PsiRa cipher symbols are intentional — receiver sees the cipher)
                     message.content ?: ""
                 } else {
                     // Group chat path — decrypt with global AES key
-                    try { AESEncryption.decrypt(message.content!!) }
+                    try { AESEncryption.decryptWithKey(message.content!!, AESEncryption.GLOBAL_GROUP_KEY) }
                     catch (e: Exception) { message.content ?: "" }
                 }
                 holder.textMessage?.text = displayText
@@ -190,43 +189,118 @@ class MessageAdapter(
 
 
     private fun saveFileToLocal(context: Context, url: String, fileName: String) {
-        try {
-            if (url.startsWith("data:")) {
+        if (url.startsWith("data:")) {
+            try {
                 val base64Data = url.substringAfter("base64,")
                 val decodedBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
-                
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                    val resolver = context.contentResolver
-                    val contentValues = android.content.ContentValues().apply {
-                        put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, "PsiRa_$fileName")
-                        put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_DOWNLOADS)
-                    }
-                    val uri = resolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
-                    if (uri != null) {
-                        resolver.openOutputStream(uri)?.use { it.write(decodedBytes) }
-                        Toast.makeText(context, "Encryption bypass successful. Saving to Downloads...", Toast.LENGTH_LONG).show()
-                    }
-                } else {
-                    @Suppress("DEPRECATION")
-                    val destDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
-                    val destFile = java.io.File(destDir, "PsiRa_$fileName")
-                    destFile.writeBytes(decodedBytes)
-                    Toast.makeText(context, "Encryption bypass successful. Saving to Downloads...", Toast.LENGTH_LONG).show()
-                }
-                return
+                writeBytesToStorage(context, decodedBytes, fileName)
+            } catch (e: Exception) {
+                Toast.makeText(context, "Save failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                e.printStackTrace()
             }
+        } else if (url.startsWith("http://") || url.startsWith("https://")) {
+            Toast.makeText(context, "Downloading secure asset...", Toast.LENGTH_SHORT).show()
+            Thread {
+                try {
+                    val conn = java.net.URL(url).openConnection() as java.net.HttpURLConnection
+                    conn.connectTimeout = 15000
+                    conn.readTimeout = 15000
+                    conn.requestMethod = "GET"
+                    conn.doInput = true
+                    conn.connect()
+                    
+                    if (conn.responseCode == java.net.HttpURLConnection.HTTP_OK) {
+                        val input = conn.inputStream
+                        val decodedBytes = input.readBytes()
+                        input.close()
+                        
+                        (context as? android.app.Activity)?.runOnUiThread {
+                            writeBytesToStorage(context, decodedBytes, fileName)
+                        }
+                    } else {
+                        (context as? android.app.Activity)?.runOnUiThread {
+                            Toast.makeText(context, "Download failed: HTTP ${conn.responseCode}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    (context as? android.app.Activity)?.runOnUiThread {
+                        Toast.makeText(context, "Download failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }.start()
+        } else {
+            Toast.makeText(context, "Invalid download source", Toast.LENGTH_SHORT).show()
+        }
+    }
 
-            val request = android.app.DownloadManager.Request(android.net.Uri.parse(url))
-                .setTitle("PsiRa Secure Download")
-                .setDescription("Downloading encrypted asset...")
-                .setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                .setDestinationInExternalPublicDir(android.os.Environment.DIRECTORY_DOWNLOADS, "PsiRa_$fileName")
-                .setAllowedOverMetered(true)
-                .setAllowedOverRoaming(true)
+    private fun writeBytesToStorage(context: Context, decodedBytes: ByteArray, fileName: String) {
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                val resolver = context.contentResolver
+                val contentValues = android.content.ContentValues().apply {
+                    put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, "PsiRa_$fileName")
+                    
+                    val mimeType = when {
+                        fileName.endsWith(".jpg", true) || fileName.endsWith(".jpeg", true) -> "image/jpeg"
+                        fileName.endsWith(".png", true) -> "image/png"
+                        fileName.endsWith(".m4a", true) -> "audio/mp4"
+                        fileName.endsWith(".pdf", true) -> "application/pdf"
+                        else -> "*/*"
+                    }
+                    put(android.provider.MediaStore.MediaColumns.MIME_TYPE, mimeType)
+                    
+                    val relativePath = when {
+                        mimeType.startsWith("image/") -> android.os.Environment.DIRECTORY_PICTURES
+                        mimeType.startsWith("audio/") -> android.os.Environment.DIRECTORY_MUSIC
+                        else -> android.os.Environment.DIRECTORY_DOWNLOADS
+                    }
+                    put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, relativePath)
+                    put(android.provider.MediaStore.MediaColumns.IS_PENDING, 1)
+                }
 
-            val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as android.app.DownloadManager
-            downloadManager.enqueue(request)
-            Toast.makeText(context, "Encryption bypass successful. Saving to Downloads/PsiRa...", Toast.LENGTH_LONG).show()
+                val collectionUri = when {
+                    fileName.endsWith(".jpg", true) || fileName.endsWith(".jpeg", true) || fileName.endsWith(".png", true) -> {
+                        android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                    }
+                    fileName.endsWith(".m4a", true) -> {
+                        android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+                    }
+                    else -> {
+                        android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI
+                    }
+                }
+
+                val uri = resolver.insert(collectionUri, contentValues)
+                if (uri != null) {
+                    resolver.openOutputStream(uri)?.use { it.write(decodedBytes) }
+                    contentValues.clear()
+                    contentValues.put(android.provider.MediaStore.MediaColumns.IS_PENDING, 0)
+                    resolver.update(uri, contentValues, null, null)
+                    
+                    val saveMsg = when {
+                        collectionUri == android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI -> "Saved to Pictures/PsiRa_$fileName"
+                        collectionUri == android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI -> "Saved to Music/PsiRa_$fileName"
+                        else -> "Saved to Downloads/PsiRa_$fileName"
+                    }
+                    Toast.makeText(context, saveMsg, Toast.LENGTH_LONG).show()
+                } else {
+                    throw java.io.IOException("Failed to create MediaStore entry")
+                }
+            } else {
+                @Suppress("DEPRECATION")
+                val relativePath = when {
+                    fileName.endsWith(".jpg", true) || fileName.endsWith(".jpeg", true) || fileName.endsWith(".png", true) -> android.os.Environment.DIRECTORY_PICTURES
+                    fileName.endsWith(".m4a", true) -> android.os.Environment.DIRECTORY_MUSIC
+                    else -> android.os.Environment.DIRECTORY_DOWNLOADS
+                }
+                @Suppress("DEPRECATION")
+                val destDir = android.os.Environment.getExternalStoragePublicDirectory(relativePath)
+                if (!destDir.exists()) destDir.mkdirs()
+                val destFile = java.io.File(destDir, "PsiRa_$fileName")
+                destFile.writeBytes(decodedBytes)
+                Toast.makeText(context, "Saved to ${destFile.absolutePath}", Toast.LENGTH_LONG).show()
+            }
         } catch (e: Exception) {
             Toast.makeText(context, "Save failed. Check storage permissions.", Toast.LENGTH_SHORT).show()
             e.printStackTrace()

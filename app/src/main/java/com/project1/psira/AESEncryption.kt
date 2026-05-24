@@ -20,6 +20,11 @@ import javax.crypto.spec.GCMParameterSpec
  */
 object AESEncryption {
 
+    val GLOBAL_GROUP_KEY = javax.crypto.spec.SecretKeySpec(
+        "PsiRa_GlobalNet__32ByteGroupKey!".toByteArray(Charsets.UTF_8),
+        "AES"
+    )
+
     private const val KEY_ALIAS   = "PsiRaSecureKey_v2"
     private const val KEYSTORE    = "AndroidKeyStore"
     private const val ALGO        = "AES/GCM/NoPadding"
@@ -30,7 +35,11 @@ object AESEncryption {
 
     private fun getOrCreateKey(): SecretKey {
         val keyStore = KeyStore.getInstance(KEYSTORE).also { it.load(null) }
-        keyStore.getKey(KEY_ALIAS, null)?.let { return it as SecretKey }
+        try {
+            keyStore.getKey(KEY_ALIAS, null)?.let { return it as SecretKey }
+        } catch (e: Exception) {
+            try { keyStore.deleteEntry(KEY_ALIAS) } catch (_: Exception) {}
+        }
 
         val spec = KeyGenParameterSpec.Builder(
             KEY_ALIAS,
@@ -54,15 +63,27 @@ object AESEncryption {
      * Encrypts [value] and returns Base64( IV || ciphertext+GCM_tag ).
      */
     fun encrypt(value: String): String {
-        val cipher = Cipher.getInstance(ALGO)
-        cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey())
+        return try {
+            val cipher = Cipher.getInstance(ALGO)
+            cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey())
+            val iv         = cipher.iv                        // fresh random 12-byte IV
+            val ciphertext = cipher.doFinal(value.toByteArray(Charsets.UTF_8))
+            val combined = iv + ciphertext
+            Base64.encodeToString(combined, Base64.NO_WRAP)
+        } catch (e: Exception) {
+            // Delete key on failure (e.g. key permanently invalidated) and retry once
+            try {
+                val keyStore = KeyStore.getInstance(KEYSTORE).also { it.load(null) }
+                keyStore.deleteEntry(KEY_ALIAS)
+            } catch (_: Exception) {}
 
-        val iv         = cipher.iv                        // fresh random 12-byte IV
-        val ciphertext = cipher.doFinal(value.toByteArray(Charsets.UTF_8))
-
-        // Prepend IV so we can extract it on decrypt
-        val combined = iv + ciphertext
-        return Base64.encodeToString(combined, Base64.NO_WRAP)
+            val cipher = Cipher.getInstance(ALGO)
+            cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey())
+            val iv         = cipher.iv
+            val ciphertext = cipher.doFinal(value.toByteArray(Charsets.UTF_8))
+            val combined = iv + ciphertext
+            Base64.encodeToString(combined, Base64.NO_WRAP)
+        }
     }
 
     /**
@@ -94,8 +115,12 @@ object AESEncryption {
      */
     fun encryptWithKey(value: String, key: javax.crypto.SecretKey): String {
         val cipher = Cipher.getInstance(ALGO)
-        cipher.init(Cipher.ENCRYPT_MODE, key)
-        val combined = cipher.iv + cipher.doFinal(value.toByteArray(Charsets.UTF_8))
+        val iv = ByteArray(IV_SIZE).apply {
+            java.security.SecureRandom().nextBytes(this)
+        }
+        val spec = GCMParameterSpec(GCM_TAG_LEN, iv)
+        cipher.init(Cipher.ENCRYPT_MODE, key, spec)
+        val combined = iv + cipher.doFinal(value.toByteArray(Charsets.UTF_8))
         return Base64.encodeToString(combined, Base64.NO_WRAP)
     }
 
