@@ -3,9 +3,8 @@ package com.project1.psira
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Button
+import android.view.View
 import android.widget.EditText
-import android.widget.Switch
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.edit
@@ -17,10 +16,10 @@ class SettingsActivity : BaseActivity() {
         window.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE, android.view.WindowManager.LayoutParams.FLAG_SECURE)
         setContentView(R.layout.activity_settings)
 
-        val btnConfigureCloak = findViewById<Button>(R.id.btnConfigureCloak)
-        val btnSecurityFamily = findViewById<Button>(R.id.btnSecurityFamily)
-        val btnChangeName = findViewById<Button>(R.id.btnChangeName)
-        val btnSystemFamily = findViewById<Button>(R.id.btnSystemFamily)
+        val btnConfigureCloak = findViewById<View>(R.id.btnConfigureCloak)
+        val btnSecurityFamily = findViewById<View>(R.id.btnSecurityFamily)
+        val btnChangeName     = findViewById<View>(R.id.btnChangeName)
+        val btnSystemFamily   = findViewById<View>(R.id.btnSystemFamily)
 
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
 
@@ -82,11 +81,11 @@ class SettingsActivity : BaseActivity() {
             }
         }
 
-        val btnThemeSelection = findViewById<Button>(R.id.btnThemeSelection)
+        val btnThemeSelection = findViewById<View>(R.id.btnThemeSelection)
         btnThemeSelection.setOnClickListener { showThemeSelector() }
 
         // ── TOR Settings ──────────────────────────────────────────────────────
-        val btnTorSettings = findViewById<Button>(R.id.btnTorSettings)
+        val btnTorSettings = findViewById<View>(R.id.btnTorSettings)
         btnTorSettings.setOnClickListener {
             val isTorOnNow = sharedPref.getBoolean("TOR_MODE", false)
             val toggleLabel = if (isTorOnNow) "Disable Tor Mode (Use Direct)" else "Enable Tor Mode (Anonymize IP)"
