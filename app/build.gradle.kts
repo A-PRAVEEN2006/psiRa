@@ -11,24 +11,13 @@ android {
         applicationId = "com.project1.psira"
         minSdk = 26
         targetSdk = 34
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 1
+        versionName = "1.0"
         multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    signingConfigs {
-        create("release") {
-            val props = java.util.Properties()
-            val keyFile = rootProject.file("keystore.properties")
-            if (keyFile.exists()) props.load(keyFile.inputStream())
-            storeFile     = props.getProperty("storeFile")?.let { rootProject.file(it) }
-            storePassword = props.getProperty("storePassword") ?: ""
-            keyAlias      = props.getProperty("keyAlias") ?: ""
-            keyPassword   = props.getProperty("keyPassword") ?: ""
-        }
-    }
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -36,7 +25,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
