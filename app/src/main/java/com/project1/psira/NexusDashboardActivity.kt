@@ -20,6 +20,10 @@ class NexusDashboardActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_nexus_dashboard)
+
+        // Check for updates via Firebase RTDB
+        val updateManager = UpdateManager(this)
+        updateManager.checkUpdate()
         
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
         val currentUser = FirebaseAuth.getInstance().currentUser

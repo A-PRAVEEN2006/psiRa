@@ -5,23 +5,42 @@
     android:layout_height="match_parent"
     android:background="#1A1A2E">
 
-    <TextView
-        android:id="@+id/tvVaultHeader"
+    <RelativeLayout
+        android:id="@+id/layoutVaultHeader"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Secure Vault"
-        android:textColor="#7B61FF"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:padding="16dp"
-        android:letterSpacing="0.05"
-        android:layout_alignParentTop="true"/>
+        android:layout_alignParentTop="true"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tvVaultHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Secure Vault"
+            android:textColor="#7B61FF"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.05"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"/>
+
+        <ImageButton
+            android:id="@+id/btnOpenSteg"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_gallery"
+            app:tint="#7B61FF"
+            android:contentDescription="Image Steganography" />
+    </RelativeLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvNotes"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/tvVaultHeader"
+        android:layout_below="@id/layoutVaultHeader"
         android:layout_above="@id/bottomNavigationView"
         android:padding="8dp"
         android:clipToPadding="false"/>

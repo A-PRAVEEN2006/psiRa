@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
@@ -152,6 +153,7 @@
         <activity android:name=".ChatsActivity" android:exported="false" />
         <activity android:name=".DirectChatActivity" android:exported="false" />
         <activity android:name=".VaultActivity" android:exported="false" />
+        <activity android:name=".StegActivity" android:exported="false" />
         <activity android:name=".StealthDetailActivity" android:exported="false" />
         <activity android:name=".NoteEditorActivity" android:exported="false" />
         <activity android:name=".GodDashboardActivity" android:exported="false" />
@@ -171,5 +173,15 @@
             android:name="com.project1.psira.CallService"
             android:foregroundServiceType="microphone"
             android:exported="false" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 </manifest>

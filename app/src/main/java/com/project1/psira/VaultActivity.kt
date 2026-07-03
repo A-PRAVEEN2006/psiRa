@@ -52,6 +52,10 @@ class VaultActivity : BaseActivity() {
             }
         }
 
+        findViewById<android.view.View>(R.id.btnOpenSteg).setOnClickListener {
+            startActivity(Intent(this, StegActivity::class.java))
+        }
+
         val rvNotes: RecyclerView = findViewById(R.id.rvNotes)
         rvNotes.layoutManager = LinearLayoutManager(this)
         noteList = ArrayList()

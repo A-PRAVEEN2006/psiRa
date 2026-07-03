@@ -45,14 +45,11 @@ open class DisguiseActivity : BaseActivity() {
     private fun handleInput(input: String, id: String) {
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
         val panicCode = sharedPref.getString("PANIC_PASSCODE", "") ?: ""
-        
+
         // Normalize input for comparison (especially for calculator)
         val normalizedInput = input.replace("×", "*").replace("÷", "/")
-        
-        val appSecret = StealthManager.getPass(this, id).replace("×", "*").replace("÷", "/")
-        val gateSecret = StealthManager.getGateway(this, id).replace("×", "*").replace("÷", "/")
-        
-        // Handle Panic Wipe
+
+        // ── 1. Panic code — bypasses rate limiter entirely ────────────────────
         if (panicCode.isNotEmpty() && normalizedInput == panicCode) {
             vibrate(500)
             sharedPref.edit().clear().apply()
@@ -61,11 +58,43 @@ open class DisguiseActivity : BaseActivity() {
             return
         }
 
-        // Standard Secret Unlock
-        if (normalizedInput == appSecret) {
-            unlock(false)
-        } else if (normalizedInput == gateSecret) {
-            unlock(true)
+        // ── 2. Rate-limit gate — block if currently locked out ────────────────
+        if (RateLimiter.isLockedOut(this)) {
+            val remaining = RateLimiter.getRemainingLockoutSeconds(this)
+            vibrate(80)
+            // Minimal toast — avoids breaking the disguise UI while still signalling
+            Toast.makeText(this, "⏳ ${remaining}s", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val appSecret  = StealthManager.getPass(this, id).replace("×", "*").replace("÷", "/")
+        val gateSecret = StealthManager.getGateway(this, id).replace("×", "*").replace("÷", "/")
+
+        // ── 3. Secret match ───────────────────────────────────────────────────
+        when {
+            normalizedInput == appSecret -> {
+                RateLimiter.resetAttempts(this)
+                unlock(false)
+            }
+            normalizedInput == gateSecret -> {
+                RateLimiter.resetAttempts(this)
+                unlock(true)
+            }
+            else -> {
+                // Only count as a failed unlock attempt if the input is intentionally short.
+                // This prevents normal Notepad diary entries (long body text) from
+                // incrementing the counter and eventually locking out the real owner.
+                val isLikelyUnlockAttempt = input.length <= 30
+                if (isLikelyUnlockAttempt && input.isNotEmpty()) {
+                    val justLocked = RateLimiter.recordFailedAttempt(this)
+                    if (justLocked) {
+                        val remaining = RateLimiter.getRemainingLockoutSeconds(this)
+                        vibrate(120)
+                        Toast.makeText(this, "⏳ ${remaining}s", Toast.LENGTH_SHORT).show()
+                    }
+                    // else: silent fail — preserves the disguise's credibility
+                }
+            }
         }
     }
 

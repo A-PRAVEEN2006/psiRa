@@ -43,6 +43,7 @@ Thumbs.db
 *.keystore
 *.pk8
 *.pem
+keystore.properties
 
 # Python files
 __pycache__/
