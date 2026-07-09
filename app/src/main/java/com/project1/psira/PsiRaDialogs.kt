@@ -24,7 +24,10 @@ object PsiRaDialogs {
         val view = LayoutInflater.from(context).inflate(R.layout.layout_delete_bottom_sheet, null)
         
         view.findViewById<TextView>(R.id.tvSheetTitle).text = title
-        view.findViewById<TextView>(R.id.tvSheetMessage).text = message
+        val tvMessage = view.findViewById<TextView>(R.id.tvSheetMessage)
+        tvMessage.text = message
+        tvMessage.autoLinkMask = android.text.util.Linkify.WEB_URLS
+        tvMessage.movementMethod = android.text.method.LinkMovementMethod.getInstance()
 
         if (optionalView != null) {
             val container = view.findViewById<android.widget.FrameLayout>(R.id.sheetInputContainer)
