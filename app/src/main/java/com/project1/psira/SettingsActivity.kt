@@ -385,7 +385,7 @@ class SettingsActivity : BaseActivity() {
 
     private fun showAbout() {
         val about = """
-            PsiRa | Overseer Build v1.5
+            PsiRa | Overseer Build v3.1.8
             ----------------------------
             THE SPECTRE ENCLAVE:
             A premium, high-fidelity secure communication network.
@@ -401,6 +401,8 @@ class SettingsActivity : BaseActivity() {
             • Zero-Footprint Registry
             
             PsiRa is built for those who operate in the shadows of the digital matrix.
+            
+            Website: https://primextech.me
         """.trimIndent()
         PsiRaDialogs.showDeleteSheet(this, "ABOUT THIS APP", about, "CLOSE") {}
     }
