@@ -26,7 +26,6 @@ object PsiRaDialogs {
         view.findViewById<TextView>(R.id.tvSheetTitle).text = title
         val tvMessage = view.findViewById<TextView>(R.id.tvSheetMessage)
         tvMessage.text = message
-        tvMessage.autoLinkMask = android.text.util.Linkify.WEB_URLS
         tvMessage.movementMethod = android.text.method.LinkMovementMethod.getInstance()
 
         if (optionalView != null) {
