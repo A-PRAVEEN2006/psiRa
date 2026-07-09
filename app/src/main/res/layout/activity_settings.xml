@@ -866,6 +866,65 @@
                     android:layout_marginStart="64dp"
                     android:background="#2A2A2A" />
 
+                <!-- Check for Updates -->
+                <LinearLayout
+                    android:id="@+id/btnCheckUpdates"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:layout_width="34dp"
+                        android:layout_height="34dp"
+                        android:text="🔄"
+                        android:gravity="center"
+                        android:textSize="18sp"
+                        android:background="@drawable/ic_settings_icon_bg"
+                        android:backgroundTint="#007AFF" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:paddingStart="14dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Check for Updates"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="15sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Verify if a newer version is available"
+                            android:textColor="#808080"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="›"
+                        android:textColor="#505050"
+                        android:textSize="22sp"
+                        android:paddingStart="8dp" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.5dp"
+                    android:layout_marginStart="64dp"
+                    android:background="#2A2A2A" />
+
                 <!-- About PsiRa -->
                 <LinearLayout
                     android:id="@+id/btnAbout"

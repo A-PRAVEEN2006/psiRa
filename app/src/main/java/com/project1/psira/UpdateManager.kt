@@ -17,7 +17,10 @@ import java.io.File
 
 class UpdateManager(private val activity: Activity) {
 
-    fun checkUpdate() {
+    fun checkUpdate(isManual: Boolean = false) {
+        if (isManual) {
+            Toast.makeText(activity, "Checking for updates...", Toast.LENGTH_SHORT).show()
+        }
         val databaseRef = FirebaseDatabase.getInstance().getReference("app_update")
         databaseRef.get().addOnSuccessListener { snapshot ->
             if (snapshot.exists()) {
@@ -36,10 +39,20 @@ class UpdateManager(private val activity: Activity) {
 
                 if (serverVersionCode > currentVersionCode) {
                     showUpdateDialog(apkUrl, changelog, forceUpdate)
+                } else {
+                    if (isManual) {
+                        Toast.makeText(activity, "App is up to date (v${packageInfo.versionName})", Toast.LENGTH_LONG).show()
+                    }
+                }
+            } else {
+                if (isManual) {
+                    Toast.makeText(activity, "No update information found.", Toast.LENGTH_SHORT).show()
                 }
             }
         }.addOnFailureListener {
-            // Silently fail if offline or unable to connect
+            if (isManual) {
+                Toast.makeText(activity, "Failed to check for updates: ${it.message}", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 

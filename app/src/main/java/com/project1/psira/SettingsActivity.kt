@@ -29,6 +29,7 @@ class SettingsActivity : BaseActivity() {
         val btnDecoyBriefing  = findViewById<View>(R.id.btnDecoyBriefing)
         val btnReportAgent    = findViewById<View>(R.id.btnReportAgent)
         val btnAbout          = findViewById<View>(R.id.btnAbout)
+        val btnCheckUpdates   = findViewById<View>(R.id.btnCheckUpdates)
 
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
 
@@ -94,6 +95,10 @@ class SettingsActivity : BaseActivity() {
         btnDecoyBriefing.setOnClickListener { showDecoyBriefing() }
         btnReportAgent.setOnClickListener { showReportAgentDialog() }
         btnAbout.setOnClickListener { showAbout() }
+        btnCheckUpdates.setOnClickListener {
+            val updateManager = UpdateManager(this)
+            updateManager.checkUpdate(isManual = true)
+        }
     }
 
     /**
