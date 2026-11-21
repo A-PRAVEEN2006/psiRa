@@ -194,6 +194,53 @@ object MediaVaultManager {
         tmpDir(ctx).listFiles()?.forEach { it.delete() }
     }
 
+    /**
+     * Exports/restores an encrypted media item back to the device's public media collection (Pictures or Movies).
+     */
+    fun exportToGallery(ctx: Context, item: VaultMediaItem): Boolean {
+        return try {
+            val encFile = File(vaultDir(ctx), item.encFileName)
+            if (!encFile.exists()) return false
+            val plainBytes = MediaVaultCipher.decryptBytes(encFile.readBytes())
+
+            val contentValues = android.content.ContentValues().apply {
+                put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, item.originalName)
+                put(android.provider.MediaStore.MediaColumns.MIME_TYPE, item.mimeType)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    val relPath = if (item.mimeType.startsWith("video/")) {
+                        android.os.Environment.DIRECTORY_MOVIES + "/PsiRa"
+                    } else {
+                        android.os.Environment.DIRECTORY_PICTURES + "/PsiRa"
+                    }
+                    put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, relPath)
+                    put(android.provider.MediaStore.MediaColumns.IS_PENDING, 1)
+                }
+            }
+
+            val tableUri = if (item.mimeType.startsWith("video/")) {
+                android.provider.MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+            } else {
+                android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+            }
+
+            val outUri = ctx.contentResolver.insert(tableUri, contentValues) ?: return false
+            ctx.contentResolver.openOutputStream(outUri)?.use { os ->
+                os.write(plainBytes)
+                os.flush()
+            }
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                contentValues.clear()
+                contentValues.put(android.provider.MediaStore.MediaColumns.IS_PENDING, 0)
+                ctx.contentResolver.update(outUri, contentValues, null, null)
+            }
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────
 
     private fun scaleBitmap(src: Bitmap, maxSide: Int): Bitmap {

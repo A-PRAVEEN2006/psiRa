@@ -45,7 +45,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center" />
 
-    <!-- Top bar with back button and filename -->
+    <!-- Top bar with back button, filename, and export button -->
     <LinearLayout
         android:id="@+id/viewerTopBar"
         android:layout_width="match_parent"
@@ -54,7 +54,7 @@
         android:gravity="center_vertical"
         android:background="#AA000000"
         android:paddingStart="8dp"
-        android:paddingEnd="16dp">
+        android:paddingEnd="8dp">
 
         <ImageButton
             android:id="@+id/btnVaultBack"
@@ -76,6 +76,15 @@
             android:ellipsize="middle"
             android:paddingStart="8dp"
             android:text="filename.jpg" />
+
+        <ImageButton
+            android:id="@+id/btnExportVaultMedia"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@android:drawable/ic_menu_save"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:tint="#FFFFFF"
+            android:contentDescription="Export to Gallery" />
     </LinearLayout>
 
 </FrameLayout>

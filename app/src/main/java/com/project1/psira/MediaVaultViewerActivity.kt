@@ -64,6 +64,27 @@ class MediaVaultViewerActivity : AppCompatActivity() {
             originalName = originalName
         )
 
+        val btnExport = findViewById<ImageButton>(R.id.btnExportVaultMedia)
+        btnExport.setOnClickListener {
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle("Export to Gallery?")
+                .setMessage("This will save an unencrypted copy of \"$originalName\" back to your device gallery.")
+                .setPositiveButton("Export") { _, _ ->
+                    uiScope.launch {
+                        val success = withContext(Dispatchers.IO) {
+                            MediaVaultManager.exportToGallery(this@MediaVaultViewerActivity, item)
+                        }
+                        if (success) {
+                            Toast.makeText(this@MediaVaultViewerActivity, "Exported to Pictures/Movies", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(this@MediaVaultViewerActivity, "Export failed", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+
         progress.visibility = View.VISIBLE
 
         uiScope.launch {
