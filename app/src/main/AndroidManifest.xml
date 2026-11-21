@@ -37,6 +37,7 @@
     <application
         android:name="com.project1.psira.PsiRaApplication"
         android:allowBackup="true"
+        android:usesCleartextTraffic="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -153,6 +154,8 @@
         <activity android:name=".ChatsActivity" android:exported="false" />
         <activity android:name=".DirectChatActivity" android:exported="false" />
         <activity android:name=".VaultActivity" android:exported="false" />
+        <activity android:name=".MediaVaultActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".MediaVaultViewerActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".StegActivity" android:exported="false" />
         <activity android:name=".StealthDetailActivity" android:exported="false" />
         <activity android:name=".NoteEditorActivity" android:exported="false" />

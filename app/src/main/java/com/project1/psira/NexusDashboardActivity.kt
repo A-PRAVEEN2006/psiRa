@@ -242,7 +242,7 @@ class NexusDashboardActivity : BaseActivity() {
         usersRef.child("agentId").get().addOnSuccessListener { snapshot ->
             val value = snapshot.value?.toString()
             if (value == null || value.isEmpty()) {
-                val newId = (10000..99999).random().toString()
+                val newId = (1000000..9999999).random().toString()
                 usersRef.child("agentId").setValue(newId).addOnCompleteListener { onComplete() }
             } else {
                 onComplete()

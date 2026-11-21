@@ -220,8 +220,12 @@ class WifiDirectChatActivity : BaseActivity() {
     }
 
     private fun sendMessage(text: String) {
-        val encoded = PsiRaConverter.encode(text)
-        dataTransferThread?.write(encoded)
+        val encrypted = try {
+            AESEncryption.encryptWithKey(text, AESEncryption.GLOBAL_GROUP_KEY)
+        } catch (e: Exception) {
+            PsiRaConverter.encode(text)
+        }
+        dataTransferThread?.write(encrypted)
         messageList.add(BluetoothMessage("You", text, true))
         adapter.notifyItemInserted(messageList.size - 1)
         rvMessages.scrollToPosition(messageList.size - 1)
@@ -255,7 +259,11 @@ class WifiDirectChatActivity : BaseActivity() {
             while (true) {
                 try {
                     val received = reader.readLine() ?: break
-                    val decoded = PsiRaConverter.decodeAny(received)
+                    val decoded = try {
+                        AESEncryption.decryptWithKey(received, AESEncryption.GLOBAL_GROUP_KEY)
+                    } catch (e: Exception) {
+                        PsiRaConverter.decodeAny(received)
+                    }
                     handler.post {
                         messageList.add(BluetoothMessage("Agent", decoded, false))
                         adapter.notifyItemInserted(messageList.size - 1)

@@ -171,7 +171,12 @@ class NexusLinkActivity : BaseActivity() {
     private fun handleSend() {
         val text = etMessage.text.toString()
         if (text.isNotEmpty()) {
-            val encoded = PsiRaConverter.encode(text)
+            val encrypted = try {
+                AESEncryption.encryptWithKey(text, AESEncryption.GLOBAL_GROUP_KEY)
+            } catch (e: Exception) {
+                PsiRaConverter.encode(text)
+            }
+
             if (currentMode == LinkMode.MESH) {
                 val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
                 val targetId = etTargetId.text.toString().trim()
@@ -179,13 +184,13 @@ class NexusLinkActivity : BaseActivity() {
                 
                 val intent = Intent(this, SpectreNodeService::class.java).apply {
                     action = SpectreNodeService.ACTION_SEND_MESSAGE
-                    putExtra("message", text)
+                    putExtra("message", encrypted)
                     putExtra("alias", user?.displayName ?: "Ghost")
                     putExtra("target", finalTarget)
                 }
                 startService(intent)
             } else {
-                wfDataThread?.write(encoded)
+                wfDataThread?.write(encrypted)
             }
             
             messageList.add(SpectreMessage("You", text, true))
@@ -200,8 +205,13 @@ class NexusLinkActivity : BaseActivity() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == SpectreNodeService.BROADCAST_SPECTRE_MESSAGE) {
                 val alias = intent.getStringExtra("alias") ?: "Unknown"
-                val msg = intent.getStringExtra("message") ?: ""
-                postMessage(alias, msg)
+                val rawMsg = intent.getStringExtra("message") ?: ""
+                val decryptedMsg = try {
+                    AESEncryption.decryptWithKey(rawMsg, AESEncryption.GLOBAL_GROUP_KEY)
+                } catch (e: Exception) {
+                    PsiRaConverter.decodeAny(rawMsg)
+                }
+                postMessage(alias, decryptedMsg)
             }
         }
     }

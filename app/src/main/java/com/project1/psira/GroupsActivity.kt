@@ -199,15 +199,15 @@ class GroupsActivity : BaseActivity() {
         PsiRaDialogs.showDeleteSheet(
             this,
             "RECRUIT AGENT",
-            "Grant an agent access to vault '${group.name}'. Requires their unique 5-Digit ID.",
+            "Grant an agent access to vault '${group.name}'. Requires their unique Agent ID.",
             "RECRUIT",
             input
         ) {
             val agentId = input.text.toString().trim()
-            if (agentId.length == 5) {
+            if (agentId.length in 5..8) {
                 addMemberByAgentId(group, agentId)
             } else {
-                Toast.makeText(this, "ID must be 5 digits", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Invalid Agent ID", Toast.LENGTH_SHORT).show()
             }
         }
     }

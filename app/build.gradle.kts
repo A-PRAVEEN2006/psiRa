@@ -11,8 +11,8 @@ android {
         applicationId = "com.project1.psira"
         minSdk = 26
         targetSdk = 34
-        versionCode = 318
-        versionName = "3.1.8"
+        versionCode = 319
+        versionName = "3.2.0"
         multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -50,4 +50,8 @@ dependencies {
     implementation("com.google.firebase:firebase-storage-ktx:20.3.0")
     implementation("io.getstream:stream-webrtc-android:1.1.2")
     implementation("com.github.bumptech.glide:glide:4.16.0")
+
+    // Private Media Vault
+    implementation("androidx.media3:media3-exoplayer:1.3.1")
+    implementation("androidx.media3:media3-ui:1.3.1")
 }

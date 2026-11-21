@@ -30,6 +30,7 @@ class SettingsActivity : BaseActivity() {
         val btnReportAgent    = findViewById<View>(R.id.btnReportAgent)
         val btnAbout          = findViewById<View>(R.id.btnAbout)
         val btnCheckUpdates   = findViewById<View>(R.id.btnCheckUpdates)
+        val btnPrivateVault   = findViewById<View>(R.id.btnPrivateVault)
 
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
 
@@ -98,6 +99,14 @@ class SettingsActivity : BaseActivity() {
         btnCheckUpdates.setOnClickListener {
             val updateManager = UpdateManager(this)
             updateManager.checkUpdate(isManual = true)
+        }
+        btnPrivateVault.setOnClickListener {
+            VaultAuthHelper.authenticateAndLaunch(
+                activity    = this,
+                targetClass = MediaVaultActivity::class.java,
+                title       = "Private Media Vault",
+                subtitle    = "Authenticate to access your encrypted media"
+            )
         }
     }
 
@@ -385,7 +394,7 @@ class SettingsActivity : BaseActivity() {
 
     private fun showAbout() {
         val about = """
-            PsiRa | Overseer Build v3.1.8
+            PsiRa | Overseer Build v3.2.0
             ----------------------------
             THE SPECTRE ENCLAVE:
             A premium, high-fidelity secure communication network.

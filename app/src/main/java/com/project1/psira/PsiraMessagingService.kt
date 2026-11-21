@@ -13,36 +13,38 @@ import com.google.firebase.messaging.RemoteMessage
 class PsiraMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-        // Only show notification if we aren't currently looking at the chat
-        val title = remoteMessage.notification?.title ?: "New Encrypted Data"
-        val body = remoteMessage.notification?.body ?: "Decrypt to view message"
+        // Discrete notifications to protect camouflage
+        val title = remoteMessage.notification?.title ?: "System Notification"
+        val body = remoteMessage.notification?.body ?: "Notification received"
 
         showNotification(title, body)
     }
 
     private fun showNotification(title: String, message: String) {
-        val channelId = "psira_channel"
-        val intent = Intent(this, MainActivity::class.java) // Opens Calculator first for stealth
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        val channelId = "system_alerts_channel"
+        // Opens the active disguise activity, preserving user's configured camouflage
+        val intent = Intent(this, DisguiseActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
 
         val pendingIntent = PendingIntent.getActivity(this, 0, intent,
-            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE)
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(android.R.drawable.ic_dialog_info) // Use a generic icon for stealth
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(title)
             .setContentText(message)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(channelId, "Secure Messages", NotificationManager.IMPORTANCE_HIGH)
+            val channel = NotificationChannel(channelId, "System Updates", NotificationManager.IMPORTANCE_DEFAULT)
             notificationManager.createNotificationChannel(channel)
         }
 
-        notificationManager.notify(0, notificationBuilder.build())
+        val notifyId = (System.currentTimeMillis() % 10000).toInt()
+        notificationManager.notify(notifyId, notificationBuilder.build())
     }
 }

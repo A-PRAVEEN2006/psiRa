@@ -4,8 +4,9 @@ import android.graphics.Bitmap
 import android.graphics.Color
 
 object StegoHelper {
-    // Signature to identify that the image contains PsiRa hidden content ("PSRA")
-    private val SIGNATURE = byteArrayOf(0x50, 0x53, 0x52, 0x41)
+    // High-entropy non-ASCII signature to defeat static keyword / ASCII LSB scanners
+    private val SIGNATURE = byteArrayOf(0xA7.toByte(), 0x3F.toByte(), 0x91.toByte(), 0x5E.toByte())
+    private val LEGACY_SIGNATURE = byteArrayOf(0x50, 0x53, 0x52, 0x41) // "PSRA" legacy compatibility
 
     /**
      * Conceals [secretBytes] inside [sourceBitmap].
@@ -136,11 +137,11 @@ object StegoHelper {
             }
         }
 
-        // Verify Signature
-        for (i in 0 until 4) {
-            if (headerBytes[i] != SIGNATURE[i]) {
-                return null // Signature mismatch
-            }
+        // Verify Signature (supports high-entropy signature and legacy PSRA)
+        val matchesCurrent = (0 until 4).all { headerBytes[it] == SIGNATURE[it] }
+        val matchesLegacy = (0 until 4).all { headerBytes[it] == LEGACY_SIGNATURE[it] }
+        if (!matchesCurrent && !matchesLegacy) {
+            return null // Signature mismatch
         }
 
         // Extract Length

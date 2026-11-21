@@ -1,17 +1,11 @@
 package com.project1.psira
 
 import android.content.Context
+import android.os.SystemClock
 
 /**
  * Global brute-force rate limiter for all disguise unlock attempts.
- *
- * Rules:
- *  - MAX_ATTEMPTS consecutive failures → lockout
- *  - Lockout duration doubles each time the user hits the limit again (exponential backoff)
- *  - Panic code is exempt (evaluated before this limiter in DisguiseActivity.handleInput)
- *  - Successful unlock resets both the counter and the backoff tier
- *
- * All state is stored in PsiRaPrefs (same SharedPreferences used by the rest of the app).
+ * Uses SystemClock.elapsedRealtime() to prevent clock tampering bypasses.
  */
 object RateLimiter {
 
@@ -26,7 +20,7 @@ object RateLimiter {
 
     private const val PREFS          = "PsiRaPrefs"
     private const val KEY_FAIL_COUNT = "RATE_FAIL_COUNT"
-    private const val KEY_LAST_FAIL  = "RATE_LAST_FAIL_TIME"
+    private const val KEY_LAST_FAIL  = "RATE_LAST_FAIL_ELAPSED"
     private const val KEY_TIER       = "RATE_LOCKOUT_TIER"
 
     // ── Public API ────────────────────────────────────────────────────────────
@@ -43,12 +37,13 @@ object RateLimiter {
         val lastFail    = prefs.getLong(KEY_LAST_FAIL, 0L)
         val tier        = prefs.getInt(KEY_TIER, 0)
         val lockoutMs   = lockoutDurationMs(tier)
-        val elapsed     = System.currentTimeMillis() - lastFail
+        val now         = SystemClock.elapsedRealtime()
+        val elapsed     = now - lastFail
 
-        return if (elapsed < lockoutMs) {
+        return if (elapsed in 0 until lockoutMs) {
             true
         } else {
-            // Window expired — reset fail counter but keep tier for next round
+            // Window expired or device rebooted past window — reset fail counter but keep tier
             prefs.edit().putInt(KEY_FAIL_COUNT, 0).apply()
             false
         }
@@ -61,8 +56,14 @@ object RateLimiter {
         val prefs   = prefs(context)
         val last    = prefs.getLong(KEY_LAST_FAIL, 0L)
         val tier    = prefs.getInt(KEY_TIER, 0)
-        val elapsed = System.currentTimeMillis() - last
-        return maxOf(0L, (lockoutDurationMs(tier) - elapsed) / 1000L)
+        val now     = SystemClock.elapsedRealtime()
+        val elapsed = now - last
+        val duration = lockoutDurationMs(tier)
+        return if (elapsed in 0 until duration) {
+            maxOf(0L, (duration - elapsed) / 1000L)
+        } else {
+            0L
+        }
     }
 
     /**
@@ -76,7 +77,7 @@ object RateLimiter {
 
         prefs.edit()
             .putInt(KEY_FAIL_COUNT, newCount)
-            .putLong(KEY_LAST_FAIL, System.currentTimeMillis())
+            .putLong(KEY_LAST_FAIL, SystemClock.elapsedRealtime())
             .apply()
 
         return if (newCount >= MAX_ATTEMPTS) {

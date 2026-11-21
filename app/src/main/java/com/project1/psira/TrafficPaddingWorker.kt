@@ -44,7 +44,7 @@ object TrafficPaddingWorker {
         // Pad it to uniform size
         fakeAlien = PsiraCipher.padPayload(fakeAlien, 512)
 
-        val packetId = "DUMMY_" + UUID.randomUUID().toString()
+        val packetId = UUID.randomUUID().toString()
         
         // Push to a designated padding or general node
         val node = database.child("global_mesh").child(packetId)

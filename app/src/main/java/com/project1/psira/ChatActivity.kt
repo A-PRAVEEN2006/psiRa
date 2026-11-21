@@ -219,6 +219,22 @@ class ChatActivity : BaseActivity() {
 
 
         // 5. Send Message Logic (Using Display Name)
+        var isBurnMode = false
+        btnSend.setOnLongClickListener {
+            isBurnMode = !isBurnMode
+            vibrate(80)
+            if (isBurnMode) {
+                btnSend.setTextColor(android.graphics.Color.parseColor("#FF3B30"))
+                btnSend.text = "🔥"
+                Toast.makeText(this, "🔥 Burn-on-Read Active: Messages burn 10s after viewing", Toast.LENGTH_SHORT).show()
+            } else {
+                btnSend.setTextColor(android.graphics.Color.WHITE)
+                btnSend.text = "SEND"
+                Toast.makeText(this, "Standard Signal Mode", Toast.LENGTH_SHORT).show()
+            }
+            true
+        }
+
         btnSend.setOnClickListener {
             val text = editMessage.text.toString().trim()
             if (text.isNotEmpty()) {
@@ -226,8 +242,7 @@ class ChatActivity : BaseActivity() {
                 val impersonatingName = sharedPref.getString("IMPERSONATING_NAME", null)
                 val senderName = impersonatingName ?: user?.displayName ?: "Unknown Agent"
                 
-                val isBurnable = false
-                sendMessage(text, "text", isBurnable, senderName, isCipherMode)
+                sendMessage(text, "text", isBurnMode, senderName, isCipherMode)
                 editMessage.setText("")
             } else {
                 Toast.makeText(this, "Empty signals are rejected.", Toast.LENGTH_SHORT).show()
@@ -265,20 +280,15 @@ class ChatActivity : BaseActivity() {
     }
 
     private fun sendMessage(content: String, type: String, isBurnable: Boolean, senderName: String, encodeCipher: Boolean = false) {
-        if (type == "text") {
-            try {
-                val textToSend = if (encodeCipher) PsiRaConverter.encode(content) else content
-                val encrypted = AESEncryption.encryptWithKey(textToSend, AESEncryption.GLOBAL_GROUP_KEY)
-                db.push().setValue(Message(null, senderName, encrypted, isBurnable, type)).addOnFailureListener { e ->
-                     Toast.makeText(this, "Transmission failed: ${e.message}", Toast.LENGTH_LONG).show()
-                }
-            } catch (e: Exception) {
-                Toast.makeText(this, "Encryption failure: ${e.message}", Toast.LENGTH_LONG).show()
-            }
-        } else {
-            db.push().setValue(Message(null, senderName, content, isBurnable, type)).addOnFailureListener { e ->
+        try {
+            val textToSend = if (type == "text" && encodeCipher) PsiRaConverter.encode(content) else content
+            // Encrypt all payloads with group AES-256-GCM
+            val encrypted = AESEncryption.encryptWithKey(textToSend, AESEncryption.GLOBAL_GROUP_KEY)
+            db.push().setValue(Message(null, senderName, encrypted, isBurnable, type)).addOnFailureListener { e ->
                  Toast.makeText(this, "Transmission failed: ${e.message}", Toast.LENGTH_LONG).show()
             }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Encryption failure: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 

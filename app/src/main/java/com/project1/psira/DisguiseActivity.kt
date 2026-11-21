@@ -49,11 +49,9 @@ open class DisguiseActivity : BaseActivity() {
         // Normalize input for comparison (especially for calculator)
         val normalizedInput = input.replace("×", "*").replace("÷", "/")
 
-        // ── 1. Panic code — bypasses rate limiter entirely ────────────────────
+        // ── 1. Panic code — executes silent deep wipe & exits immediately ────
         if (panicCode.isNotEmpty() && normalizedInput == panicCode) {
-            vibrate(500)
-            sharedPref.edit().clear().apply()
-            Toast.makeText(this, "SYSTEM ERASE EXECUTED", Toast.LENGTH_LONG).show()
+            VaultAuthHelper.wipeLocalVault(this)
             finishAffinity()
             return
         }

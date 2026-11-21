@@ -36,13 +36,41 @@ open class BaseActivity : AppCompatActivity() {
         private var isAppLocked = false
         private val lockHandler = Handler(Looper.getMainLooper())
         private val lockRunnable = Runnable { isAppLocked = true }
+        val systemDefaultProxySelector: ProxySelector? = ProxySelector.getDefault()
     }
 
     private var initialThemeName: String = ""
+    private var sensorManager: android.hardware.SensorManager? = null
+    private var accelerometer: android.hardware.Sensor? = null
+
+    private val flipListener = object : android.hardware.SensorEventListener {
+        override fun onSensorChanged(event: android.hardware.SensorEvent?) {
+            if (event == null || event.sensor.type != android.hardware.Sensor.TYPE_ACCELEROMETER) return
+            if (this@BaseActivity is DisguiseActivity || this@BaseActivity is LoginActivity) return
+
+            // z < -8.5 m/s^2 indicates phone is placed flat face-down
+            val z = event.values[2]
+            if (z < -8.5f) {
+                triggerInstantStealthLock()
+            }
+        }
+        override fun onAccuracyChanged(sensor: android.hardware.Sensor?, accuracy: Int) {}
+    }
+
+    private fun triggerInstantStealthLock() {
+        val intent = Intent(this, DisguiseActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        startActivity(intent)
+        finish()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         applyTheme()
         super.onCreate(savedInstanceState)
+
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as? android.hardware.SensorManager
+        accelerometer = sensorManager?.getDefaultSensor(android.hardware.Sensor.TYPE_ACCELEROMETER)
 
         // Apply dark/light preference
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
@@ -105,6 +133,15 @@ open class BaseActivity : AppCompatActivity() {
         if (currentThemeName != initialThemeName) {
             recreate()
         }
+
+        accelerometer?.let {
+            sensorManager?.registerListener(flipListener, it, android.hardware.SensorManager.SENSOR_DELAY_UI)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        sensorManager?.unregisterListener(flipListener)
     }
 
     override fun onStop() {
@@ -215,7 +252,7 @@ open class BaseActivity : AppCompatActivity() {
 
     /**
      * Registers a global ProxySelector that routes all JVM TCP through TOR's SOCKS5 proxy.
-     * This affects all network calls in the app (Firebase, URLConnection, etc).
+     * Restores system proxy configuration cleanly when disabled.
      */
     protected fun applyTorProxy(enable: Boolean) {
         if (enable) {
@@ -226,19 +263,18 @@ open class BaseActivity : AppCompatActivity() {
                     // Route everything except localhost through TOR
                     val host = uri?.host ?: ""
                     return if (host.contains("127.0.0.1") || host.contains("localhost")) {
-                        Collections.singletonList(Proxy.NO_PROXY)
+                        systemDefaultProxySelector?.select(uri) ?: Collections.singletonList(Proxy.NO_PROXY)
                     } else {
                         Collections.singletonList(torProxy)
                     }
                 }
-                override fun connectFailed(uri: URI?, sa: java.net.SocketAddress?, ioe: java.io.IOException?) {}
+                override fun connectFailed(uri: URI?, sa: java.net.SocketAddress?, ioe: java.io.IOException?) {
+                    systemDefaultProxySelector?.connectFailed(uri, sa, ioe)
+                }
             })
         } else {
-            // Restore default direct-connection selector
-            ProxySelector.setDefault(object : ProxySelector() {
-                override fun select(uri: URI?) = Collections.singletonList(Proxy.NO_PROXY)
-                override fun connectFailed(uri: URI?, sa: java.net.SocketAddress?, ioe: java.io.IOException?) {}
-            })
+            // Restore actual system default selector (preserving VPN/corporate configs)
+            ProxySelector.setDefault(systemDefaultProxySelector)
         }
     }
 }

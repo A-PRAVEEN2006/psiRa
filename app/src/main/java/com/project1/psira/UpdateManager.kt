@@ -17,6 +17,11 @@ import java.io.File
 
 class UpdateManager(private val activity: Activity) {
 
+    companion object {
+        private const val PREFS_NAME = "PsiRaUpdatePrefs"
+        private const val KEY_DISMISSED_VERSION = "dismissed_version_code"
+    }
+
     fun checkUpdate(isManual: Boolean = false) {
         if (isManual) {
             Toast.makeText(activity, "Checking for updates...", Toast.LENGTH_SHORT).show()
@@ -38,7 +43,14 @@ class UpdateManager(private val activity: Activity) {
                 }
 
                 if (serverVersionCode > currentVersionCode) {
-                    showUpdateDialog(apkUrl, changelog, forceUpdate)
+                    // Skip if the user already dismissed this specific version
+                    // (unless it's a forced update — always show those)
+                    val prefs = activity.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                    val dismissedVersion = prefs.getInt(KEY_DISMISSED_VERSION, -1)
+                    if (!forceUpdate && !isManual && dismissedVersion == serverVersionCode) {
+                        return@addOnSuccessListener
+                    }
+                    showUpdateDialog(apkUrl, changelog, forceUpdate, serverVersionCode)
                 } else {
                     if (isManual) {
                         Toast.makeText(activity, "App is up to date (v${packageInfo.versionName})", Toast.LENGTH_LONG).show()
@@ -56,7 +68,7 @@ class UpdateManager(private val activity: Activity) {
         }
     }
 
-    private fun showUpdateDialog(apkUrl: String, changelog: String, forceUpdate: Boolean) {
+    private fun showUpdateDialog(apkUrl: String, changelog: String, forceUpdate: Boolean, serverVersionCode: Int) {
         val dialog = MaterialAlertDialogBuilder(activity)
             .setTitle("New Update Available")
             .setMessage("What's new:\n$changelog")
@@ -67,6 +79,13 @@ class UpdateManager(private val activity: Activity) {
 
         if (!forceUpdate) {
             dialog.setNegativeButton("Later", null)
+            dialog.setNeutralButton("Don't Show Again") { _, _ ->
+                // Persist the dismissed version so we never prompt for it again
+                activity.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                    .edit()
+                    .putInt(KEY_DISMISSED_VERSION, serverVersionCode)
+                    .apply()
+            }
         }
 
         dialog.show()

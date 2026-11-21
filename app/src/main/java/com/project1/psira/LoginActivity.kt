@@ -262,7 +262,7 @@ class LoginActivity : BaseActivity() {
         usersRef.child("agentId").get().addOnSuccessListener { snapshot ->
             val existing = snapshot.value?.toString()
             if (existing.isNullOrEmpty()) {
-                val newId = (10000..99999).random().toString()
+                val newId = (1000000..9999999).random().toString()
                 usersRef.child("agentId").setValue(newId).addOnCompleteListener {
                     getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
                         .edit().putString("AGENT_ID_LOCAL", newId).apply()

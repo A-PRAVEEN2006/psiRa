@@ -173,16 +173,21 @@ class DirectChatActivity : BaseActivity() {
             }
         }
 
+        val decryptedCache = HashMap<String, String>()
         db.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 messageList.clear()
                 for (postSnapshot in snapshot.children) {
                     val raw = postSnapshot.getValue(Message::class.java) ?: continue
-                    val decryptedContent = ECDHKeyManager.decryptFromContact(
-                        this@DirectChatActivity, targetUid!!, raw.content ?: ""
-                    )
+                    val msgKey = postSnapshot.key ?: ""
+                    val rawContent = raw.content ?: ""
+                    val decryptedContent = decryptedCache.getOrPut(msgKey) {
+                        ECDHKeyManager.decryptFromContact(
+                            this@DirectChatActivity, targetUid!!, rawContent
+                        )
+                    }
                     // Build a new Message with decrypted content
-                    val msg = Message(postSnapshot.key, raw.sender, decryptedContent, raw.isBurnable, raw.type)
+                    val msg = Message(msgKey, raw.sender, decryptedContent, raw.isBurnable, raw.type)
                     messageList.add(msg)
                 }
                 messageAdapter.notifyDataSetChanged()
@@ -194,13 +199,28 @@ class DirectChatActivity : BaseActivity() {
             override fun onCancelled(error: DatabaseError) {}
         })
 
+        var isBurnMode = false
+        btnSend.setOnLongClickListener {
+            isBurnMode = !isBurnMode
+            vibrate(80)
+            if (isBurnMode) {
+                btnSend.setTextColor(android.graphics.Color.parseColor("#FF3B30"))
+                btnSend.text = "🔥"
+                Toast.makeText(this, "🔥 Burn-on-Read Active: Messages burn 10s after viewing", Toast.LENGTH_SHORT).show()
+            } else {
+                btnSend.setTextColor(android.graphics.Color.WHITE)
+                btnSend.text = "SEND"
+                Toast.makeText(this, "Standard Signal Mode", Toast.LENGTH_SHORT).show()
+            }
+            true
+        }
+
         btnSend.setOnClickListener {
             val text = editMessage.text.toString().trim()
             if (text.isNotEmpty()) {
                 val user = FirebaseAuth.getInstance().currentUser
                 val senderName = user?.displayName ?: "Unknown Agent"
-                val isBurnable = false
-                sendMessage(text, "text", isBurnable, senderName, myUid, isCipherMode)
+                sendMessage(text, "text", isBurnMode, senderName, myUid, isCipherMode)
                 editMessage.setText("")
             } else {
                 Toast.makeText(this, "Empty signals are not broadcasted.", Toast.LENGTH_SHORT).show()
@@ -210,31 +230,23 @@ class DirectChatActivity : BaseActivity() {
 
 
     private fun sendMessage(content: String, type: String, isBurnable: Boolean, senderName: String, myUid: String, encodeCipher: Boolean = false) {
-        val textToSend = if (type == "text" && encodeCipher) PsiRaConverter.encode(content) else content
+        val payloadToSend = if (type == "text" && encodeCipher) PsiRaConverter.encode(content) else content
 
-        if (type == "text") {
-            // 🔐 Encrypt with ECDH-derived key (falls back to shared static key transparently)
-            ECDHKeyManager.encryptForContact(
-                this, targetUid!!, textToSend,
-                onResult = { encrypted ->
-                    db.push().setValue(Message(null, senderName, encrypted, isBurnable, type))
-                        .addOnFailureListener { e ->
-                            Toast.makeText(this, "Signal sync failed: ${e.message}", Toast.LENGTH_LONG).show()
-                        }
-                    registerContactLink(myUid)
-                },
-                onError = { _ ->
-                    // This path should not be reached — fallback always succeeds
-                    // but just in case, send raw text
-                    db.push().setValue(Message(null, senderName, textToSend, isBurnable, type))
-                    registerContactLink(myUid)
-                }
-            )
-        } else {
-            // Media/voice — content is a URL, no text encryption
-            db.push().setValue(Message(null, senderName, content, isBurnable, type))
-            registerContactLink(myUid)
-        }
+        // 🔐 End-to-end encrypt all payloads (text, voice, photo, doc) using ECDH-derived key
+        ECDHKeyManager.encryptForContact(
+            this, targetUid!!, payloadToSend,
+            onResult = { encrypted ->
+                db.push().setValue(Message(null, senderName, encrypted, isBurnable, type))
+                    .addOnFailureListener { e ->
+                        Toast.makeText(this, "Signal sync failed: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                registerContactLink(myUid)
+            },
+            onError = { _ ->
+                db.push().setValue(Message(null, senderName, payloadToSend, isBurnable, type))
+                registerContactLink(myUid)
+            }
+        )
     }
 
     private fun registerContactLink(myUid: String) {

@@ -78,32 +78,29 @@ class MessageAdapter(
         // Use the Firebase key (id) for deletion
         val messageId = message.id
 
+        val resolvedContent = if (alreadyDecrypted) {
+            message.content ?: ""
+        } else {
+            try { AESEncryption.decryptWithKey(message.content ?: "", AESEncryption.GLOBAL_GROUP_KEY) }
+            catch (e: Exception) { message.content ?: "" }
+        }
+
         when (message.type) {
             "text" -> {
-                val displayText = if (alreadyDecrypted) {
-                    // Already decrypted by the activity — show as-is
-                    message.content ?: ""
-                } else {
-                    // Group chat path — decrypt with global AES key
-                    try { AESEncryption.decryptWithKey(message.content!!, AESEncryption.GLOBAL_GROUP_KEY) }
-                    catch (e: Exception) { message.content ?: "" }
-                }
-                holder.textMessage?.text = displayText
+                holder.textMessage?.text = resolvedContent
             }
             "voice" -> {
                 holder.tvVoiceDuration?.text = "Voice Note (Encrypted)"
                 holder.btnPlayVoice?.setOnClickListener {
-                    // Start simple playback (URL from message.content)
-                    playOneAudio(context, message.content ?: "")
+                    playOneAudio(context, resolvedContent)
                 }
-
             }
             "image" -> {
                 holder.ivMessageMedia?.visibility = View.VISIBLE
                 holder.tvFileName?.visibility = View.GONE
                 holder.ivMessageMedia?.let { imageView ->
                     Glide.with(context)
-                        .load(message.content)
+                        .load(resolvedContent)
                         .placeholder(android.R.drawable.ic_menu_gallery)
                         .error(android.R.drawable.ic_menu_report_image)
                         .into(imageView)
@@ -112,7 +109,7 @@ class MessageAdapter(
             "doc" -> {
                 holder.ivMessageMedia?.visibility = View.GONE
                 holder.tvFileName?.visibility = View.VISIBLE
-                holder.tvFileName?.text = "Encrypted Doc: ${message.content?.takeLast(10)}"
+                holder.tvFileName?.text = "Encrypted Document (${resolvedContent.length / 1024} KB)"
             }
         }
 
