@@ -415,7 +415,7 @@ class SettingsActivity : BaseActivity() {
 
     private fun showAbout() {
         val about = """
-            PsiRa | Overseer Build v3.2.4
+            PsiRa | Overseer Build v3.2.5
             ----------------------------
             THE SPECTRE ENCLAVE:
             A premium, high-fidelity secure communication network.

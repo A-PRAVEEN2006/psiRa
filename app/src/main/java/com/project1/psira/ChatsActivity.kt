@@ -13,6 +13,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 
@@ -20,6 +21,11 @@ class ChatsActivity : BaseActivity() {
 
     private lateinit var chatList: ArrayList<User>
     private lateinit var chatAdapter: DirectChatAdapter
+
+    private var userDirectChatsRef: DatabaseReference? = null
+    private var chatsListener: ValueEventListener? = null
+    private val listenersMap = mutableMapOf<String, ValueEventListener>()
+    private val messageListenersMap = mutableMapOf<String, ValueEventListener>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,48 +70,129 @@ class ChatsActivity : BaseActivity() {
         val db = FirebaseDatabase.getInstance()
 
         if (currentUser != null) {
-            val listenersMap = mutableMapOf<String, ValueEventListener>()
-            db.getReference("user_direct_chats").child(currentUser.uid)
-                .addValueEventListener(object : ValueEventListener {
-                    override fun onDataChange(snapshot: DataSnapshot) {
-                        val newUids = snapshot.children.mapNotNull { it.key }
-                        
-                        // Remove items that are no longer in the list
-                        val toRemove = listenersMap.keys.filter { it !in newUids }
-                        for (uid in toRemove) {
-                            val listener = listenersMap.remove(uid)
-                            if (listener != null) {
-                                db.getReference("users").child(uid).removeEventListener(listener)
-                            }
-                            chatList.removeAll { it.uid == uid }
+            val myUid = currentUser.uid
+            userDirectChatsRef = db.getReference("user_direct_chats").child(myUid)
+            chatsListener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val newUids = snapshot.children.mapNotNull { it.key }
+                    
+                    // Remove items that are no longer in the list
+                    val toRemove = listenersMap.keys.filter { it !in newUids }
+                    for (uid in toRemove) {
+                        val listener = listenersMap.remove(uid)
+                        if (listener != null) {
+                            db.getReference("users").child(uid).removeEventListener(listener)
                         }
-                        chatAdapter.notifyDataSetChanged()
-                        
-                        for (targetUid in newUids) {
-                            if (!listenersMap.containsKey(targetUid)) {
-                                val listener = object : ValueEventListener {
-                                    override fun onDataChange(userSnap: DataSnapshot) {
-                                        val user = userSnap.getValue(User::class.java)
-                                        if (user != null) {
-                                            val fullUser = User(uid = targetUid, email = user.email, name = user.name, agentId = user.agentId, banned = user.banned, online = user.online)
-                                            val existingIndex = chatList.indexOfFirst { it.uid == targetUid }
-                                            if (existingIndex >= 0) {
-                                                chatList[existingIndex] = fullUser
-                                            } else {
-                                                chatList.add(fullUser)
-                                            }
-                                            chatAdapter.notifyDataSetChanged()
+                        val msgListener = messageListenersMap.remove(uid)
+                        if (msgListener != null) {
+                            val channelName = if (myUid < uid) "${myUid}_$uid" else "${uid}_${myUid}"
+                            db.getReference("direct_messages").child(channelName).removeEventListener(msgListener)
+                        }
+                        chatList.removeAll { it.uid == uid }
+                    }
+                    chatAdapter.notifyDataSetChanged()
+                    
+                    for (targetUid in newUids) {
+                        // User Profile listener
+                        if (!listenersMap.containsKey(targetUid)) {
+                            val listener = object : ValueEventListener {
+                                override fun onDataChange(userSnap: DataSnapshot) {
+                                    val user = userSnap.getValue(User::class.java)
+                                    if (user != null) {
+                                        val fullUser = User(uid = targetUid, email = user.email, name = user.name, agentId = user.agentId, banned = user.banned, online = user.online)
+                                        val existingIndex = chatList.indexOfFirst { it.uid == targetUid }
+                                        if (existingIndex >= 0) {
+                                            chatList[existingIndex] = fullUser
+                                        } else {
+                                            chatList.add(fullUser)
                                         }
+                                        chatList.sortByDescending { chatAdapter.getTimestamp(it.uid) }
+                                        chatAdapter.notifyDataSetChanged()
                                     }
-                                    override fun onCancelled(error: DatabaseError) {}
                                 }
-                                listenersMap[targetUid] = listener
-                                db.getReference("users").child(targetUid).addValueEventListener(listener)
+                                override fun onCancelled(error: DatabaseError) {}
                             }
+                            listenersMap[targetUid] = listener
+                            db.getReference("users").child(targetUid).addValueEventListener(listener)
+                        }
+
+                        // WhatsApp-style Channel Message Listener (Unread counts & Last Message preview)
+                        if (!messageListenersMap.containsKey(targetUid)) {
+                            val channelName = if (myUid < targetUid) "${myUid}_$targetUid" else "${targetUid}_${myUid}"
+                            val msgListener = object : ValueEventListener {
+                                override fun onDataChange(msgSnapshot: DataSnapshot) {
+                                    var unreadCount = 0
+                                    var totalReceived = 0
+                                    var lastMsg: Message? = null
+
+                                    val myDisplayName = FirebaseAuth.getInstance().currentUser?.displayName
+
+                                    for (child in msgSnapshot.children) {
+                                        val msg = child.getValue(Message::class.java) ?: continue
+                                        val isFromMe = (msg.sender == myDisplayName)
+                                        if (!isFromMe) {
+                                            totalReceived++
+                                            if (msg.status != "read") {
+                                                unreadCount++
+                                            }
+                                        }
+                                        lastMsg = msg
+                                    }
+
+                                    if (lastMsg != null) {
+                                        val isFromMe = (lastMsg.sender == myDisplayName)
+                                        var previewContent = ""
+                                        if (lastMsg.type == "text") {
+                                            val rawContent = lastMsg.content ?: ""
+                                            val decrypted = try {
+                                                ECDHKeyManager.decryptFromContact(this@ChatsActivity, targetUid, rawContent)
+                                            } catch (e: Exception) {
+                                                rawContent
+                                            }
+                                            val decoded = try {
+                                                PsiRaConverter.decode(decrypted)
+                                            } catch (e: Exception) {
+                                                decrypted
+                                            }
+                                            previewContent = if (decoded.length > 35) decoded.substring(0, 32) + "..." else decoded
+                                        }
+
+                                        val info = ChatPreviewInfo(
+                                            lastMessage = previewContent,
+                                            lastMessageType = lastMsg.type,
+                                            timestamp = if (lastMsg.timestamp > 0) lastMsg.timestamp else 0L,
+                                            unreadCount = unreadCount,
+                                            totalReceived = totalReceived,
+                                            isLastFromMe = isFromMe,
+                                            lastStatus = lastMsg.status
+                                        )
+                                        chatAdapter.updatePreview(targetUid, info)
+                                        chatList.sortByDescending { chatAdapter.getTimestamp(it.uid) }
+                                        chatAdapter.notifyDataSetChanged()
+                                    } else {
+                                        val info = ChatPreviewInfo(
+                                            lastMessage = "",
+                                            lastMessageType = "text",
+                                            timestamp = 0L,
+                                            unreadCount = 0,
+                                            totalReceived = 0,
+                                            isLastFromMe = false,
+                                            lastStatus = "sent"
+                                        )
+                                        chatAdapter.updatePreview(targetUid, info)
+                                    }
+                                }
+
+                                override fun onCancelled(error: DatabaseError) {}
+                            }
+                            messageListenersMap[targetUid] = msgListener
+                            db.getReference("direct_messages").child(channelName).addValueEventListener(msgListener)
                         }
                     }
-                    override fun onCancelled(error: DatabaseError) {}
-                })
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            }
+            userDirectChatsRef?.addValueEventListener(chatsListener as ValueEventListener)
         }
 
         val fabNewChat: FloatingActionButton = findViewById(R.id.fabNewChat)
@@ -141,6 +228,24 @@ class ChatsActivity : BaseActivity() {
         super.onResume()
         CallManager.listenForIncomingCalls(this)
         CallManager.updateContext(this)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        val db = FirebaseDatabase.getInstance()
+        if (currentUser != null) {
+            chatsListener?.let { userDirectChatsRef?.removeEventListener(it) }
+            for ((uid, listener) in listenersMap) {
+                db.getReference("users").child(uid).removeEventListener(listener)
+            }
+            for ((uid, msgListener) in messageListenersMap) {
+                val channelName = if (currentUser.uid < uid) "${currentUser.uid}_$uid" else "${uid}_${currentUser.uid}"
+                db.getReference("direct_messages").child(channelName).removeEventListener(msgListener)
+            }
+        }
+        listenersMap.clear()
+        messageListenersMap.clear()
     }
 
     private fun findAgentAndChat(agentId: String) {
