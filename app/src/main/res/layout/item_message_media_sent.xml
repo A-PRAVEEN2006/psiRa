@@ -7,14 +7,28 @@
     android:gravity="end"
     android:paddingStart="12dp"
     android:paddingEnd="12dp"
-    android:paddingTop="3dp"
-    android:paddingBottom="3dp">
+    android:paddingTop="2dp"
+    android:paddingBottom="2dp">
+
+    <TextView
+        android:id="@+id/tvDateHeader"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/bg_date_pill"
+        android:textColor="#C0C0E0"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:visibility="gone"
+        android:text="TODAY" />
 
     <androidx.cardview.widget.CardView
         android:layout_width="220dp"
         android:layout_height="wrap_content"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="2dp"
+        app:cardCornerRadius="14dp"
+        app:cardElevation="3dp"
         app:cardBackgroundColor="#7B61FF">
 
         <LinearLayout

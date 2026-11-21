@@ -7,28 +7,60 @@
     android:gravity="start"
     android:paddingStart="12dp"
     android:paddingEnd="12dp"
-    android:paddingTop="3dp"
-    android:paddingBottom="3dp">
+    android:paddingTop="2dp"
+    android:paddingBottom="2dp">
+
+    <TextView
+        android:id="@+id/tvDateHeader"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/bg_date_pill"
+        android:textColor="#C0C0E0"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:visibility="gone"
+        android:text="TODAY" />
 
     <androidx.cardview.widget.CardView
         android:layout_width="220dp"
         android:layout_height="wrap_content"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="2dp"
-        app:cardBackgroundColor="#262D31">
+        app:cardCornerRadius="14dp"
+        app:cardElevation="3dp"
+        app:cardBackgroundColor="#24243B">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <ImageView
-                android:id="@+id/ivMessageMedia"
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:scaleType="centerCrop"
-                android:src="@android:drawable/ic_menu_gallery"
-                android:visibility="gone" />
+                android:layout_height="wrap_content">
+
+                <ImageView
+                    android:id="@+id/ivMessageMedia"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:scaleType="centerCrop"
+                    android:src="@android:drawable/ic_menu_gallery"
+                    android:visibility="gone" />
+
+                <!-- Quick 1-Tap Save Button on Received Photo -->
+                <ImageButton
+                    android:id="@+id/btnQuickSaveMedia"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:layout_gravity="bottom|end"
+                    android:layout_margin="8dp"
+                    android:background="@drawable/bg_chat_btn_download"
+                    android:src="@android:drawable/stat_sys_download_done"
+                    android:tint="#FFFFFF"
+                    android:padding="8dp"
+                    android:contentDescription="Save Photo to Gallery" />
+            </FrameLayout>
 
             <LinearLayout
                 android:id="@+id/llFileDetails"
@@ -42,7 +74,7 @@
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:src="@android:drawable/ic_menu_save"
-                    app:tint="#FFFFFF" />
+                    app:tint="#A78BFA" />
 
                 <TextView
                     android:id="@+id/tvFileName"

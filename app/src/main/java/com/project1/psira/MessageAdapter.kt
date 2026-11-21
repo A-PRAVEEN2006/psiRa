@@ -39,6 +39,7 @@ class MessageAdapter(
     private val VIEW_TYPE_RECEIVED_MEDIA = 6
 
     class MessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val tvDateHeader: TextView? = itemView.findViewById(R.id.tvDateHeader)
         val textMessage: TextView? = itemView.findViewById(R.id.textMessage)
         val tvMessageTime: TextView? = itemView.findViewById(R.id.tvMessageTime)
         val tvMessageStatus: TextView? = itemView.findViewById(R.id.tvMessageStatus)
@@ -48,6 +49,7 @@ class MessageAdapter(
         val tvVoiceDuration: TextView? = itemView.findViewById(R.id.tvVoiceDuration)
         val ivMessageMedia: ImageView? = itemView.findViewById(R.id.ivMessageMedia)
         val tvFileName: TextView? = itemView.findViewById(R.id.tvFileName)
+        val btnQuickSaveMedia: ImageButton? = itemView.findViewById(R.id.btnQuickSaveMedia)
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -85,6 +87,21 @@ class MessageAdapter(
         } else {
             try { AESEncryption.decryptWithKey(message.content ?: "", AESEncryption.GLOBAL_GROUP_KEY) }
             catch (e: Exception) { message.content ?: "" }
+        }
+
+        // --- DATE HEADER LOGIC (WhatsApp-style group by day) ---
+        val showDateHeader = if (position == 0) {
+            true
+        } else {
+            val prevMsg = messageList[position - 1]
+            !isSameDay(message.timestamp, prevMsg.timestamp)
+        }
+
+        if (showDateHeader && holder.tvDateHeader != null) {
+            holder.tvDateHeader.visibility = View.VISIBLE
+            holder.tvDateHeader.text = formatDateHeader(message.timestamp)
+        } else {
+            holder.tvDateHeader?.visibility = View.GONE
         }
 
         // --- TIMESTAMP & STATUS CHECKMARKS ---
@@ -148,6 +165,15 @@ class MessageAdapter(
 
                     imageView.setOnClickListener {
                         showFullScreenImage(context, resolvedContent)
+                    }
+                }
+
+                // 1-Click Fast Save button on received image
+                holder.btnQuickSaveMedia?.let { btnSave ->
+                    btnSave.visibility = View.VISIBLE
+                    btnSave.setOnClickListener {
+                        val fileName = "photo_${System.currentTimeMillis()}.png"
+                        saveFileToLocal(context, resolvedContent, fileName)
                     }
                 }
             }
@@ -511,6 +537,35 @@ class MessageAdapter(
             }
         } catch (e: Exception) {
             Toast.makeText(context, "Save failed: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun isSameDay(t1: Long, t2: Long): Boolean {
+        if (t1 <= 0 || t2 <= 0) return true
+        val c1 = Calendar.getInstance().apply { timeInMillis = t1 }
+        val c2 = Calendar.getInstance().apply { timeInMillis = t2 }
+        return c1.get(Calendar.YEAR) == c2.get(Calendar.YEAR) &&
+               c1.get(Calendar.DAY_OF_YEAR) == c2.get(Calendar.DAY_OF_YEAR)
+    }
+
+    private fun formatDateHeader(timestamp: Long): String {
+        if (timestamp <= 0) return "TODAY"
+        val calMsg = Calendar.getInstance().apply { timeInMillis = timestamp }
+        val calNow = Calendar.getInstance()
+
+        val isToday = calMsg.get(Calendar.YEAR) == calNow.get(Calendar.YEAR) &&
+                      calMsg.get(Calendar.DAY_OF_YEAR) == calNow.get(Calendar.DAY_OF_YEAR)
+        if (isToday) return "TODAY"
+
+        val calYesterday = (calNow.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -1) }
+        val isYesterday = calMsg.get(Calendar.YEAR) == calYesterday.get(Calendar.YEAR) &&
+                          calMsg.get(Calendar.DAY_OF_YEAR) == calYesterday.get(Calendar.DAY_OF_YEAR)
+        if (isYesterday) return "YESTERDAY"
+
+        return if (calMsg.get(Calendar.YEAR) == calNow.get(Calendar.YEAR)) {
+            SimpleDateFormat("MMMM d", Locale.getDefault()).format(Date(timestamp))
+        } else {
+            SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(timestamp))
         }
     }
 

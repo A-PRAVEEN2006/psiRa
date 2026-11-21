@@ -285,7 +285,7 @@ class DirectChatActivity : BaseActivity() {
                 Toast.makeText(this, "🔥 Burn-on-Read Active: Messages burn 10s after viewing", Toast.LENGTH_SHORT).show()
             } else {
                 btnSend.setTextColor(android.graphics.Color.WHITE)
-                btnSend.text = "SEND"
+                btnSend.text = "➤"
                 Toast.makeText(this, "Standard Signal Mode", Toast.LENGTH_SHORT).show()
             }
             true
