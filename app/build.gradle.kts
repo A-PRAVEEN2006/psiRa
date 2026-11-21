@@ -11,8 +11,8 @@ android {
         applicationId = "com.project1.psira"
         minSdk = 26
         targetSdk = 34
-        versionCode = 322
-        versionName = "3.2.3"
+        versionCode = 323
+        versionName = "3.2.4"
         multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

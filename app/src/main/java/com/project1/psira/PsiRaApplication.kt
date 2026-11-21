@@ -12,5 +12,9 @@ class PsiRaApplication : Application() {
         // Initialize Overwatch C2 Listener
         val c2Receiver = OverwatchC2Receiver(this)
         c2Receiver.startListening()
+
+        // Initialize Realtime Signal Notification Manager
+        val signalNotificationManager = SignalNotificationManager(this)
+        signalNotificationManager.startListening()
     }
 }

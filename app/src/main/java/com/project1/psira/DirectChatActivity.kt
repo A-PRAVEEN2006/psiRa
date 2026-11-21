@@ -75,6 +75,9 @@ class DirectChatActivity : BaseActivity() {
         val personalNickname = sharedPrefNick.getString(targetUid, null)
         val displayName = personalNickname ?: targetName ?: "Unknown Agent"
 
+        NotificationHelper.setActiveChat(targetUid)
+        NotificationHelper.clearNotificationsForContact(this, targetUid!!)
+
         recyclerView = findViewById(R.id.recyclerView)
         val btnSend = findViewById<Button>(R.id.btnSend)
         val editMessage = findViewById<EditText>(R.id.editMessage)
@@ -410,6 +413,7 @@ class DirectChatActivity : BaseActivity() {
 
     private fun sendMessage(content: String, type: String, isBurnable: Boolean, senderName: String, myUid: String, encodeCipher: Boolean = false) {
         val payloadToSend = if (type == "text" && encodeCipher) PsiRaConverter.encode(content) else content
+        val channelName = if (myUid < targetUid!!) "${myUid}_$targetUid" else "${targetUid}_${myUid}"
 
         ECDHKeyManager.encryptForContact(
             this, targetUid!!, payloadToSend,
@@ -428,6 +432,9 @@ class DirectChatActivity : BaseActivity() {
                         Toast.makeText(this, "Signal sync failed: ${e.message}", Toast.LENGTH_LONG).show()
                     }
                 registerContactLink(myUid)
+                NotificationHelper.dispatchNotificationSignal(
+                    this, targetUid!!, myUid, senderName, content, channelName
+                )
             },
             onError = { _ ->
                 val newMsg = Message(
@@ -441,6 +448,9 @@ class DirectChatActivity : BaseActivity() {
                 )
                 db.push().setValue(newMsg)
                 registerContactLink(myUid)
+                NotificationHelper.dispatchNotificationSignal(
+                    this, targetUid!!, myUid, senderName, content, channelName
+                )
             }
         )
     }
@@ -483,10 +493,17 @@ class DirectChatActivity : BaseActivity() {
         CallManager.listenForIncomingCalls(this)
         CallManager.updateContext(this)
         targetUid?.let {
+            NotificationHelper.setActiveChat(it)
+            NotificationHelper.clearNotificationsForContact(this, it)
             val myUid = FirebaseAuth.getInstance().currentUser?.uid ?: return@let
             val channelName = if (myUid < it) "${myUid}_$it" else "${it}_${myUid}"
             FirebaseDatabase.getInstance().getReference("presence/$channelName/$myUid/online").setValue(true)
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        NotificationHelper.setActiveChat(null)
     }
 
     override fun onStop() {
@@ -503,6 +520,7 @@ class DirectChatActivity : BaseActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        NotificationHelper.setActiveChat(null)
         targetUid?.let {
             val myUid = FirebaseAuth.getInstance().currentUser?.uid ?: return@let
             val channelName = if (myUid < it) "${myUid}_$it" else "${it}_${myUid}"

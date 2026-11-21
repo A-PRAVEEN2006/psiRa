@@ -165,6 +165,8 @@
         <activity android:name=".CallActivity" android:exported="false" android:screenOrientation="portrait"/>
         <activity android:name=".CallHistoryActivity" android:exported="false" />
 
+        <receiver android:name=".NotificationReplyReceiver" android:exported="false" />
+
         <service android:name="com.project1.psira.PsiraMessagingService" android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />

@@ -30,6 +30,7 @@ open class BaseActivity : AppCompatActivity() {
 
     companion object {
         var startedActivitiesCount = 0
+        var currentActivity: AppCompatActivity? = null
 
         // Auto-lock: lock app after 3 minutes in background
         private const val AUTO_LOCK_DELAY_MS = 3 * 60 * 1000L
@@ -123,11 +124,18 @@ open class BaseActivity : AppCompatActivity() {
             ECDHKeyManager.initializeKeys(this)
         }
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 101)
+            }
+        }
+
         updatePresence(true)
     }
 
     override fun onResume() {
         super.onResume()
+        currentActivity = this
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
         val currentThemeName = sharedPref.getString("APP_THEME", "MIDNIGHT") ?: "MIDNIGHT"
         if (currentThemeName != initialThemeName) {
@@ -141,6 +149,9 @@ open class BaseActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
+        if (currentActivity == this) {
+            currentActivity = null
+        }
         sensorManager?.unregisterListener(flipListener)
     }
 

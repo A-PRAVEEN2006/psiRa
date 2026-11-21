@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.edit
@@ -31,6 +32,26 @@ class SettingsActivity : BaseActivity() {
         val btnAbout          = findViewById<View>(R.id.btnAbout)
         val btnCheckUpdates   = findViewById<View>(R.id.btnCheckUpdates)
         val btnPrivateVault   = findViewById<View>(R.id.btnPrivateVault)
+        val btnNotifCamouflage= findViewById<View>(R.id.btnNotifCamouflage)
+        val tvNotifCamouflageValue = findViewById<TextView>(R.id.tvNotifCamouflageValue)
+
+        val isCamouflage = NotificationHelper.isCamouflageEnabled(this)
+        tvNotifCamouflageValue?.text = if (isCamouflage) "ON" else "OFF"
+        tvNotifCamouflageValue?.setTextColor(if (isCamouflage) android.graphics.Color.parseColor("#4CD964") else android.graphics.Color.parseColor("#808080"))
+
+        btnNotifCamouflage?.setOnClickListener {
+            val current = NotificationHelper.isCamouflageEnabled(this)
+            val newSetting = !current
+            NotificationHelper.setCamouflageEnabled(this, newSetting)
+            tvNotifCamouflageValue?.text = if (newSetting) "ON" else "OFF"
+            tvNotifCamouflageValue?.setTextColor(if (newSetting) android.graphics.Color.parseColor("#4CD964") else android.graphics.Color.parseColor("#808080"))
+            val msg = if (newSetting) {
+                "🛡️ Camouflage Active: Lock-screen notifications masked as routine system sync."
+            } else {
+                "✓ Standard Notifications: Shows sender name and message alerts."
+            }
+            Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+        }
 
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
 
@@ -394,7 +415,7 @@ class SettingsActivity : BaseActivity() {
 
     private fun showAbout() {
         val about = """
-            PsiRa | Overseer Build v3.2.3
+            PsiRa | Overseer Build v3.2.4
             ----------------------------
             THE SPECTRE ENCLAVE:
             A premium, high-fidelity secure communication network.
