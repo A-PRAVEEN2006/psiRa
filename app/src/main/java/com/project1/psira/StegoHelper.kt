@@ -4,7 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Color
 
 object StegoHelper {
-    // High-entropy non-ASCII signature to defeat static keyword / ASCII LSB scanners
+    // High-entropy signature to identify PsiRa stego containers
     private val SIGNATURE = byteArrayOf(0xA7.toByte(), 0x3F.toByte(), 0x91.toByte(), 0x5E.toByte())
     private val LEGACY_SIGNATURE = byteArrayOf(0x50, 0x53, 0x52, 0x41) // "PSRA" legacy compatibility
 
@@ -36,49 +36,29 @@ object StegoHelper {
         // Copy source bitmap to a mutable ARGB_8888 bitmap
         val workingBitmap = sourceBitmap.copy(Bitmap.Config.ARGB_8888, true)
 
-        var bitIndex = 0
+        for (bitIndex in 0 until totalBitsNeeded) {
+            val bytePos = bitIndex / 8
+            val bitPos = 7 - (bitIndex % 8)
+            val bit = (fullPayload[bytePos].toInt() shr bitPos) and 1
 
-        for (y in 0 until height) {
-            for (x in 0 until width) {
-                if (bitIndex >= totalBitsNeeded) {
-                    return workingBitmap
-                }
+            val pixelIndex = bitIndex / 3
+            val channel = bitIndex % 3
+            val x = pixelIndex % width
+            val y = pixelIndex / width
 
-                val pixel = workingBitmap.getPixel(x, y)
-                var r = Color.red(pixel)
-                var g = Color.green(pixel)
-                var b = Color.blue(pixel)
-                val a = Color.alpha(pixel)
+            val pixel = workingBitmap.getPixel(x, y)
+            val a = Color.alpha(pixel)
+            var r = Color.red(pixel)
+            var g = Color.green(pixel)
+            var b = Color.blue(pixel)
 
-                // Embed 1 bit in Red channel
-                if (bitIndex < totalBitsNeeded) {
-                    val bytePos = bitIndex / 8
-                    val bitPos = 7 - (bitIndex % 8)
-                    val bit = (fullPayload[bytePos].toInt() shr bitPos) and 1
-                    r = (r and 0xFE) or bit
-                    bitIndex++
-                }
-
-                // Embed 1 bit in Green channel
-                if (bitIndex < totalBitsNeeded) {
-                    val bytePos = bitIndex / 8
-                    val bitPos = 7 - (bitIndex % 8)
-                    val bit = (fullPayload[bytePos].toInt() shr bitPos) and 1
-                    g = (g and 0xFE) or bit
-                    bitIndex++
-                }
-
-                // Embed 1 bit in Blue channel
-                if (bitIndex < totalBitsNeeded) {
-                    val bytePos = bitIndex / 8
-                    val bitPos = 7 - (bitIndex % 8)
-                    val bit = (fullPayload[bytePos].toInt() shr bitPos) and 1
-                    b = (b and 0xFE) or bit
-                    bitIndex++
-                }
-
-                workingBitmap.setPixel(x, y, Color.argb(a, r, g, b))
+            when (channel) {
+                0 -> r = (r and 0xFE) or bit
+                1 -> g = (g and 0xFE) or bit
+                2 -> b = (b and 0xFE) or bit
             }
+
+            workingBitmap.setPixel(x, y, Color.argb(a, r, g, b))
         }
 
         return workingBitmap
@@ -92,52 +72,34 @@ object StegoHelper {
         val width = stegoBitmap.width
         val height = stegoBitmap.height
 
+        val maxBits = width * height * 3
         val headerSize = 8
         val headerBits = headerSize * 8
 
+        if (maxBits < headerBits) return null
+
         val headerBytes = ByteArray(headerSize)
-        var bitIndex = 0
 
-        // Extract header
-        outer@ for (y in 0 until height) {
-            for (x in 0 until width) {
-                if (bitIndex >= headerBits) break@outer
+        // 1. Extract header bits
+        for (bitIndex in 0 until headerBits) {
+            val pixelIndex = bitIndex / 3
+            val channel = bitIndex % 3
+            val x = pixelIndex % width
+            val y = pixelIndex / width
 
-                val pixel = stegoBitmap.getPixel(x, y)
-                val r = Color.red(pixel)
-                val g = Color.green(pixel)
-                val b = Color.blue(pixel)
-
-                // Red
-                if (bitIndex < headerBits) {
-                    val bytePos = bitIndex / 8
-                    val bitPos = 7 - (bitIndex % 8)
-                    val bit = r and 1
-                    headerBytes[bytePos] = (headerBytes[bytePos].toInt() or (bit shl bitPos)).toByte()
-                    bitIndex++
-                }
-
-                // Green
-                if (bitIndex < headerBits) {
-                    val bytePos = bitIndex / 8
-                    val bitPos = 7 - (bitIndex % 8)
-                    val bit = g and 1
-                    headerBytes[bytePos] = (headerBytes[bytePos].toInt() or (bit shl bitPos)).toByte()
-                    bitIndex++
-                }
-
-                // Blue
-                if (bitIndex < headerBits) {
-                    val bytePos = bitIndex / 8
-                    val bitPos = 7 - (bitIndex % 8)
-                    val bit = b and 1
-                    headerBytes[bytePos] = (headerBytes[bytePos].toInt() or (bit shl bitPos)).toByte()
-                    bitIndex++
-                }
+            val pixel = stegoBitmap.getPixel(x, y)
+            val bit = when (channel) {
+                0 -> Color.red(pixel) and 1
+                1 -> Color.green(pixel) and 1
+                else -> Color.blue(pixel) and 1
             }
+
+            val bytePos = bitIndex / 8
+            val bitPos = 7 - (bitIndex % 8)
+            headerBytes[bytePos] = (headerBytes[bytePos].toInt() or (bit shl bitPos)).toByte()
         }
 
-        // Verify Signature (supports high-entropy signature and legacy PSRA)
+        // Verify Signature
         val matchesCurrent = (0 until 4).all { headerBytes[it] == SIGNATURE[it] }
         val matchesLegacy = (0 until 4).all { headerBytes[it] == LEGACY_SIGNATURE[it] }
         if (!matchesCurrent && !matchesLegacy) {
@@ -150,59 +112,31 @@ object StegoHelper {
                   ((headerBytes[6].toInt() and 0xFF) shl 8) or
                   (headerBytes[7].toInt() and 0xFF)
 
-        if (len <= 0 || len > width * height * 3) {
-            return null // Invalid length
+        if (len <= 0 || (headerSize + len) * 8 > maxBits) {
+            return null // Invalid length or exceeds capacity
         }
 
-        // Extract full payload
+        // 2. Extract full payload (header + secret)
         val totalBitsNeeded = (headerSize + len) * 8
         val fullPayload = ByteArray(headerSize + len)
         System.arraycopy(headerBytes, 0, fullPayload, 0, headerSize)
 
-        bitIndex = headerBits
-        val startPixel = headerBits / 3
-        var currentPixel = 0
+        for (bitIndex in headerBits until totalBitsNeeded) {
+            val pixelIndex = bitIndex / 3
+            val channel = bitIndex % 3
+            val x = pixelIndex % width
+            val y = pixelIndex / width
 
-        outer2@ for (y in 0 until height) {
-            for (x in 0 until width) {
-                if (currentPixel < startPixel) {
-                    currentPixel++
-                    continue
-                }
-                if (bitIndex >= totalBitsNeeded) break@outer2
-
-                val pixel = stegoBitmap.getPixel(x, y)
-                val r = Color.red(pixel)
-                val g = Color.green(pixel)
-                val b = Color.blue(pixel)
-
-                // Red
-                if (bitIndex < totalBitsNeeded) {
-                    val bytePos = bitIndex / 8
-                    val bitPos = 7 - (bitIndex % 8)
-                    val bit = r and 1
-                    fullPayload[bytePos] = (fullPayload[bytePos].toInt() or (bit shl bitPos)).toByte()
-                    bitIndex++
-                }
-
-                // Green
-                if (bitIndex < totalBitsNeeded) {
-                    val bytePos = bitIndex / 8
-                    val bitPos = 7 - (bitIndex % 8)
-                    val bit = g and 1
-                    fullPayload[bytePos] = (fullPayload[bytePos].toInt() or (bit shl bitPos)).toByte()
-                    bitIndex++
-                }
-
-                // Blue
-                if (bitIndex < totalBitsNeeded) {
-                    val bytePos = bitIndex / 8
-                    val bitPos = 7 - (bitIndex % 8)
-                    val bit = b and 1
-                    fullPayload[bytePos] = (fullPayload[bytePos].toInt() or (bit shl bitPos)).toByte()
-                    bitIndex++
-                }
+            val pixel = stegoBitmap.getPixel(x, y)
+            val bit = when (channel) {
+                0 -> Color.red(pixel) and 1
+                1 -> Color.green(pixel) and 1
+                else -> Color.blue(pixel) and 1
             }
+
+            val bytePos = bitIndex / 8
+            val bitPos = 7 - (bitIndex % 8)
+            fullPayload[bytePos] = (fullPayload[bytePos].toInt() or (bit shl bitPos)).toByte()
         }
 
         val result = ByteArray(len)

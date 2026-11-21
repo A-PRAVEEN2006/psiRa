@@ -46,6 +46,12 @@ class ChatActivity : BaseActivity() {
         }
     }
 
+    private val pickStegoImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        if (uri != null) {
+            promptAndSendStegoImage(uri)
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         messageListener?.let { db.removeEventListener(it) }
@@ -65,11 +71,15 @@ class ChatActivity : BaseActivity() {
         val btnRecordVoice = findViewById<ImageButton>(R.id.btnRecordVoice)
 
         btnAttachMedia.setOnClickListener {
-            PsiRaDialogs.showOptionsSheet(this, "ATTACH FILE", listOf("Image", "Document")) { index ->
-                if (index == 0) {
-                    pickMediaLauncher.launch("image/*")
-                } else {
-                    pickMediaLauncher.launch("*/*")
+            PsiRaDialogs.showOptionsSheet(
+                this,
+                "ATTACH FILE",
+                listOf("📸 Image", "🕵️ Hide Message in Image (Stego)", "📄 Document")
+            ) { index ->
+                when (index) {
+                    0 -> pickMediaLauncher.launch("image/*")
+                    1 -> pickStegoImageLauncher.launch("image/*")
+                    2 -> pickMediaLauncher.launch("*/*")
                 }
             }
         }
@@ -284,12 +294,126 @@ class ChatActivity : BaseActivity() {
             val textToSend = if (type == "text" && encodeCipher) PsiRaConverter.encode(content) else content
             // Encrypt all payloads with group AES-256-GCM
             val encrypted = AESEncryption.encryptWithKey(textToSend, AESEncryption.GLOBAL_GROUP_KEY)
-            db.push().setValue(Message(null, senderName, encrypted, isBurnable, type)).addOnFailureListener { e ->
+            val msg = Message(
+                id = null,
+                sender = senderName,
+                content = encrypted,
+                isBurnable = isBurnable,
+                type = type,
+                timestamp = System.currentTimeMillis(),
+                status = "sent"
+            )
+            db.push().setValue(msg).addOnFailureListener { e ->
                  Toast.makeText(this, "Transmission failed: ${e.message}", Toast.LENGTH_LONG).show()
             }
         } catch (e: Exception) {
             Toast.makeText(this, "Encryption failure: ${e.message}", Toast.LENGTH_LONG).show()
         }
+    }
+
+    private fun promptAndSendStegoImage(uri: Uri) {
+        val layout = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(50, 30, 50, 10)
+        }
+        val etSecret = EditText(this).apply {
+            hint = "Secret message to conceal"
+            setTextColor(android.graphics.Color.WHITE)
+            setHintTextColor(android.graphics.Color.GRAY)
+        }
+        val etKey = EditText(this).apply {
+            hint = "Optional encryption password"
+            setTextColor(android.graphics.Color.WHITE)
+            setHintTextColor(android.graphics.Color.GRAY)
+        }
+        layout.addView(etSecret)
+        layout.addView(etKey)
+
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle("🕵️ Conceal Secret in Image")
+            .setMessage("Select text to embed into this carrier image:")
+            .setView(layout)
+            .setPositiveButton("Conceal & Send") { _, _ ->
+                val secret = etSecret.text.toString().trim()
+                if (secret.isEmpty()) {
+                    Toast.makeText(this, "Secret message cannot be empty", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                val password = etKey.text.toString().trim()
+                encodeAndSendStegoImage(uri, secret, password)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun encodeAndSendStegoImage(uri: Uri, secret: String, password: String) {
+        val progressDialog = AlertDialog.Builder(this)
+            .setTitle("Steganography Encoding")
+            .setMessage("Embedding secret message into lossless carrier...")
+            .setCancelable(false)
+            .create()
+        progressDialog.show()
+
+        Thread {
+            try {
+                val inputStream = contentResolver.openInputStream(uri)
+                val opts = android.graphics.BitmapFactory.Options().apply {
+                    inPreferredConfig = android.graphics.Bitmap.Config.ARGB_8888
+                    inPremultiplied = false
+                    inDither = false
+                    inScaled = false
+                }
+                val bitmap = android.graphics.BitmapFactory.decodeStream(inputStream, null, opts)
+                inputStream?.close()
+
+                if (bitmap == null) {
+                    runOnUiThread {
+                        progressDialog.dismiss()
+                        Toast.makeText(this, "Failed to load image carrier", Toast.LENGTH_SHORT).show()
+                    }
+                    return@Thread
+                }
+
+                val encryptedData: ByteArray = if (password.isNotEmpty()) {
+                    val digest = java.security.MessageDigest.getInstance("SHA-256")
+                    val keyBytes = digest.digest(password.toByteArray(Charsets.UTF_8))
+                    val key = javax.crypto.spec.SecretKeySpec(keyBytes, "AES")
+                    AESEncryption.encryptWithKey(secret, key).toByteArray(Charsets.UTF_8)
+                } else {
+                    AESEncryption.encryptWithKey(secret, AESEncryption.GLOBAL_GROUP_KEY).toByteArray(Charsets.UTF_8)
+                }
+
+                val stegoBitmap = StegoHelper.conceal(bitmap, encryptedData)
+                if (stegoBitmap == null) {
+                    runOnUiThread {
+                        progressDialog.dismiss()
+                        Toast.makeText(this, "Image too small to hold this message!", Toast.LENGTH_LONG).show()
+                    }
+                    return@Thread
+                }
+
+                val baos = java.io.ByteArrayOutputStream()
+                stegoBitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, baos)
+                val pngBytes = baos.toByteArray()
+                val base64String = "data:image/png;base64," + android.util.Base64.encodeToString(pngBytes, android.util.Base64.DEFAULT)
+
+                runOnUiThread {
+                    progressDialog.dismiss()
+                    val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
+                    val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+                    val impersonatingName = sharedPref.getString("IMPERSONATING_NAME", null)
+                    val senderName = impersonatingName ?: user?.displayName ?: "Unknown Agent"
+                    sendMessage(base64String, "steg", false, senderName, false)
+                    Toast.makeText(this@ChatActivity, "🕵️ Stego carrier transmitted!", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                runOnUiThread {
+                    progressDialog.dismiss()
+                    Toast.makeText(this, "Steganography failed: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }.start()
     }
 
     private fun checkRecordAudioPermission(): Boolean {

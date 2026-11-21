@@ -5,8 +5,10 @@ data class Message(
     val sender: String? = null,
     val content: String? = null,
     val isBurnable: Boolean = false,
-    val type: String = "text" // New field: text, voice, image, doc
+    val type: String = "text", // text, voice, image, doc, steg
+    val timestamp: Long = System.currentTimeMillis(),
+    val status: String = "sent" // sent, delivered, read
 ) {
-    // Empty constructor for Firebase
-    constructor() : this(null, null, null, false, "text")
+    // Empty constructor for Firebase reflection
+    constructor() : this(null, null, null, false, "text", System.currentTimeMillis(), "sent")
 }

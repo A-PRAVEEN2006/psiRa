@@ -276,7 +276,13 @@ class StegActivity : BaseActivity() {
         var inputStream: InputStream? = null
         return try {
             inputStream = contentResolver.openInputStream(uri)
-            BitmapFactory.decodeStream(inputStream)
+            val opts = BitmapFactory.Options().apply {
+                inPreferredConfig = Bitmap.Config.ARGB_8888
+                inPremultiplied = false
+                inDither = false
+                inScaled = false
+            }
+            BitmapFactory.decodeStream(inputStream, null, opts)
         } catch (e: Exception) {
             null
         } finally {
@@ -293,19 +299,23 @@ class StegActivity : BaseActivity() {
             put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/PsiRa")
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
             }
         }
 
         val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
         if (uri != null) {
             try {
-                val outputStream = contentResolver.openOutputStream(uri)
-                if (outputStream != null) {
+                contentResolver.openOutputStream(uri)?.use { outputStream ->
                     bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
                     outputStream.flush()
-                    outputStream.close()
-                    return uri
                 }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    contentValues.clear()
+                    contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                    contentResolver.update(uri, contentValues, null, null)
+                }
+                return uri
             } catch (e: Exception) {
                 contentResolver.delete(uri, null, null)
             }

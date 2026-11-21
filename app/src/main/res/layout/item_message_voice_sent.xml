@@ -4,30 +4,71 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:gravity="end"
-    android:padding="8dp">
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:paddingTop="3dp"
+    android:paddingBottom="3dp">
 
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:background="@drawable/bg_message_sent"
-        android:padding="12dp">
+        android:orientation="vertical"
+        android:background="@drawable/bg_message_sent_v2"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="6dp"
+        android:elevation="2dp">
 
-        <ImageButton
-            android:id="@+id/btnPlayVoice"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_media_play"
-            android:tint="#FFFFFF" />
-
-        <TextView
-            android:id="@+id/tvVoiceDuration"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Voice Note"
-            android:textColor="#FFFFFF"
-            android:layout_gravity="center_vertical"
-            android:layout_marginStart="8dp" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/btnPlayVoice"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_media_play"
+                android:tint="#FFFFFF" />
+
+            <TextView
+                android:id="@+id/tvVoiceDuration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Voice Note"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:layout_marginStart="8dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginTop="2dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tvMessageTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#B3FFFFFF"
+                android:textSize="10sp"
+                android:text="10:45 AM" />
+
+            <TextView
+                android:id="@+id/tvMessageStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:textColor="#79D7BE"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:text="✓✓" />
+        </LinearLayout>
     </LinearLayout>
 </LinearLayout>

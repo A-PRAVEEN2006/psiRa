@@ -1,27 +1,29 @@
 package com.project1.psira
 
+import android.app.Dialog
 import android.content.Context
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.TextView
-import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Color
+import android.net.Uri
+import android.util.Base64
+import android.view.*
+import android.widget.*
 import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.database.FirebaseDatabase
 import com.bumptech.glide.Glide
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DatabaseReference
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
 
 class MessageAdapter(
     private val messageList: List<Message>,
-    /**
-     * Set to true when the calling activity has already decrypted the messages
-     * before adding them to the list (e.g. DirectChatActivity with ECDH).
-     * When false, the adapter decrypts itself using the global AES key (group chat).
-     */
     private val alreadyDecrypted: Boolean = false
 ) : RecyclerView.Adapter<MessageAdapter.MessageViewHolder>() {
-    
-    var chatDbRef: com.google.firebase.database.DatabaseReference? = null
+
+    var chatDbRef: DatabaseReference? = null
 
     var isMirrored: Boolean = false
         set(value) {
@@ -38,21 +40,24 @@ class MessageAdapter(
 
     class MessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val textMessage: TextView? = itemView.findViewById(R.id.textMessage)
+        val tvMessageTime: TextView? = itemView.findViewById(R.id.tvMessageTime)
+        val tvMessageStatus: TextView? = itemView.findViewById(R.id.tvMessageStatus)
+        val tvSenderName: TextView? = itemView.findViewById(R.id.tvSenderName)
         val tvBurnIcon: TextView? = itemView.findViewById(R.id.tvBurnIcon)
-        val btnPlayVoice: android.widget.ImageButton? = itemView.findViewById(R.id.btnPlayVoice)
+        val btnPlayVoice: ImageButton? = itemView.findViewById(R.id.btnPlayVoice)
         val tvVoiceDuration: TextView? = itemView.findViewById(R.id.tvVoiceDuration)
-        val ivMessageMedia: android.widget.ImageView? = itemView.findViewById(R.id.ivMessageMedia)
+        val ivMessageMedia: ImageView? = itemView.findViewById(R.id.ivMessageMedia)
         val tvFileName: TextView? = itemView.findViewById(R.id.tvFileName)
     }
 
     override fun getItemViewType(position: Int): Int {
-        val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+        val currentUser = FirebaseAuth.getInstance().currentUser
         val message = messageList[position]
         val isMe = message.sender == currentUser?.displayName
 
         return when (message.type) {
             "voice" -> if (isMe) VIEW_TYPE_SENT_VOICE else VIEW_TYPE_RECEIVED_VOICE
-            "image", "doc" -> if (isMe) VIEW_TYPE_SENT_MEDIA else VIEW_TYPE_RECEIVED_MEDIA
+            "image", "steg", "doc" -> if (isMe) VIEW_TYPE_SENT_MEDIA else VIEW_TYPE_RECEIVED_MEDIA
             else -> if (isMe) VIEW_TYPE_SENT_TEXT else VIEW_TYPE_RECEIVED_TEXT
         }
     }
@@ -75,9 +80,6 @@ class MessageAdapter(
         val context = holder.itemView.context
         val message = messageList[position]
 
-        // Use the Firebase key (id) for deletion
-        val messageId = message.id
-
         val resolvedContent = if (alreadyDecrypted) {
             message.content ?: ""
         } else {
@@ -85,6 +87,45 @@ class MessageAdapter(
             catch (e: Exception) { message.content ?: "" }
         }
 
+        // --- TIMESTAMP & STATUS CHECKMARKS ---
+        val timeStr = if (message.timestamp > 0) {
+            val sdf = SimpleDateFormat("hh:mm a", Locale.getDefault())
+            sdf.format(Date(message.timestamp))
+        } else ""
+        holder.tvMessageTime?.text = timeStr
+
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        val isMe = message.sender == currentUser?.displayName
+
+        if (isMe) {
+            holder.tvMessageStatus?.let { tvStatus ->
+                when (message.status) {
+                    "read" -> {
+                        tvStatus.text = "✓✓"
+                        tvStatus.setTextColor(Color.parseColor("#34B7F1")) // WhatsApp blue tick
+                    }
+                    "delivered" -> {
+                        tvStatus.text = "✓✓"
+                        tvStatus.setTextColor(Color.parseColor("#B3FFFFFF"))
+                    }
+                    else -> {
+                        tvStatus.text = "✓"
+                        tvStatus.setTextColor(Color.parseColor("#B3FFFFFF"))
+                    }
+                }
+            }
+        } else {
+            holder.tvSenderName?.let { tvName ->
+                if (!message.sender.isNullOrEmpty()) {
+                    tvName.text = message.sender
+                    tvName.visibility = View.VISIBLE
+                } else {
+                    tvName.visibility = View.GONE
+                }
+            }
+        }
+
+        // --- CONTENT RENDERING ---
         when (message.type) {
             "text" -> {
                 holder.textMessage?.text = resolvedContent
@@ -95,7 +136,7 @@ class MessageAdapter(
                     playOneAudio(context, resolvedContent)
                 }
             }
-            "image" -> {
+            "image", "steg" -> {
                 holder.ivMessageMedia?.visibility = View.VISIBLE
                 holder.tvFileName?.visibility = View.GONE
                 holder.ivMessageMedia?.let { imageView ->
@@ -104,6 +145,10 @@ class MessageAdapter(
                         .placeholder(android.R.drawable.ic_menu_gallery)
                         .error(android.R.drawable.ic_menu_report_image)
                         .into(imageView)
+
+                    imageView.setOnClickListener {
+                        showFullScreenImage(context, resolvedContent)
+                    }
                 }
             }
             "doc" -> {
@@ -115,66 +160,247 @@ class MessageAdapter(
 
         // --- SELF-DESTRUCT LOGIC ---
         holder.tvBurnIcon?.visibility = if (message.isBurnable) View.VISIBLE else View.GONE
-        
-        // If this is a burnable message AND we are the receiver (not the sender)
-        if (message.isBurnable && message.sender != com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.displayName) {
+        if (message.isBurnable && message.sender != currentUser?.displayName) {
             android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                 val messageIdToDelete = message.id
                 if (messageIdToDelete != null && chatDbRef != null) {
                     chatDbRef!!.child(messageIdToDelete).removeValue()
                 }
-            }, 10000) // 10 seconds
+            }, 10000)
         }
 
-        // --- LONG PRESS TO DELETE FEATURE ---
-        // Inside onBindViewHolder in MessageAdapter.kt
+        // --- LONG PRESS OPTIONS ---
         holder.itemView.setOnLongClickListener {
-            val messageId = messageList[position].id
+            val messageId = message.id
             if (messageId != null) {
-                val type = messageList[position].type ?: "text"
-                val options = mutableListOf("Delete", "Copy to Clipboard")
-                if (type in listOf("image", "doc", "voice")) {
-                    options.add(0, "Save to Device")
+                val type = message.type
+                val options = mutableListOf<String>()
+
+                if (type in listOf("image", "steg")) {
+                    options.add("View Full Screen")
+                    options.add("Save to Private Vault 🔒")
+                    options.add("Save to Gallery")
+                    options.add("Extract Steganography 🕵️")
+                } else if (type in listOf("doc", "voice")) {
+                    options.add("Save to Device")
+                    options.add("Save to Private Vault 🔒")
                 }
 
+                if (type == "text") {
+                    options.add("Copy to Clipboard")
+                }
+                options.add("Delete for Everyone")
+
                 PsiRaDialogs.showOptionsSheet(context, "MESSAGE OPTIONS", options) { which ->
-                    val selectedOption = options[which]
-                    if (selectedOption == "Save to Device") {
-                        val ext = when(type) {
-                            "image" -> "jpg"
-                            "doc" -> "pdf"
-                            "voice" -> "m4a"
-                            else -> "file"
+                    when (options[which]) {
+                        "View Full Screen" -> showFullScreenImage(context, resolvedContent)
+                        "Save to Gallery", "Save to Device" -> {
+                            val ext = when (type) {
+                                "image", "steg" -> "png"
+                                "doc" -> "pdf"
+                                "voice" -> "m4a"
+                                else -> "bin"
+                            }
+                            saveFileToLocal(context, resolvedContent, "${type}_${System.currentTimeMillis()}.$ext")
                         }
-                        saveFileToLocal(context, messageList[position].content ?: "", "${type}_${System.currentTimeMillis()}.$ext")
-                    } else if (selectedOption == "Delete") {
-                        PsiRaDialogs.showDeleteSheet(
-                            context,
-                            "ERASE SIGNAL?",
-                            "This message will be purged from the encrypted logs forever.",
-                            "PURGE"
-                        ) {
-                            chatDbRef?.child(messageId)?.removeValue()?.addOnSuccessListener {
-                                Toast.makeText(context, "Message Erased", Toast.LENGTH_SHORT).show()
+                        "Save to Private Vault 🔒" -> {
+                            try {
+                                val base64Data = resolvedContent.substringAfter("base64,")
+                                val bytes = Base64.decode(base64Data, Base64.DEFAULT)
+                                val mime = if (type == "voice") "video/mp4" else "image/png"
+                                saveToVault(context, bytes, mime, "${type}_${System.currentTimeMillis()}.${if (type == "voice") "mp4" else "png"}")
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Vault save failed: ${e.message}", Toast.LENGTH_SHORT).show()
                             }
                         }
-                    } else if (selectedOption == "Copy to Clipboard") {
-                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                        val textToCopy = holder.textMessage?.text?.toString() ?: messageList[position].content ?: ""
-                        val clip = android.content.ClipData.newPlainText("PsiRa Message", textToCopy)
-                        clipboard.setPrimaryClip(clip)
-                        Toast.makeText(context, "Copied to Clipboard", Toast.LENGTH_SHORT).show()
+                        "Extract Steganography 🕵️" -> {
+                            try {
+                                val base64Data = resolvedContent.substringAfter("base64,")
+                                val bytes = Base64.decode(base64Data, Base64.DEFAULT)
+                                val opts = BitmapFactory.Options().apply {
+                                    inPreferredConfig = Bitmap.Config.ARGB_8888
+                                    inPremultiplied = false
+                                }
+                                val bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
+                                if (bmp != null) {
+                                    extractSteganographyFromImage(context, bmp)
+                                } else {
+                                    Toast.makeText(context, "Cannot decode image", Toast.LENGTH_SHORT).show()
+                                }
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        "Copy to Clipboard" -> {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                            val clip = android.content.ClipData.newPlainText("PsiRa Message", resolvedContent)
+                            clipboard.setPrimaryClip(clip)
+                            Toast.makeText(context, "Copied to Clipboard", Toast.LENGTH_SHORT).show()
+                        }
+                        "Delete for Everyone" -> {
+                            PsiRaDialogs.showDeleteSheet(
+                                context,
+                                "ERASE SIGNAL?",
+                                "This message will be purged from the encrypted logs forever.",
+                                "PURGE"
+                            ) {
+                                chatDbRef?.child(messageId)?.removeValue()?.addOnSuccessListener {
+                                    Toast.makeText(context, "Message Erased", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
                     }
                 }
-            } else {
-                Toast.makeText(context, "Error: Message ID missing", Toast.LENGTH_SHORT).show()
             }
             true
         }
     }
 
+    private fun showFullScreenImage(context: Context, imageContent: String) {
+        val dialog = Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        dialog.setContentView(R.layout.activity_media_vault_viewer)
+
+        val imgView = dialog.findViewById<ImageView>(R.id.imgVaultViewer)
+        val btnBack = dialog.findViewById<ImageButton>(R.id.btnVaultBack)
+        val tvName = dialog.findViewById<TextView>(R.id.tvViewerFileName)
+        val btnExport = dialog.findViewById<ImageButton>(R.id.btnExportVaultMedia)
+        val progress = dialog.findViewById<ProgressBar>(R.id.progressVaultViewer)
+
+        tvName.text = "Encrypted Media"
+        imgView.visibility = View.VISIBLE
+        progress.visibility = View.GONE
+        btnBack.setOnClickListener { dialog.dismiss() }
+
+        var currentBitmap: Bitmap? = null
+        if (imageContent.startsWith("data:")) {
+            try {
+                val base64Data = imageContent.substringAfter("base64,")
+                val bytes = Base64.decode(base64Data, Base64.DEFAULT)
+                val opts = BitmapFactory.Options().apply {
+                    inPreferredConfig = Bitmap.Config.ARGB_8888
+                    inPremultiplied = false
+                    inDither = false
+                    inScaled = false
+                }
+                currentBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
+                imgView.setImageBitmap(currentBitmap)
+            } catch (_: Exception) {}
+        } else {
+            Glide.with(context).load(imageContent).into(imgView)
+        }
+
+        var scaleFactor = 1f
+        val scaleDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            override fun onScale(detector: ScaleGestureDetector): Boolean {
+                scaleFactor *= detector.scaleFactor
+                scaleFactor = scaleFactor.coerceIn(0.5f, 5f)
+                imgView.scaleX = scaleFactor
+                imgView.scaleY = scaleFactor
+                return true
+            }
+        })
+        imgView.setOnTouchListener { _, event ->
+            scaleDetector.onTouchEvent(event)
+            true
+        }
+
+        btnExport.setOnClickListener {
+            val options = arrayOf("Save to Gallery", "Save to Private Vault 🔒", "Extract Steganography 🕵️")
+            MaterialAlertDialogBuilder(context)
+                .setTitle("Image Options")
+                .setItems(options) { _, which ->
+                    when (which) {
+                        0 -> saveFileToLocal(context, imageContent, "chat_${System.currentTimeMillis()}.png")
+                        1 -> {
+                            val base64Data = imageContent.substringAfter("base64,")
+                            val bytes = Base64.decode(base64Data, Base64.DEFAULT)
+                            saveToVault(context, bytes, "image/png", "chat_${System.currentTimeMillis()}.png")
+                        }
+                        2 -> {
+                            if (currentBitmap != null) {
+                                extractSteganographyFromImage(context, currentBitmap)
+                            } else {
+                                Toast.makeText(context, "Image still loading...", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                }
+                .show()
+        }
+
+        dialog.show()
+    }
+
+    private fun extractSteganographyFromImage(context: Context, bitmap: Bitmap) {
+        val extracted = StegoHelper.extract(bitmap)
+        if (extracted == null) {
+            Toast.makeText(context, "No hidden steganography detected in this image.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val defaultDecrypted = try {
+            val str = String(extracted, Charsets.UTF_8)
+            AESEncryption.decryptWithKey(str, AESEncryption.GLOBAL_GROUP_KEY)
+        } catch (_: Exception) { null }
+
+        if (defaultDecrypted != null) {
+            showStegoResultDialog(context, defaultDecrypted)
+        } else {
+            val input = EditText(context)
+            input.hint = "Enter decryption password"
+            input.setTextColor(Color.WHITE)
+            input.setHintTextColor(Color.GRAY)
+
+            MaterialAlertDialogBuilder(context)
+                .setTitle("🕵️ Hidden Data Found!")
+                .setMessage("Data is encrypted with a custom key. Enter password:")
+                .setView(input)
+                .setPositiveButton("Decrypt") { _, _ ->
+                    val pass = input.text.toString().trim()
+                    try {
+                        val digest = java.security.MessageDigest.getInstance("SHA-256")
+                        val keyBytes = digest.digest(pass.toByteArray(Charsets.UTF_8))
+                        val key = javax.crypto.spec.SecretKeySpec(keyBytes, "AES")
+                        val str = String(extracted, Charsets.UTF_8)
+                        val result = AESEncryption.decryptWithKey(str, key)
+                        showStegoResultDialog(context, result)
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Decryption failed. Incorrect password.", Toast.LENGTH_LONG).show()
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+    }
+
+    private fun showStegoResultDialog(context: Context, text: String) {
+        MaterialAlertDialogBuilder(context)
+            .setTitle("🕵️ Hidden Message Extracted")
+            .setMessage(text)
+            .setPositiveButton("Copy") { _, _ ->
+                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("PsiRa Steg", text))
+                Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun saveToVault(context: Context, decodedBytes: ByteArray, mimeType: String, originalName: String) {
+        try {
+            val tmpFile = File(context.cacheDir, "vault_import_${System.currentTimeMillis()}.${if (mimeType.startsWith("video/")) "mp4" else "png"}")
+            tmpFile.writeBytes(decodedBytes)
+            val uri = Uri.fromFile(tmpFile)
+            MediaVaultManager.importMedia(context, uri, mimeType)
+            tmpFile.delete()
+            Toast.makeText(context, "🔒 Stashed securely in Private Vault!", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(context, "Vault save failed: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private fun playOneAudio(context: Context, url: String) {
-        AudioPlayer.play(context, url, 
+        AudioPlayer.play(context, url,
             onStart = {
                 Toast.makeText(context, "Initializing secure audio stream...", Toast.LENGTH_SHORT).show()
             },
@@ -184,16 +410,14 @@ class MessageAdapter(
         )
     }
 
-
     private fun saveFileToLocal(context: Context, url: String, fileName: String) {
         if (url.startsWith("data:")) {
             try {
                 val base64Data = url.substringAfter("base64,")
-                val decodedBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
+                val decodedBytes = Base64.decode(base64Data, Base64.DEFAULT)
                 writeBytesToStorage(context, decodedBytes, fileName)
             } catch (e: Exception) {
                 Toast.makeText(context, "Save failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                e.printStackTrace()
             }
         } else if (url.startsWith("http://") || url.startsWith("https://")) {
             Toast.makeText(context, "Downloading secure asset...", Toast.LENGTH_SHORT).show()
@@ -205,12 +429,12 @@ class MessageAdapter(
                     conn.requestMethod = "GET"
                     conn.doInput = true
                     conn.connect()
-                    
+
                     if (conn.responseCode == java.net.HttpURLConnection.HTTP_OK) {
                         val input = conn.inputStream
                         val decodedBytes = input.readBytes()
                         input.close()
-                        
+
                         (context as? android.app.Activity)?.runOnUiThread {
                             writeBytesToStorage(context, decodedBytes, fileName)
                         }
@@ -220,14 +444,11 @@ class MessageAdapter(
                         }
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
                     (context as? android.app.Activity)?.runOnUiThread {
                         Toast.makeText(context, "Download failed: ${e.message}", Toast.LENGTH_SHORT).show()
                     }
                 }
             }.start()
-        } else {
-            Toast.makeText(context, "Invalid download source", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -237,7 +458,6 @@ class MessageAdapter(
                 val resolver = context.contentResolver
                 val contentValues = android.content.ContentValues().apply {
                     put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, "PsiRa_$fileName")
-                    
                     val mimeType = when {
                         fileName.endsWith(".jpg", true) || fileName.endsWith(".jpeg", true) -> "image/jpeg"
                         fileName.endsWith(".png", true) -> "image/png"
@@ -246,7 +466,6 @@ class MessageAdapter(
                         else -> "*/*"
                     }
                     put(android.provider.MediaStore.MediaColumns.MIME_TYPE, mimeType)
-                    
                     val relativePath = when {
                         mimeType.startsWith("image/") -> android.os.Environment.DIRECTORY_PICTURES
                         mimeType.startsWith("audio/") -> android.os.Environment.DIRECTORY_MUSIC
@@ -274,15 +493,7 @@ class MessageAdapter(
                     contentValues.clear()
                     contentValues.put(android.provider.MediaStore.MediaColumns.IS_PENDING, 0)
                     resolver.update(uri, contentValues, null, null)
-                    
-                    val saveMsg = when {
-                        collectionUri == android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI -> "Saved to Pictures/PsiRa_$fileName"
-                        collectionUri == android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI -> "Saved to Music/PsiRa_$fileName"
-                        else -> "Saved to Downloads/PsiRa_$fileName"
-                    }
-                    Toast.makeText(context, saveMsg, Toast.LENGTH_LONG).show()
-                } else {
-                    throw java.io.IOException("Failed to create MediaStore entry")
+                    Toast.makeText(context, "Saved to Pictures/Music/Downloads", Toast.LENGTH_LONG).show()
                 }
             } else {
                 @Suppress("DEPRECATION")
@@ -294,17 +505,14 @@ class MessageAdapter(
                 @Suppress("DEPRECATION")
                 val destDir = android.os.Environment.getExternalStoragePublicDirectory(relativePath)
                 if (!destDir.exists()) destDir.mkdirs()
-                val destFile = java.io.File(destDir, "PsiRa_$fileName")
+                val destFile = File(destDir, "PsiRa_$fileName")
                 destFile.writeBytes(decodedBytes)
                 Toast.makeText(context, "Saved to ${destFile.absolutePath}", Toast.LENGTH_LONG).show()
             }
         } catch (e: Exception) {
-            Toast.makeText(context, "Save failed. Check storage permissions.", Toast.LENGTH_SHORT).show()
-            e.printStackTrace()
+            Toast.makeText(context, "Save failed: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
-    override fun getItemCount(): Int {
-        return messageList.size
-    }
+    override fun getItemCount(): Int = messageList.size
 }
