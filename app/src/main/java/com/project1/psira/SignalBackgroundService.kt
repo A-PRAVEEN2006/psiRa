@@ -85,6 +85,12 @@ class SignalBackgroundService : Service() {
             @Suppress("DEPRECATION")
             stopForeground(true)
         }
+        try {
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.cancel(NOTIF_SYNC_ID)
+        } catch (e: Exception) {
+            Log.w("SignalSync", "Failed to cancel sync notification: ${e.message}")
+        }
 
         // 3. Initialize and start real-time listener for incoming messages
         if (signalManager == null) {

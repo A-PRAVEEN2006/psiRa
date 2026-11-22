@@ -28,11 +28,27 @@ class CallActivity : AppCompatActivity() {
 
     private var rtcClient: WebRTCClient? = null
     private lateinit var tvStatus: TextView
+    private lateinit var tvCallTimer: TextView
+    private lateinit var layoutAcceptCall: View
+    private lateinit var viewAvatarPulse: View
     private lateinit var audioManager: android.media.AudioManager
     private lateinit var btnAccept: ImageButton
     private lateinit var btnEnd: ImageButton
     private lateinit var btnMute: ImageButton
     private lateinit var btnSpeaker: ImageButton
+
+    private val timerHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val timerRunnable = object : Runnable {
+        override fun run() {
+            if (isCallActive && callConnectedTime > 0L) {
+                val elapsedSeconds = (System.currentTimeMillis() - callConnectedTime) / 1000
+                val minutes = elapsedSeconds / 60
+                val seconds = elapsedSeconds % 60
+                tvCallTimer.text = String.format("%02d:%02d", minutes, seconds)
+                timerHandler.postDelayed(this, 1000)
+            }
+        }
+    }
 
     companion object {
         private const val REQUEST_MICROPHONE = 101
@@ -51,10 +67,15 @@ class CallActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvCallerName).text = targetName
         findViewById<TextView>(R.id.tvCallerInitial).text = targetName.take(1).uppercase()
         btnAccept = findViewById(R.id.btnAcceptCall)
+        layoutAcceptCall = findViewById(R.id.layoutAcceptCall)
         btnEnd = findViewById(R.id.btnEndCall)
         tvStatus = findViewById(R.id.tvCallStatus)
+        tvCallTimer = findViewById(R.id.tvCallTimer)
+        viewAvatarPulse = findViewById(R.id.viewAvatarPulse)
         btnMute = findViewById(R.id.btnMute)
         btnSpeaker = findViewById(R.id.btnSpeaker)
+
+        startPulseAnimation()
 
         audioManager = getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
 
@@ -67,13 +88,32 @@ class CallActivity : AppCompatActivity() {
         } else {
             // Show a waiting state and request permission
             tvStatus.text = "Requesting Microphone Access..."
-            btnAccept.visibility = View.GONE
+            layoutAcceptCall.visibility = View.GONE
             btnEnd.setOnClickListener { terminateCall() }
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(android.Manifest.permission.RECORD_AUDIO),
                 REQUEST_MICROPHONE
             )
+        }
+    }
+
+    private fun startPulseAnimation() {
+        val scaleX = android.animation.ObjectAnimator.ofFloat(viewAvatarPulse, "scaleX", 1.0f, 1.25f, 1.0f)
+        val scaleY = android.animation.ObjectAnimator.ofFloat(viewAvatarPulse, "scaleY", 1.0f, 1.25f, 1.0f)
+        val alpha = android.animation.ObjectAnimator.ofFloat(viewAvatarPulse, "alpha", 0.4f, 0.8f, 0.4f)
+        android.animation.AnimatorSet().apply {
+            playTogether(scaleX, scaleY, alpha)
+            duration = 2000
+            interpolator = android.view.animation.AccelerateDecelerateInterpolator()
+            addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: android.animation.Animator) {
+                    if (isCallActive || !isFinishing) {
+                        start()
+                    }
+                }
+            })
+            start()
         }
     }
 
@@ -128,13 +168,16 @@ class CallActivity : AppCompatActivity() {
                 override fun onCallReady() {
                     runOnUiThread {
                         tvStatus.text = "SECURE CHANNEL ESTABLISHED"
-                        tvStatus.setTextColor(android.graphics.Color.GREEN)
+                        tvStatus.setTextColor(android.graphics.Color.parseColor("#4CD964"))
                         callConnectedTime = System.currentTimeMillis()
+                        tvCallTimer.visibility = View.VISIBLE
+                        timerHandler.post(timerRunnable)
                     }
                 }
                 override fun onCallEnded() {
                     runOnUiThread {
                         tvStatus.text = "Connection Terminated"
+                        tvStatus.setTextColor(android.graphics.Color.parseColor("#FF5252"))
                         android.os.Handler(android.os.Looper.getMainLooper())
                             .postDelayed({ terminateCall() }, 1000)
                     }
@@ -144,7 +187,7 @@ class CallActivity : AppCompatActivity() {
 
         if (callMode == "OUTGOING") {
             tvStatus.text = "Initiating Secure Uplink..."
-            btnAccept.visibility = View.GONE
+            layoutAcceptCall.visibility = View.GONE
 
             var hasStarted = false
             db.getReference("calls").child(targetUid)
@@ -178,16 +221,16 @@ class CallActivity : AppCompatActivity() {
             if (alreadyAccepted) {
                 // User already tapped Accept in the BottomSheet — go straight to connecting
                 tvStatus.text = "Establishing Secure Link..."
-                btnAccept.visibility = View.GONE
+                layoutAcceptCall.visibility = View.GONE
                 rtcClient?.acceptCall()
             } else {
                 // User arrived here without accepting (e.g. direct call)
                 tvStatus.text = "Secure Signal Incoming..."
-                btnAccept.visibility = View.VISIBLE
+                layoutAcceptCall.visibility = View.VISIBLE
                 btnAccept.setOnClickListener {
                     myCallRef.child("status").setValue("accepted")
                     tvStatus.text = "Connecting..."
-                    btnAccept.visibility = View.GONE
+                    layoutAcceptCall.visibility = View.GONE
                     rtcClient?.acceptCall()
                 }
             }
@@ -232,6 +275,7 @@ class CallActivity : AppCompatActivity() {
     private fun terminateCall() {
         if (!isCallActive) return
         isCallActive = false
+        timerHandler.removeCallbacksAndMessages(null)
 
         val timestamp = System.currentTimeMillis()
         val duration = if (callConnectedTime > 0L) {

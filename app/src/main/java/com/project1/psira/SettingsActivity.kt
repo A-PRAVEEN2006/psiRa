@@ -12,6 +12,14 @@ import androidx.core.content.edit
 import com.google.firebase.database.FirebaseDatabase
 
 class SettingsActivity : BaseActivity() {
+
+    private var tvCloakActiveValue: TextView? = null
+    private var tvLogicConfigValue: TextView? = null
+    private var tvPanicCodeValue: TextView? = null
+    private var tvDoubleLayerValue: TextView? = null
+    private var tvThemeActiveValue: TextView? = null
+    private var tvUiStyleActiveValue: TextView? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE, android.view.WindowManager.LayoutParams.FLAG_SECURE)
@@ -24,6 +32,7 @@ class SettingsActivity : BaseActivity() {
         val btnPanicCode      = findViewById<View>(R.id.btnPanicCode)
         val btnDoubleLayer    = findViewById<View>(R.id.btnDoubleLayer)
         val btnThemeSelection = findViewById<View>(R.id.btnThemeSelection)
+        val btnUiStyleSelection = findViewById<View>(R.id.btnUiStyleSelection)
         val btnToggleTor      = findViewById<View>(R.id.btnToggleTor)
         val btnVerifyTor      = findViewById<View>(R.id.btnVerifyTor)
         val btnWipeCache      = findViewById<View>(R.id.btnWipeCache)
@@ -34,6 +43,15 @@ class SettingsActivity : BaseActivity() {
         val btnPrivateVault   = findViewById<View>(R.id.btnPrivateVault)
         val btnNotifCamouflage= findViewById<View>(R.id.btnNotifCamouflage)
         val tvNotifCamouflageValue = findViewById<TextView>(R.id.tvNotifCamouflageValue)
+
+        tvCloakActiveValue = findViewById(R.id.tvCloakActiveValue)
+        tvLogicConfigValue = findViewById(R.id.tvLogicConfigValue)
+        tvPanicCodeValue = findViewById(R.id.tvPanicCodeValue)
+        tvDoubleLayerValue = findViewById(R.id.tvDoubleLayerValue)
+        tvThemeActiveValue = findViewById(R.id.tvThemeActiveValue)
+        tvUiStyleActiveValue = findViewById(R.id.tvUiStyleActiveValue)
+
+        updateSettingBadges()
 
         val isCamouflage = NotificationHelper.isCamouflageEnabled(this)
         tvNotifCamouflageValue?.text = if (isCamouflage) "ON" else "OFF"
@@ -110,11 +128,24 @@ class SettingsActivity : BaseActivity() {
         }
 
         btnChangePassword.setOnClickListener { showStealthPasscodeEditor() }
-        btnConfigureCloak.setOnClickListener { showMaskSelector() }
-        btnLogicConfig.setOnClickListener { showLogicConfigSelector() }
+        btnConfigureCloak.setOnClickListener { 
+            DisguiseStudioHelper.showStudio(this) { updateSettingBadges() }
+        }
+        btnLogicConfig.setOnClickListener { 
+            val activeCloak = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
+                .getString("ACTIVE_CLOAK", "CALCULATOR")?.uppercase() ?: "CALCULATOR"
+            val intent = Intent(this, StealthDetailActivity::class.java)
+            intent.putExtra("LOGIC_ID", activeCloak)
+            startActivity(intent)
+        }
         btnPanicCode.setOnClickListener { showPanicCodeEditor() }
         btnDoubleLayer.setOnClickListener { toggleDoubleLayer() }
-        btnThemeSelection.setOnClickListener { showThemeSelector() }
+        btnThemeSelection.setOnClickListener { 
+            ThemeStudioHelper.showStudio(this) { updateSettingBadges() }
+        }
+        btnUiStyleSelection?.setOnClickListener {
+            ThemeStudioHelper.showStudio(this) { updateSettingBadges() }
+        }
 
         btnToggleTor.setOnClickListener {
             val isTorOnNow = sharedPref.getBoolean("TOR_MODE", false)
@@ -437,9 +468,43 @@ class SettingsActivity : BaseActivity() {
         startActivity(intent)
     }
 
+    override fun onResume() {
+        super.onResume()
+        updateSettingBadges()
+    }
+
+    private fun updateSettingBadges() {
+        val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
+
+        // 1. Cloak Disguise Badge
+        val currentCloak = sharedPref.getString("ACTIVE_CLOAK", "CALCULATOR")?.uppercase() ?: "CALCULATOR"
+        tvCloakActiveValue?.text = currentCloak
+
+        // 2. Logic Config Badge
+        tvLogicConfigValue?.text = "CONFIGURED"
+
+        // 3. Panic PIN Badge
+        val panicSet = !sharedPref.getString("PANIC_PASSCODE", "").isNullOrEmpty()
+        tvPanicCodeValue?.text = if (panicSet) "ARMED" else "NOT SET"
+        tvPanicCodeValue?.setTextColor(if (panicSet) android.graphics.Color.parseColor("#FF3B30") else android.graphics.Color.parseColor("#808080"))
+
+        // 4. Double Layer Badge
+        val doubleLayer = sharedPref.getBoolean("DOUBLE_LAYER", false)
+        tvDoubleLayerValue?.text = if (doubleLayer) "ACTIVE" else "OFF"
+        tvDoubleLayerValue?.setTextColor(if (doubleLayer) android.graphics.Color.parseColor("#4CD964") else android.graphics.Color.parseColor("#808080"))
+
+        // 5. Theme Badge
+        val theme = sharedPref.getString("APP_THEME", "MIDNIGHT") ?: "MIDNIGHT"
+        tvThemeActiveValue?.text = theme
+
+        // 6. UI Style Badge
+        val uiStyle = sharedPref.getString("UI_STYLE", "GLASS") ?: "GLASS"
+        tvUiStyleActiveValue?.text = uiStyle
+    }
+
     private fun showAbout() {
         val about = """
-            PsiRa | Overseer Build v3.2.8
+            PsiRa | Overseer Build v3.3.0
             ----------------------------
             THE SPECTRE ENCLAVE:
             A premium, high-fidelity secure communication network.

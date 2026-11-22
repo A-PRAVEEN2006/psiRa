@@ -9,37 +9,41 @@ data class StealthLogic(
     val guide: String,
     val defaultPass: String,
     val defaultGateway: String,
-    val hint: String
+    val hint: String,
+    val iconRes: Int = R.drawable.ic_cloak_clock
 )
 
 object StealthManager {
     val LOGICS = listOf(
         StealthLogic(
             "CLOCK",
-            "Clock",
-            "A simple analog clock. You can unlock the app by moving the hands to a secret time.",
+            "Analog Clock",
+            "A realistic clock. Move the hands to a secret time and tap the center to unlock.",
             "1. Move the clock hands to your secret time.\n2. Tap the center button to unlock the app.\n3. Hold the center button to open settings.",
             "02:35",
             "12:00",
-            "HH:MM"
+            "HH:MM",
+            R.drawable.ic_cloak_clock
         ),
         StealthLogic(
             "CALCULATOR",
             "Calculator",
-            "A fully working calculator. A hidden equation acts as your secret key.",
+            "A fully working scientific calculator. A hidden equation acts as your secret key.",
             "1. Type your secret equation on the calculator.\n2. Press [ = ] to open the app.\n3. Type your settings equation and press [ = ] to open settings.",
             "9999",
             "7777",
-            "4-8 Digits"
+            "4-8 Digits",
+            R.drawable.ic_cloak_calculator
         ),
         StealthLogic(
             "NOTEPAD",
-            "Diary",
+            "Diary & Notes",
             "A personal diary app. Saving a specific secret word in an entry will unlock the app.",
             "1. Type your secret password into a diary entry (Title or Body).\n2. Press 'Save' to open the app.\n3. Typing your settings password and pressing Save opens settings.",
             "vault",
             "settings",
-            "Any word"
+            "Any word",
+            R.drawable.ic_cloak_notepad
         ),
         StealthLogic(
             "RECORDER",
@@ -48,7 +52,8 @@ object StealthManager {
             "1. Long press the RED Record button a specific number of times.\n2. Example: 5 long presses for App, 10 long presses for Settings.",
             "5",
             "10",
-            "Long Press Count"
+            "Long Press Count",
+            R.drawable.ic_cloak_recorder
         ),
         StealthLogic(
             "CALENDAR",
@@ -57,7 +62,8 @@ object StealthManager {
             "1. Select your secret date on the planner calendar.\n2. Use a different secret date to open Settings.",
             "01-01",
             "12-25",
-            "DD-MM"
+            "DD-MM",
+            R.drawable.ic_cloak_calendar
         ),
         StealthLogic(
             "WEATHER",
@@ -66,7 +72,8 @@ object StealthManager {
             "1. Tap the refresh icon a specific number of times.\n2. Sequence: 5 taps for App, 10 for Settings.",
             "5",
             "10",
-            "Tap Count"
+            "Tap Count",
+            R.drawable.ic_cloak_weather
         ),
         StealthLogic(
             "CONVERTER",
@@ -75,7 +82,8 @@ object StealthManager {
             "1. Enter your secret number in the value box.\n2. Tap the convert button to unlock.",
             "99.9",
             "00.0",
-            "Number"
+            "Number",
+            R.drawable.ic_cloak_converter
         )
     )
 

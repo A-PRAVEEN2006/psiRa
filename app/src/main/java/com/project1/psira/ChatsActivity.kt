@@ -3,6 +3,7 @@ package com.project1.psira
 import android.content.Intent
 import android.os.Bundle
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -20,7 +21,13 @@ import com.google.firebase.database.ValueEventListener
 class ChatsActivity : BaseActivity() {
 
     private lateinit var chatList: ArrayList<User>
+    private val allChatsList = ArrayList<User>()
     private lateinit var chatAdapter: DirectChatAdapter
+
+    private var activeFilter = "ALL"
+    private var chipAll: TextView? = null
+    private var chipUnread: TextView? = null
+    private var chipDirect: TextView? = null
 
     private var userDirectChatsRef: DatabaseReference? = null
     private var chatsListener: ValueEventListener? = null
@@ -31,6 +38,28 @@ class ChatsActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         window.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE, android.view.WindowManager.LayoutParams.FLAG_SECURE)
         setContentView(R.layout.activity_chats)
+
+        chipAll = findViewById(R.id.chipAll)
+        chipUnread = findViewById(R.id.chipUnread)
+        chipDirect = findViewById(R.id.chipDirect)
+
+        chipAll?.setOnClickListener {
+            activeFilter = "ALL"
+            updateFilterChipStyles()
+            applyFilter()
+        }
+
+        chipUnread?.setOnClickListener {
+            activeFilter = "UNREAD"
+            updateFilterChipStyles()
+            applyFilter()
+        }
+
+        chipDirect?.setOnClickListener {
+            activeFilter = "DIRECT"
+            updateFilterChipStyles()
+            applyFilter()
+        }
 
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNavigationView)
         bottomNav.selectedItemId = R.id.nav_chats
@@ -88,9 +117,9 @@ class ChatsActivity : BaseActivity() {
                             val channelName = if (myUid < uid) "${myUid}_$uid" else "${uid}_${myUid}"
                             db.getReference("direct_messages").child(channelName).removeEventListener(msgListener)
                         }
-                        chatList.removeAll { it.uid == uid }
+                        allChatsList.removeAll { it.uid == uid }
                     }
-                    chatAdapter.notifyDataSetChanged()
+                    applyFilter()
                     
                     for (targetUid in newUids) {
                         // User Profile listener
@@ -100,14 +129,13 @@ class ChatsActivity : BaseActivity() {
                                     val user = userSnap.getValue(User::class.java)
                                     if (user != null) {
                                         val fullUser = User(uid = targetUid, email = user.email, name = user.name, agentId = user.agentId, banned = user.banned, online = user.online)
-                                        val existingIndex = chatList.indexOfFirst { it.uid == targetUid }
+                                        val existingIndex = allChatsList.indexOfFirst { it.uid == targetUid }
                                         if (existingIndex >= 0) {
-                                            chatList[existingIndex] = fullUser
+                                            allChatsList[existingIndex] = fullUser
                                         } else {
-                                            chatList.add(fullUser)
+                                            allChatsList.add(fullUser)
                                         }
-                                        chatList.sortByDescending { chatAdapter.getTimestamp(it.uid) }
-                                        chatAdapter.notifyDataSetChanged()
+                                        applyFilter()
                                     }
                                 }
                                 override fun onCancelled(error: DatabaseError) {}
@@ -167,8 +195,7 @@ class ChatsActivity : BaseActivity() {
                                             lastStatus = lastMsg.status
                                         )
                                         chatAdapter.updatePreview(targetUid, info)
-                                        chatList.sortByDescending { chatAdapter.getTimestamp(it.uid) }
-                                        chatAdapter.notifyDataSetChanged()
+                                        applyFilter()
                                     } else {
                                         val info = ChatPreviewInfo(
                                             lastMessage = "",
@@ -180,6 +207,7 @@ class ChatsActivity : BaseActivity() {
                                             lastStatus = "sent"
                                         )
                                         chatAdapter.updatePreview(targetUid, info)
+                                        applyFilter()
                                     }
                                 }
 
@@ -329,5 +357,33 @@ class ChatsActivity : BaseActivity() {
             startActivity(intent)
             return
         }
+    }
+
+    private fun applyFilter() {
+        chatList.clear()
+        when (activeFilter) {
+            "UNREAD" -> {
+                chatList.addAll(allChatsList.filter { (chatAdapter.getPreview(it.uid)?.unreadCount ?: 0) > 0 })
+            }
+            "DIRECT" -> {
+                chatList.addAll(allChatsList.filter { chatAdapter.getTimestamp(it.uid) > 0 })
+            }
+            else -> {
+                chatList.addAll(allChatsList)
+            }
+        }
+        chatList.sortByDescending { chatAdapter.getTimestamp(it.uid) }
+        chatAdapter.notifyDataSetChanged()
+    }
+
+    private fun updateFilterChipStyles() {
+        chipAll?.setBackgroundResource(if (activeFilter == "ALL") R.drawable.bg_filter_chip_active else R.drawable.bg_filter_chip_inactive)
+        chipAll?.setTextColor(if (activeFilter == "ALL") android.graphics.Color.parseColor("#00E5FF") else android.graphics.Color.parseColor("#888888"))
+
+        chipUnread?.setBackgroundResource(if (activeFilter == "UNREAD") R.drawable.bg_filter_chip_active else R.drawable.bg_filter_chip_inactive)
+        chipUnread?.setTextColor(if (activeFilter == "UNREAD") android.graphics.Color.parseColor("#00E5FF") else android.graphics.Color.parseColor("#888888"))
+
+        chipDirect?.setBackgroundResource(if (activeFilter == "DIRECT") R.drawable.bg_filter_chip_active else R.drawable.bg_filter_chip_inactive)
+        chipDirect?.setTextColor(if (activeFilter == "DIRECT") android.graphics.Color.parseColor("#00E5FF") else android.graphics.Color.parseColor("#888888"))
     }
 }

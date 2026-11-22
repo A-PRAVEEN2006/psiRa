@@ -33,10 +33,10 @@ class MainActivity : BaseActivity() {
             // Check Panic Code First
             val panicCode = sharedPref.getString("PANIC_PASSCODE", null)
             if (panicCode != null && currentText == panicCode) {
-                com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
-                sharedPref.edit { clear() }
+                VaultAuthHelper.wipeLocalVault(this)
                 calcDisplay.setText("")
-                Toast.makeText(this, "System Error 0x000F", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "System Error: Memory Fault 0x000F", Toast.LENGTH_SHORT).show()
+                finishAffinity()
                 return@setOnClickListener
             }
 

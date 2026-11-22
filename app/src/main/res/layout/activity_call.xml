@@ -1,97 +1,267 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0F0F1B">
+    android:background="#0A0E17">
 
-    <!-- Blurred Background or Gradient -->
+    <!-- Atmospheric Glow Background -->
     <View
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@drawable/bg_god_gradient"
-        android:alpha="0.3" />
+        android:alpha="0.25" />
 
+    <!-- ── TOP ENCRYPTION SECURITY BANNER ── -->
     <LinearLayout
+        android:id="@+id/layoutCallSecurity"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="100dp"
+        android:layout_marginTop="48dp"
         android:gravity="center"
         android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/tvCallerInitial"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:background="@drawable/bg_circle_dark"
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_pill_accent"
+            android:backgroundTint="#2000E5FF"
             android:gravity="center"
-            android:textColor="#FFFFFF"
-            android:textSize="48sp"
-            android:textStyle="bold" />
+            android:paddingStart="14dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="14dp"
+            android:paddingBottom="6dp">
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🔒"
+                android:textSize="12sp" />
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:letterSpacing="0.08"
+                android:text="END-TO-END ENCRYPTED"
+                android:textColor="#00E5FF"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:letterSpacing="0.05"
+            android:text="P-256 ECDH • ZERO-KNOWLEDGE NODE"
+            android:textColor="#607D8B"
+            android:textSize="10sp" />
+    </LinearLayout>
+
+    <!-- ── CENTER: CALLER AVATAR & CALL TELEMETRY ── -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <!-- Avatar with Pulsing Radar Ring -->
+        <FrameLayout
+            android:layout_width="160dp"
+            android:layout_height="160dp">
+
+            <View
+                android:id="@+id/viewAvatarPulse"
+                android:layout_width="160dp"
+                android:layout_height="160dp"
+                android:background="@drawable/bg_call_avatar_glow" />
+
+            <TextView
+                android:id="@+id/tvCallerInitial"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_circle_dark"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="44sp"
+                android:textStyle="bold" />
+        </FrameLayout>
+
+        <!-- Caller Name -->
         <TextView
             android:id="@+id/tvCallerName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="20dp"
             android:text="AGENT X"
             android:textColor="#FFFFFF"
-            android:textSize="24sp"
+            android:textSize="26sp"
             android:textStyle="bold" />
 
+        <!-- Call Status -->
         <TextView
             android:id="@+id/tvCallStatus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="ENCRYPTING NODE..."
-            android:textColor="#7B61FF"
-            android:textSize="14sp" />
+            android:layout_marginTop="8dp"
+            android:letterSpacing="0.04"
+            android:text="INITIATING ENCRYPTED UPLINK..."
+            android:textColor="#00E5FF"
+            android:textSize="13sp" />
+
+        <!-- Live Call Timer -->
+        <TextView
+            android:id="@+id/tvCallTimer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:letterSpacing="0.15"
+            android:text="00:00"
+            android:textColor="#E0E0E0"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <!-- Subtle Audio Wave Telemetry Indicator -->
+        <TextView
+            android:id="@+id/tvAudioWave"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:letterSpacing="0.25"
+            android:text="••• ❙❙❙ •••"
+            android:textColor="#4000E5FF"
+            android:textSize="16sp" />
     </LinearLayout>
 
+    <!-- ── BOTTOM: FLOATING GLASS CALL CONTROLS DOCK ── -->
     <LinearLayout
+        android:id="@+id/layoutControlDock"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="80dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="48dp"
+        android:background="@drawable/bg_call_glass_dock"
         android:gravity="center"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="20dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="20dp">
 
-        <ImageButton
-            android:id="@+id/btnMute"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:layout_marginEnd="40dp"
-            android:background="@drawable/bg_circle_dark"
-            android:src="@android:drawable/ic_btn_speak_now"
-            android:tint="#FFFFFF" />
+        <!-- Mute Button Column -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
 
-        <ImageButton
-            android:id="@+id/btnAcceptCall"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:layout_marginEnd="40dp"
-            android:background="@drawable/bg_circle_green"
-            android:src="@android:drawable/ic_btn_speak_now"
-            android:tint="#FFFFFF"
-            android:visibility="gone" />
+            <ImageButton
+                android:id="@+id/btnMute"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="@drawable/bg_circle_dark"
+                android:contentDescription="Mute Audio"
+                android:src="@android:drawable/ic_btn_speak_now"
+                app:tint="#FFFFFF" />
 
-        <ImageButton
-            android:id="@+id/btnEndCall"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:background="@drawable/bg_circle_red"
-            android:src="@android:drawable/ic_menu_close_clear_cancel"
-            android:tint="#FFFFFF" />
+            <TextView
+                android:id="@+id/tvMuteLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Mute"
+                android:textColor="#B0BEC5"
+                android:textSize="11sp" />
+        </LinearLayout>
 
-        <ImageButton
-            android:id="@+id/btnSpeaker"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:layout_marginStart="40dp"
-            android:background="@drawable/bg_circle_dark"
-            android:src="@android:drawable/ic_lock_silent_mode_off"
-            android:tint="#FFFFFF" />
+        <!-- Accept Button Column (Incoming Only) -->
+        <LinearLayout
+            android:id="@+id/layoutAcceptCall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <ImageButton
+                android:id="@+id/btnAcceptCall"
+                android:layout_width="68dp"
+                android:layout_height="68dp"
+                android:background="@drawable/bg_circle_green"
+                android:contentDescription="Accept Call"
+                android:src="@android:drawable/ic_menu_call"
+                app:tint="#FFFFFF" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Accept"
+                android:textColor="#4CD964"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- End Call Button Column -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageButton
+                android:id="@+id/btnEndCall"
+                android:layout_width="68dp"
+                android:layout_height="68dp"
+                android:background="@drawable/bg_circle_red"
+                android:contentDescription="End Call"
+                android:src="@android:drawable/ic_menu_close_clear_cancel"
+                app:tint="#FFFFFF" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="End Call"
+                android:textColor="#FF5252"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- Speaker Button Column -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageButton
+                android:id="@+id/btnSpeaker"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="@drawable/bg_circle_dark"
+                android:contentDescription="Speakerphone"
+                android:src="@android:drawable/ic_lock_silent_mode_off"
+                app:tint="#FFFFFF" />
+
+            <TextView
+                android:id="@+id/tvSpeakerLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Speaker"
+                android:textColor="#B0BEC5"
+                android:textSize="11sp" />
+        </LinearLayout>
     </LinearLayout>
 
 </RelativeLayout>

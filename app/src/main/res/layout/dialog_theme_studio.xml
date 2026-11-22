@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="#121212">
+
+    <!-- Handle Bar -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:background="#333333"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🎨 VISUAL THEMES &amp; UI STYLES"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.04"
+        android:layout_marginBottom="6dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Choose your tactical accent color and visual presentation style below."
+        android:textColor="#AAAAAA"
+        android:textSize="13sp"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Section 1: UI Presentation Style -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="UI DESIGN STYLE"
+        android:textColor="?attr/colorAccent"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.08"
+        android:layout_marginBottom="8dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp">
+
+        <Button
+            android:id="@+id/btnStyleGlass"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="44dp"
+            android:layout_marginEnd="6dp"
+            android:text="🪟 Glass"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/bg_rounded_primary" />
+
+        <Button
+            android:id="@+id/btnStyleCyber"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="44dp"
+            android:layout_marginStart="3dp"
+            android:layout_marginEnd="3dp"
+            android:text="⚡ Cyber"
+            android:textSize="12sp"
+            android:textColor="#AAAAAA"
+            android:background="@drawable/bg_circle_dark" />
+
+        <Button
+            android:id="@+id/btnStyleMatte"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="44dp"
+            android:layout_marginStart="6dp"
+            android:text="🌑 OLED"
+            android:textSize="12sp"
+            android:textColor="#AAAAAA"
+            android:background="@drawable/bg_circle_dark" />
+    </LinearLayout>
+
+    <!-- Section 2: Color Palette -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="ACCENT COLOR PALETTE"
+        android:textColor="?attr/colorAccent"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.08"
+        android:layout_marginBottom="8dp" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvThemes"
+        android:layout_width="match_parent"
+        android:layout_height="280dp"
+        android:nestedScrollingEnabled="true"
+        android:clipToPadding="false" />
+
+    <Button
+        android:id="@+id/btnCloseThemeStudio"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="14dp"
+        android:text="APPLY &amp; CLOSE"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:background="@drawable/bg_rounded_primary" />
+
+</LinearLayout>
