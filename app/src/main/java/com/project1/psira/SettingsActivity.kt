@@ -383,7 +383,7 @@ class SettingsActivity : BaseActivity() {
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                 android.view.ViewGroup.LayoutParams.WRAP_CONTENT
             )
-            hint = "Agent ID (e.g. 12345)"
+            hint = "Agent ID (e.g. 1234567)"
             setTextColor(android.graphics.Color.WHITE)
             setHintTextColor(android.graphics.Color.GRAY)
             setBackgroundResource(R.drawable.bg_rounded_input)
@@ -439,7 +439,7 @@ class SettingsActivity : BaseActivity() {
 
     private fun showAbout() {
         val about = """
-            PsiRa | Overseer Build v3.2.6
+            PsiRa | Overseer Build v3.2.7
             ----------------------------
             THE SPECTRE ENCLAVE:
             A premium, high-fidelity secure communication network.

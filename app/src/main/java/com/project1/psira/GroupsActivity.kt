@@ -191,7 +191,7 @@ class GroupsActivity : BaseActivity() {
             return
         }
         val input = EditText(this)
-        input.hint = "5-Digit Agent ID"
+        input.hint = "Agent ID (5-7 Digits)"
         input.setTextColor(android.graphics.Color.WHITE)
         input.setHintTextColor(android.graphics.Color.GRAY)
         input.inputType = android.text.InputType.TYPE_CLASS_NUMBER
@@ -203,31 +203,79 @@ class GroupsActivity : BaseActivity() {
             "RECRUIT",
             input
         ) {
-            val agentId = input.text.toString().trim()
-            if (agentId.length in 5..8) {
+            val agentId = input.text.toString().trim().removePrefix("#")
+            if (agentId.length in 5..7) {
                 addMemberByAgentId(group, agentId)
             } else {
-                Toast.makeText(this, "Invalid Agent ID", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Enter a valid 5 or 7-digit User ID", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
     private fun addMemberByAgentId(group: Group, agentId: String) {
+        val cleanId = agentId.trim().removePrefix("#")
         val usersRef = FirebaseDatabase.getInstance().getReference("users")
-        usersRef.orderByChild("agentId").equalTo(agentId).addListenerForSingleValueEvent(object : ValueEventListener {
+        
+        fun attachUserToGroup(uid: String) {
+            db.getReference("user_groups").child(uid).child(group.id!!).setValue(true)
+            db.getReference("groups").child(group.id!!).child("memberCount").setValue(group.memberCount + 1)
+            Toast.makeText(this@GroupsActivity, "Agent #$cleanId added securely.", Toast.LENGTH_SHORT).show()
+        }
+
+        usersRef.orderByChild("agentId").equalTo(cleanId).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists()) {
                     val uid = snapshot.children.first().key
                     if (uid != null) {
-                        db.getReference("user_groups").child(uid).child(group.id!!).setValue(true)
-                        db.getReference("groups").child(group.id!!).child("memberCount").setValue(group.memberCount + 1)
-                        Toast.makeText(this@GroupsActivity, "Agent added securely.", Toast.LENGTH_SHORT).show()
+                        attachUserToGroup(uid)
                     }
                 } else {
-                    Toast.makeText(this@GroupsActivity, "Agent ID not found in database.", Toast.LENGTH_SHORT).show()
+                    val numericId = cleanId.toLongOrNull()
+                    if (numericId != null) {
+                        usersRef.orderByChild("agentId").equalTo(numericId.toDouble()).addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(numSnap: DataSnapshot) {
+                                if (numSnap.exists()) {
+                                    val uid = numSnap.children.first().key
+                                    if (uid != null) attachUserToGroup(uid)
+                                } else {
+                                    scanAllForGroup(group, cleanId)
+                                }
+                            }
+                            override fun onCancelled(error: DatabaseError) {
+                                scanAllForGroup(group, cleanId)
+                            }
+                        })
+                    } else {
+                        scanAllForGroup(group, cleanId)
+                    }
                 }
             }
-            override fun onCancelled(error: DatabaseError) {}
+            override fun onCancelled(error: DatabaseError) {
+                scanAllForGroup(group, cleanId)
+            }
+        })
+    }
+
+    private fun scanAllForGroup(group: Group, targetId: String) {
+        FirebaseDatabase.getInstance().getReference("users").addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                for (child in snapshot.children) {
+                    val raw = child.child("agentId").value?.toString()?.trim()?.removePrefix("#")
+                    if (raw == targetId) {
+                        val uid = child.key
+                        if (uid != null) {
+                            db.getReference("user_groups").child(uid).child(group.id!!).setValue(true)
+                            db.getReference("groups").child(group.id!!).child("memberCount").setValue(group.memberCount + 1)
+                            Toast.makeText(this@GroupsActivity, "Agent #$targetId added securely.", Toast.LENGTH_SHORT).show()
+                            return
+                        }
+                    }
+                }
+                Toast.makeText(this@GroupsActivity, "Agent ID #$targetId not found in database.", Toast.LENGTH_SHORT).show()
+            }
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(this@GroupsActivity, "Search Error: ${error.message}", Toast.LENGTH_SHORT).show()
+            }
         })
     }
 

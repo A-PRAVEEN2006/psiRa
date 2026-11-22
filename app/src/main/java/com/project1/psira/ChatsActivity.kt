@@ -198,7 +198,7 @@ class ChatsActivity : BaseActivity() {
         val fabNewChat: FloatingActionButton = findViewById(R.id.fabNewChat)
         fabNewChat.setOnClickListener {
             val input = EditText(this)
-            input.hint = "5-Digit Agent ID"
+            input.hint = "User ID (5 or 7 Digits)"
             input.setTextColor(android.graphics.Color.WHITE)
             input.setHintTextColor(android.graphics.Color.GRAY)
             input.inputType = android.text.InputType.TYPE_CLASS_NUMBER
@@ -206,15 +206,15 @@ class ChatsActivity : BaseActivity() {
             PsiRaDialogs.showDeleteSheet(
                 this,
                 "ESTABLISH SECURE LINK",
-                "Enter the unique 5-Digit identifier of the node you wish to contact.",
+                "Enter the 5-digit or 7-digit User ID of the node you wish to contact.",
                 "CONNECT",
                 input
             ) {
-                val targetId = input.text.toString().trim()
-                if (targetId.length == 5) {
+                val targetId = input.text.toString().trim().removePrefix("#")
+                if (targetId.length in 5..7) {
                     findAgentAndChat(targetId)
                 } else {
-                    Toast.makeText(this, "Invalid ID format.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Enter a valid 5 or 7-digit User ID.", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -249,34 +249,63 @@ class ChatsActivity : BaseActivity() {
     }
 
     private fun findAgentAndChat(agentId: String) {
-        Toast.makeText(this, "Scanning secure frequency...", Toast.LENGTH_SHORT).show()
+        val cleanId = agentId.trim().removePrefix("#")
+        Toast.makeText(this, "Scanning frequency for Agent #$cleanId...", Toast.LENGTH_SHORT).show()
         val db = FirebaseDatabase.getInstance().getReference("users")
         
-        // Try searching as String first
-        db.orderByChild("agentId").equalTo(agentId).addListenerForSingleValueEvent(object : ValueEventListener {
+        // 1. Try searching as String
+        db.orderByChild("agentId").equalTo(cleanId).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists()) {
                     handleSnapshot(snapshot)
                 } else {
-                    // Try searching as Long/Int if String fails (for compatibility)
-                    val numericId = agentId.toLongOrNull()
+                    // 2. Try searching as numeric Double/Long if stored as number in Firebase
+                    val numericId = cleanId.toLongOrNull()
                     if (numericId != null) {
                         db.orderByChild("agentId").equalTo(numericId.toDouble()).addListenerForSingleValueEvent(object : ValueEventListener {
                             override fun onDataChange(numSnap: DataSnapshot) {
                                 if (numSnap.exists()) {
                                     handleSnapshot(numSnap)
                                 } else {
-                                    Toast.makeText(this@ChatsActivity, "Agent ID not found in the matrix.", Toast.LENGTH_LONG).show()
+                                    scanAllUsersForId(cleanId)
                                 }
                             }
                             override fun onCancelled(error: DatabaseError) {
-                                Toast.makeText(this@ChatsActivity, "Search Error: ${error.message}", Toast.LENGTH_SHORT).show()
+                                scanAllUsersForId(cleanId)
                             }
                         })
                     } else {
-                        Toast.makeText(this@ChatsActivity, "Agent ID not found in the matrix.", Toast.LENGTH_LONG).show()
+                        scanAllUsersForId(cleanId)
                     }
                 }
+            }
+            override fun onCancelled(error: DatabaseError) {
+                scanAllUsersForId(cleanId)
+            }
+        })
+    }
+
+    private fun scanAllUsersForId(targetId: String) {
+        val db = FirebaseDatabase.getInstance().getReference("users")
+        db.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                for (child in snapshot.children) {
+                    val rawVal = child.child("agentId").value?.toString()?.trim()?.removePrefix("#")
+                    if (rawVal == targetId) {
+                        val targetUid = child.key
+                        val targetName = child.child("name").getValue(String::class.java)
+                        if (targetUid == FirebaseAuth.getInstance().currentUser?.uid) {
+                            Toast.makeText(this@ChatsActivity, "You cannot chat with yourself.", Toast.LENGTH_SHORT).show()
+                            return
+                        }
+                        val intent = Intent(this@ChatsActivity, DirectChatActivity::class.java)
+                        intent.putExtra("TARGET_UID", targetUid)
+                        intent.putExtra("TARGET_NAME", targetName)
+                        startActivity(intent)
+                        return
+                    }
+                }
+                Toast.makeText(this@ChatsActivity, "Agent ID #$targetId not found in the matrix.", Toast.LENGTH_LONG).show()
             }
             override fun onCancelled(error: DatabaseError) {
                 Toast.makeText(this@ChatsActivity, "Search Error: ${error.message}", Toast.LENGTH_SHORT).show()
