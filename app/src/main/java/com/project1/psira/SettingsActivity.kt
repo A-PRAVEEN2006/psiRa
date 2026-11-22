@@ -36,6 +36,7 @@ class SettingsActivity : BaseActivity() {
         val btnToggleTor      = findViewById<View>(R.id.btnToggleTor)
         val btnVerifyTor      = findViewById<View>(R.id.btnVerifyTor)
         val btnWipeCache      = findViewById<View>(R.id.btnWipeCache)
+        val btnDeleteAccount  = findViewById<View>(R.id.btnDeleteAccount)
         val btnDecoyBriefing  = findViewById<View>(R.id.btnDecoyBriefing)
         val btnReportAgent    = findViewById<View>(R.id.btnReportAgent)
         val btnAbout          = findViewById<View>(R.id.btnAbout)
@@ -169,6 +170,7 @@ class SettingsActivity : BaseActivity() {
         }
 
         btnWipeCache.setOnClickListener { wipeCache() }
+        btnDeleteAccount.setOnClickListener { deleteAccount() }
         btnDecoyBriefing.setOnClickListener { showDecoyBriefing() }
         btnReportAgent.setOnClickListener { showReportAgentDialog() }
         btnAbout.setOnClickListener { showAbout() }
@@ -406,6 +408,39 @@ class SettingsActivity : BaseActivity() {
         }
     }
 
+    private fun deleteAccount() {
+        PsiRaDialogs.showDeleteSheet(
+            this,
+            "DELETE ACCOUNT?",
+            "Permanently erase your identity, encrypted vault, and account profile? This action is irreversible.",
+            "DELETE PERMANENTLY"
+        ) {
+            val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+            if (user != null) {
+                val uid = user.uid
+                val db = com.google.firebase.database.FirebaseDatabase.getInstance()
+                db.getReference("users").child(uid).removeValue()
+                db.getReference("user_vault").child(uid).removeValue()
+                VaultAuthHelper.wipeLocalVault(this)
+                getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE).edit().clear().apply()
+                getSharedPreferences("PsiRa_Presence", Context.MODE_PRIVATE).edit().clear().apply()
+
+                user.delete().addOnCompleteListener {
+                    try {
+                        com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+                    } catch (_: Exception) {}
+                    Toast.makeText(this, "Account successfully deleted.", Toast.LENGTH_LONG).show()
+                    val intent = Intent(this, LoginActivity::class.java).apply {
+                        putExtra("FORCE_LOGOUT_REASON", "Your account was successfully deleted.")
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    }
+                    startActivity(intent)
+                    finishAffinity()
+                }
+            }
+        }
+    }
+
     private fun showReportAgentDialog() {
         val pad = (16 * resources.displayMetrics.density).toInt()
         val padV = (14 * resources.displayMetrics.density).toInt()
@@ -504,7 +539,7 @@ class SettingsActivity : BaseActivity() {
 
     private fun showAbout() {
         val about = """
-            PsiRa | Overseer Build v3.3.2
+            PsiRa | Overseer Build v3.3.3
             ----------------------------
             THE SPECTRE ENCLAVE:
             A premium, high-fidelity secure communication network.

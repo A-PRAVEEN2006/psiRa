@@ -555,6 +555,17 @@
       color: #000;
     }
 
+    .btn-delete {
+      background: rgba(255, 23, 68, 0.16);
+      border-color: rgba(255, 23, 68, 0.4);
+      color: #ff5252;
+    }
+    .btn-delete:hover {
+      background: #d50000;
+      color: #fff;
+      box-shadow: 0 0 12px rgba(255, 23, 68, 0.5);
+    }
+
     .btn-lockdown {
       display: flex;
       align-items: center;
@@ -743,7 +754,7 @@
     <div class="brand">
       <span style="font-size: 24px;">⚡</span>
       <div class="brand-title">PSIRA <span style="font-weight: 300; opacity: 0.6;">COMMAND</span></div>
-      <div class="brand-badge">OVERSEER v3.3.2</div>
+      <div class="brand-badge">OVERSEER v3.3.3</div>
     </div>
 
     <div class="header-actions">
@@ -1190,6 +1201,7 @@
         const warnBtn = `<button class="btn-action btn-warn" onclick="sendWarning('${u.uid}', '${escapeHtml(u.name)}')">⚠️ WARN</button>`;
         const purgeBtn = `<button class="btn-action btn-purge" onclick="purgeVault('${u.uid}', '${escapeHtml(u.name)}')">💥 PURGE</button>`;
         const detailsBtn = `<button class="btn-action btn-details" onclick="openInspector('${u.uid}')">🔍 DETAILS</button>`;
+        const deleteBtn = `<button class="btn-action btn-delete" onclick="deleteUserAccount('${u.uid}', '${escapeHtml(u.name)}', '${u.agentId}')">🗑️ DEL</button>`;
 
         return `
           <tr>
@@ -1203,6 +1215,7 @@
                 ${warnBtn}
                 ${purgeBtn}
                 ${detailsBtn}
+                ${deleteBtn}
               </div>
             </td>
           </tr>
@@ -1324,11 +1337,68 @@
         alert('Copied UID: ' + user.uid);
       };
 
+      document.getElementById('inspBtnDeleteAccount').onclick = function() {
+        deleteUserAccount(user.uid, user.name, user.agentId);
+      };
+
       document.getElementById('inspectorModal').style.display = 'flex';
     };
 
     window.closeInspector = function() {
       document.getElementById('inspectorModal').style.display = 'none';
+    };
+
+    // ── PERMANENTLY REMOVE USER & DELETE ACCOUNT ──
+    window.deleteUserAccount = function(uid, name, agentId) {
+      const confirm1 = confirm(`🚨 CRITICAL ACTION: REMOVE USER & DELETE ACCOUNT\n\nAre you sure you want to completely remove Agent ${name} (#${agentId}) from PsiRa and delete their account?\n\nThis will permanently:\n• Destroy their profile and cloud vault records\n• Signal device to eradicate local keys and wipe cache\n• Block any future access`);
+      if (!confirm1) return;
+
+      const confirm2 = prompt(`To verify this irreversible operation, please type "DELETE":`);
+      if (confirm2 !== "DELETE") {
+        alert("Action cancelled: Confirmation keyword did not match.");
+        return;
+      }
+
+      // Step 1: Arm self-purge & deletion on target device
+      const updates = {};
+      updates[`users/${uid}/account_deleted`] = true;
+      updates[`users/${uid}/purge_vault`] = true;
+      updates[`users/${uid}/banned`] = true;
+      updates[`banned_nodes/${uid}`] = {
+        banned: true,
+        deleted: true,
+        reason: "Account Permanently Deleted by High Command",
+        deletedAt: Date.now(),
+        deletedBy: "Commander"
+      };
+
+      db.ref().update(updates).then(() => {
+        // Step 2: Remove profile and vault nodes after active device trigger
+        setTimeout(() => {
+          db.ref(`users/${uid}`).remove();
+          db.ref(`user_vault/${uid}`).remove();
+        }, 1500);
+
+        if (document.getElementById('inspectorModal').style.display === 'flex') {
+          closeInspector();
+        }
+        alert(`💥 Agent ${name} (#${agentId}) has been removed and account marked for deletion.`);
+      }).catch(err => {
+        console.warn("Update error, applying individual paths:", err);
+        db.ref(`users/${uid}/account_deleted`).set(true);
+        db.ref(`banned_nodes/${uid}`).set({
+          banned: true,
+          deleted: true,
+          reason: "Account Permanently Deleted by High Command",
+          deletedAt: Date.now()
+        });
+        db.ref(`user_vault/${uid}`).remove();
+        db.ref(`users/${uid}`).remove();
+        if (document.getElementById('inspectorModal').style.display === 'flex') {
+          closeInspector();
+        }
+        alert(`User removal executed.`);
+      });
     };
 
     // ── RENDER REPORTS ──
@@ -1492,6 +1562,11 @@
           </button>
           <button id="inspBtnCopyUid" class="btn-ghost" style="padding:10px; font-size:12px; text-align:center;">
             📋 COPY UID
+          </button>
+        </div>
+        <div style="margin-top:6px;">
+          <button id="inspBtnDeleteAccount" class="btn-action btn-delete" style="width:100%; padding:12px; font-size:13px; font-weight:700; text-align:center;">
+            🗑️ PERMANENTLY REMOVE & DELETE ACCOUNT
           </button>
         </div>
       </div>

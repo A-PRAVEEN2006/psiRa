@@ -45,6 +45,11 @@ class LoginActivity : BaseActivity() {
         val btnAction            = findViewById<Button>(R.id.btnLogin)
         val tvError              = findViewById<TextView>(R.id.tvLoginError)
 
+        val forceLogoutReason = intent.getStringExtra("FORCE_LOGOUT_REASON")
+        if (!forceLogoutReason.isNullOrBlank()) {
+            showError(tvError, forceLogoutReason)
+        }
+
         // ── 1. Auto-login (session guard) ────────────────────────────────────
         if (auth.currentUser != null) {
             val autoCount = sharedPref.getInt("AUTO_LOGIN_COUNT", 0)
@@ -151,7 +156,10 @@ class LoginActivity : BaseActivity() {
                                 } else {
                                     FirebaseDatabase.getInstance().getReference("banned_nodes").child(uid).get()
                                         .addOnSuccessListener { nodeSnap ->
-                                            if (nodeSnap.exists() && nodeSnap.child("banned").getValue(Boolean::class.java) != false) {
+                                            if (nodeSnap.exists() && nodeSnap.child("deleted").getValue(Boolean::class.java) == true) {
+                                                auth.signOut()
+                                                showError(tvError, "🚨 ACCOUNT DELETED: This account was permanently deleted from PsiRa.")
+                                            } else if (nodeSnap.exists() && nodeSnap.child("banned").getValue(Boolean::class.java) != false) {
                                                 auth.signOut()
                                                 showError(tvError, "🚨 ACCESS REVOKED: This account has been blacklisted by Network Command.")
                                             } else {

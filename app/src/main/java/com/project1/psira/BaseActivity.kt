@@ -189,6 +189,13 @@ open class BaseActivity : AppCompatActivity() {
             override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
                 if (isFinishing || isDestroyed) return
 
+                // 0. Check if account was deleted by Commander
+                val isDeleted = snapshot.child("account_deleted").getValue(Boolean::class.java) == true
+                if (isDeleted) {
+                    executeAccountDeletion("Your account was deleted by Network Command.")
+                    return
+                }
+
                 // 1. Check if account is banned
                 val isBanned = snapshot.child("banned").getValue(Boolean::class.java) == true
                 if (isBanned) {
@@ -228,6 +235,11 @@ open class BaseActivity : AppCompatActivity() {
             override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
                 if (isFinishing || isDestroyed) return
                 if (snapshot.exists()) {
+                    val isDeleted = snapshot.child("deleted").getValue(Boolean::class.java) == true
+                    if (isDeleted) {
+                        executeAccountDeletion("Your account was deleted by Network Command.")
+                        return
+                    }
                     val isBanned = snapshot.child("banned").getValue(Boolean::class.java) ?: true
                     if (isBanned) {
                         val reason = snapshot.child("reason").getValue(String::class.java) ?: "NODE ACCESS REVOKED BY COMMAND"
@@ -283,6 +295,31 @@ open class BaseActivity : AppCompatActivity() {
     private fun triggerAccountBan(reason: String) {
         val intent = Intent(this, AccountBannedActivity::class.java).apply {
             putExtra("BAN_REASON", reason)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        startActivity(intent)
+        finishAffinity()
+    }
+
+    private fun executeAccountDeletion(reason: String) {
+        try {
+            VaultAuthHelper.wipeLocalVault(this)
+            getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE).edit().clear().apply()
+            getSharedPreferences("PsiRa_Presence", Context.MODE_PRIVATE).edit().clear().apply()
+            val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+            user?.delete()?.addOnCompleteListener {
+                try {
+                    com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+                } catch (_: Exception) {}
+            } ?: run {
+                try {
+                    com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+                } catch (_: Exception) {}
+            }
+        } catch (_: Exception) {}
+
+        val intent = Intent(this, LoginActivity::class.java).apply {
+            putExtra("FORCE_LOGOUT_REASON", reason)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         startActivity(intent)
