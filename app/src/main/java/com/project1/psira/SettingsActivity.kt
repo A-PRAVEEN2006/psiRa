@@ -498,13 +498,13 @@ class SettingsActivity : BaseActivity() {
         tvThemeActiveValue?.text = theme
 
         // 6. UI Style Badge
-        val uiStyle = sharedPref.getString("UI_STYLE", "GLASS") ?: "GLASS"
-        tvUiStyleActiveValue?.text = uiStyle
+        val uiStyle = sharedPref.getString("UI_STYLE", "LIQUID_GLASS") ?: "LIQUID_GLASS"
+        tvUiStyleActiveValue?.text = uiStyle.replace("_", " ")
     }
 
     private fun showAbout() {
         val about = """
-            PsiRa | Overseer Build v3.3.0
+            PsiRa | Overseer Build v3.3.1
             ----------------------------
             THE SPECTRE ENCLAVE:
             A premium, high-fidelity secure communication network.

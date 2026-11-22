@@ -18,54 +18,104 @@
         <item name="colorPrimary">@color/emerald_accent</item>
         <item name="colorAccent">@color/emerald_accent</item>
         <item name="android:colorBackground">#061A0C</item>
+        <item name="colorSurface">#0B2213</item>
     </style>
 
     <style name="Theme.PsiRa.Ruby" parent="Theme.PsiRa">
         <item name="colorPrimary">@color/ruby_accent</item>
         <item name="colorAccent">@color/ruby_accent</item>
         <item name="android:colorBackground">#1A0606</item>
+        <item name="colorSurface">#260808</item>
     </style>
 
     <style name="Theme.PsiRa.Cobalt" parent="Theme.PsiRa">
         <item name="colorPrimary">@color/cobalt_accent</item>
         <item name="colorAccent">@color/cobalt_accent</item>
         <item name="android:colorBackground">#060B1A</item>
+        <item name="colorSurface">#0B162C</item>
     </style>
 
     <style name="Theme.PsiRa.Midnight" parent="Theme.PsiRa">
         <item name="colorPrimary">@color/midnight_accent</item>
         <item name="colorAccent">@color/midnight_accent</item>
         <item name="android:colorBackground">#0A0A0A</item>
+        <item name="colorSurface">#161622</item>
     </style>
 
     <style name="Theme.PsiRa.Obsidian" parent="Theme.PsiRa">
         <item name="colorPrimary">@color/obsidian_accent</item>
         <item name="colorAccent">@color/obsidian_accent</item>
         <item name="android:colorBackground">#000000</item>
+        <item name="colorSurface">#0A0A0A</item>
     </style>
 
     <style name="Theme.PsiRa.Desert" parent="Theme.PsiRa">
         <item name="colorPrimary">@color/desert_accent</item>
         <item name="colorAccent">@color/desert_accent</item>
         <item name="android:colorBackground">#1A120B</item>
+        <item name="colorSurface">#24180E</item>
     </style>
 
     <style name="Theme.PsiRa.Ghost" parent="Theme.PsiRa">
         <item name="colorPrimary">@color/ghost_accent</item>
         <item name="colorAccent">@color/ghost_accent</item>
         <item name="android:colorBackground">#121212</item>
+        <item name="colorSurface">#1C1C1C</item>
     </style>
 
     <style name="Theme.PsiRa.DeepSea" parent="Theme.PsiRa">
         <item name="colorPrimary">@color/deepsea_accent</item>
         <item name="colorAccent">@color/deepsea_accent</item>
         <item name="android:colorBackground">#001219</item>
+        <item name="colorSurface">#021F28</item>
     </style>
 
     <style name="Theme.PsiRa.Nova" parent="Theme.PsiRa">
         <item name="colorPrimary">@color/nova_accent</item>
         <item name="colorAccent">@color/nova_accent</item>
         <item name="android:colorBackground">#120112</item>
+        <item name="colorSurface">#1E0C02</item>
+    </style>
+
+    <!-- ── PREMIER UI DESIGN STYLES ── -->
+    <style name="Theme.PsiRa.LiquidGlass" parent="Theme.PsiRa">
+        <item name="colorPrimary">#00E5FF</item>
+        <item name="colorAccent">#00E5FF</item>
+        <item name="android:colorBackground">#0B111E</item>
+        <item name="colorSurface">#192338</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+    </style>
+
+    <style name="Theme.PsiRa.CyberTactical" parent="Theme.PsiRa">
+        <item name="colorPrimary">#00E676</item>
+        <item name="colorAccent">#00E676</item>
+        <item name="android:colorBackground">#05080E</item>
+        <item name="colorSurface">#0B1420</item>
+        <item name="colorOnSurface">#E0F2FE</item>
+    </style>
+
+    <style name="Theme.PsiRa.OledStealth" parent="Theme.PsiRa">
+        <item name="colorPrimary">#FFFFFF</item>
+        <item name="colorAccent">#00E5FF</item>
+        <item name="android:colorBackground">#000000</item>
+        <item name="colorSurface">#080808</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+    </style>
+
+    <style name="Theme.PsiRa.MercuryChrome" parent="Theme.PsiRa">
+        <item name="colorPrimary">#ECEFF1</item>
+        <item name="colorAccent">#90A4AE</item>
+        <item name="android:colorBackground">#0D1219</item>
+        <item name="colorSurface">#18202C</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+    </style>
+
+    <style name="Theme.PsiRa.CrimsonVoid" parent="Theme.PsiRa">
+        <item name="colorPrimary">#FF1744</item>
+        <item name="colorAccent">#FF5252</item>
+        <item name="android:colorBackground">#140407</item>
+        <item name="colorSurface">#220A0E</item>
+        <item name="colorOnSurface">#FFFFFF</item>
     </style>
 
     <style name="CalcButton" parent="Widget.MaterialComponents.Button.TextButton">

@@ -49,35 +49,42 @@ object ThemeStudioHelper {
         val btnGlass = view.findViewById<Button>(R.id.btnStyleGlass)
         val btnCyber = view.findViewById<Button>(R.id.btnStyleCyber)
         val btnMatte = view.findViewById<Button>(R.id.btnStyleMatte)
+        val btnMercury = view.findViewById<Button>(R.id.btnStyleMercury)
 
         fun updateStyleButtons() {
-            btnGlass.setBackgroundResource(if (activeStyle == "GLASS") R.drawable.bg_rounded_primary else R.drawable.bg_circle_dark)
+            btnGlass.setBackgroundResource(if (activeStyle == "LIQUID_GLASS" || activeStyle == "GLASS") R.drawable.bg_rounded_primary else R.drawable.bg_circle_dark)
             btnCyber.setBackgroundResource(if (activeStyle == "CYBER") R.drawable.bg_rounded_primary else R.drawable.bg_circle_dark)
             btnMatte.setBackgroundResource(if (activeStyle == "OLED") R.drawable.bg_rounded_primary else R.drawable.bg_circle_dark)
+            btnMercury.setBackgroundResource(if (activeStyle == "MERCURY") R.drawable.bg_rounded_primary else R.drawable.bg_circle_dark)
 
-            btnGlass.setTextColor(if (activeStyle == "GLASS") Color.WHITE else Color.GRAY)
+            btnGlass.setTextColor(if (activeStyle == "LIQUID_GLASS" || activeStyle == "GLASS") Color.WHITE else Color.GRAY)
             btnCyber.setTextColor(if (activeStyle == "CYBER") Color.WHITE else Color.GRAY)
             btnMatte.setTextColor(if (activeStyle == "OLED") Color.WHITE else Color.GRAY)
+            btnMercury.setTextColor(if (activeStyle == "MERCURY") Color.WHITE else Color.GRAY)
         }
         updateStyleButtons()
 
-        btnGlass.setOnClickListener {
-            activeStyle = "GLASS"
+        fun applyStyleAndRecreate(newStyle: String, name: String) {
+            activeStyle = newStyle
             prefs.edit { putString("UI_STYLE", activeStyle) }
             updateStyleButtons()
-            Toast.makeText(activity, "Style set to: Frosted Glass", Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, "UI Style applied: $name", Toast.LENGTH_SHORT).show()
+            onThemeChanged()
+            dialog.dismiss()
+            activity.recreate()
+        }
+
+        btnGlass.setOnClickListener {
+            applyStyleAndRecreate("LIQUID_GLASS", "Liquid Glass")
         }
         btnCyber.setOnClickListener {
-            activeStyle = "CYBER"
-            prefs.edit { putString("UI_STYLE", activeStyle) }
-            updateStyleButtons()
-            Toast.makeText(activity, "Style set to: Tactical Cyber", Toast.LENGTH_SHORT).show()
+            applyStyleAndRecreate("CYBER", "Tactical Cyber")
         }
         btnMatte.setOnClickListener {
-            activeStyle = "OLED"
-            prefs.edit { putString("UI_STYLE", activeStyle) }
-            updateStyleButtons()
-            Toast.makeText(activity, "Style set to: OLED Stealth", Toast.LENGTH_SHORT).show()
+            applyStyleAndRecreate("OLED", "OLED Stealth")
+        }
+        btnMercury.setOnClickListener {
+            applyStyleAndRecreate("MERCURY", "Mercury Chrome")
         }
 
         val rv = view.findViewById<RecyclerView>(R.id.rvThemes)

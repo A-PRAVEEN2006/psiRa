@@ -47,42 +47,65 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:layout_marginBottom="16dp">
 
-        <Button
-            android:id="@+id/btnStyleGlass"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="44dp"
-            android:layout_marginEnd="6dp"
-            android:text="🪟 Glass"
-            android:textSize="12sp"
-            android:textColor="#FFFFFF"
-            android:background="@drawable/bg_rounded_primary" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
 
-        <Button
-            android:id="@+id/btnStyleCyber"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="44dp"
-            android:layout_marginStart="3dp"
-            android:layout_marginEnd="3dp"
-            android:text="⚡ Cyber"
-            android:textSize="12sp"
-            android:textColor="#AAAAAA"
-            android:background="@drawable/bg_circle_dark" />
+            <Button
+                android:id="@+id/btnStyleGlass"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="46dp"
+                android:layout_marginEnd="6dp"
+                android:text="🪟 Liquid Glass"
+                android:textSize="12sp"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/bg_rounded_primary" />
 
-        <Button
-            android:id="@+id/btnStyleMatte"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="44dp"
-            android:layout_marginStart="6dp"
-            android:text="🌑 OLED"
-            android:textSize="12sp"
-            android:textColor="#AAAAAA"
-            android:background="@drawable/bg_circle_dark" />
+            <Button
+                android:id="@+id/btnStyleCyber"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="46dp"
+                android:layout_marginStart="6dp"
+                android:text="⚡ Tactical Cyber"
+                android:textSize="12sp"
+                android:textColor="#AAAAAA"
+                android:background="@drawable/bg_circle_dark" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnStyleMatte"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="46dp"
+                android:layout_marginEnd="6dp"
+                android:text="🌑 OLED Stealth"
+                android:textSize="12sp"
+                android:textColor="#AAAAAA"
+                android:background="@drawable/bg_circle_dark" />
+
+            <Button
+                android:id="@+id/btnStyleMercury"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="46dp"
+                android:layout_marginStart="6dp"
+                android:text="🛸 Mercury Chrome"
+                android:textSize="12sp"
+                android:textColor="#AAAAAA"
+                android:background="@drawable/bg_circle_dark" />
+        </LinearLayout>
     </LinearLayout>
 
     <!-- Section 2: Color Palette -->

@@ -41,6 +41,7 @@ open class BaseActivity : AppCompatActivity() {
     }
 
     private var initialThemeName: String = ""
+    private var initialUiStyle: String = ""
     private var sensorManager: android.hardware.SensorManager? = null
     private var accelerometer: android.hardware.Sensor? = null
 
@@ -138,7 +139,8 @@ open class BaseActivity : AppCompatActivity() {
         currentActivity = this
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
         val currentThemeName = sharedPref.getString("APP_THEME", "MIDNIGHT") ?: "MIDNIGHT"
-        if (currentThemeName != initialThemeName) {
+        val currentUiStyle = sharedPref.getString("UI_STYLE", "LIQUID_GLASS") ?: "LIQUID_GLASS"
+        if (currentThemeName != initialThemeName || currentUiStyle != initialUiStyle) {
             recreate()
         }
 
@@ -170,18 +172,30 @@ open class BaseActivity : AppCompatActivity() {
 
     private fun applyTheme() {
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
+        val uiStyle = sharedPref.getString("UI_STYLE", "LIQUID_GLASS") ?: "LIQUID_GLASS"
         val themeName = sharedPref.getString("APP_THEME", "MIDNIGHT") ?: "MIDNIGHT"
         initialThemeName = themeName
-        when (themeName) {
-            "EMERALD"  -> setTheme(R.style.Theme_PsiRa_Emerald)
-            "RUBY"     -> setTheme(R.style.Theme_PsiRa_Ruby)
-            "COBALT"   -> setTheme(R.style.Theme_PsiRa_Cobalt)
-            "OBSIDIAN" -> setTheme(R.style.Theme_PsiRa_Obsidian)
-            "DESERT"   -> setTheme(R.style.Theme_PsiRa_Desert)
-            "GHOST"    -> setTheme(R.style.Theme_PsiRa_Ghost)
-            "DEEPSEA"  -> setTheme(R.style.Theme_PsiRa_DeepSea)
-            "NOVA"     -> setTheme(R.style.Theme_PsiRa_Nova)
-            else       -> setTheme(R.style.Theme_PsiRa_Midnight)
+        initialUiStyle = uiStyle
+
+        when (uiStyle) {
+            "LIQUID_GLASS", "GLASS" -> setTheme(R.style.Theme_PsiRa_LiquidGlass)
+            "CYBER", "CYBER_TACTICAL" -> setTheme(R.style.Theme_PsiRa_CyberTactical)
+            "OLED", "OLED_STEALTH" -> setTheme(R.style.Theme_PsiRa_OledStealth)
+            "MERCURY", "MERCURY_CHROME" -> setTheme(R.style.Theme_PsiRa_MercuryChrome)
+            "CRIMSON", "NEON_CRIMSON" -> setTheme(R.style.Theme_PsiRa_CrimsonVoid)
+            else -> {
+                when (themeName) {
+                    "EMERALD"  -> setTheme(R.style.Theme_PsiRa_Emerald)
+                    "RUBY"     -> setTheme(R.style.Theme_PsiRa_Ruby)
+                    "COBALT"   -> setTheme(R.style.Theme_PsiRa_Cobalt)
+                    "OBSIDIAN" -> setTheme(R.style.Theme_PsiRa_Obsidian)
+                    "DESERT"   -> setTheme(R.style.Theme_PsiRa_Desert)
+                    "GHOST"    -> setTheme(R.style.Theme_PsiRa_Ghost)
+                    "DEEPSEA"  -> setTheme(R.style.Theme_PsiRa_DeepSea)
+                    "NOVA"     -> setTheme(R.style.Theme_PsiRa_Nova)
+                    else       -> setTheme(R.style.Theme_PsiRa_Midnight)
+                }
+            }
         }
     }
 
