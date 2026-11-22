@@ -595,36 +595,28 @@
   <!-- ── AUTH LOGIN OVERLAY ── -->
   <div id="authOverlay">
     <div class="auth-card">
-      <div class="auth-logo">⚡</div>
+      <div class="auth-logo">🔒</div>
       <h1 class="auth-title">PSIRA OVERSEER</h1>
-      <div class="auth-subtitle">// COMMAND ACCESS GATE //</div>
+      <div class="auth-subtitle">// EXCLUSIVE COMMAND ENCLAVE //</div>
       
-      <div style="display: flex; gap: 8px; margin-bottom: 20px; background: rgba(0,0,0,0.4); padding: 4px; border-radius: 10px; border: 1px solid var(--border-glass);">
-        <button id="authModeLogin" class="tab-btn active" style="flex: 1; padding: 8px; justify-content: center; font-size: 12px; border-radius: 6px;">SIGN IN</button>
-        <button id="authModeRegister" class="tab-btn" style="flex: 1; padding: 8px; justify-content: center; font-size: 12px; border-radius: 6px;">NEW ACCOUNT</button>
+      <div style="background: rgba(0, 229, 255, 0.08); border: 1px solid rgba(0, 229, 255, 0.25); border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; text-align: left;">
+        <div style="font-size: 10px; color: var(--cyan); font-weight: 700; letter-spacing: 0.1em; font-family: var(--font-mono); margin-bottom: 4px;">DESIGNATED MASTER OPERATIVE</div>
+        <div style="font-size: 14px; color: #fff; font-weight: 700; font-family: var(--font-mono);">anbuselvan1613@gmail.com</div>
       </div>
 
       <div class="input-group">
-        <label class="input-label">COMMANDER EMAIL</label>
-        <input type="email" id="loginEmail" class="input-field" placeholder="admin@psira.network">
+        <label class="input-label">COMMANDER PASSPHRASE</label>
+        <input type="password" id="loginPassword" class="input-field" placeholder="Enter your master password">
       </div>
 
-      <div class="input-group">
-        <label class="input-label">PASSPHRASE</label>
-        <input type="password" id="loginPassword" class="input-field" placeholder="••••••••••••">
-      </div>
-
-      <button id="btnLogin" class="btn-primary">AUTHENTICATE LINK</button>
-
-      <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-glass); display: flex; flex-direction: column; gap: 10px;">
-        <button id="btnQuickAdmin" class="btn-ghost" style="width: 100%; border-color: rgba(0,229,255,0.3); color: var(--cyan); padding: 10px; font-size: 12px;">
-          ⚡ ONE-CLICK MASTER BYPASS
+      <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <button id="btnLogin" class="btn-primary" style="flex: 1;">ENTER PORTAL</button>
+        <button id="btnInitPass" class="btn-ghost" style="padding: 12px; font-size: 11px; white-space: nowrap; border-color: rgba(255,255,255,0.15);">
+          SET NEW PASS
         </button>
-        <div style="font-size: 11px; color: var(--text-muted); line-height: 1.4;">
-          Forgot ID/Pass? Check or add users in your open <strong>Firebase Console &gt; Authentication &gt; Users</strong> tab.
-        </div>
       </div>
 
+      <div id="loginSuccess" style="color: var(--emerald); font-size: 12px; margin-top: 14px; font-family: var(--font-mono); display: none;"></div>
       <div id="loginError" style="color: var(--ruby); font-size: 12px; margin-top: 14px; font-family: var(--font-mono); display: none;"></div>
     </div>
   </div>
@@ -853,70 +845,96 @@
     let allReports = [];
 
     // ── AUTH CHECK ──
+    // ── STRICT MASTER AUTHENTICATION (EXCLUSIVE TO anbuselvan1613@gmail.com) ──
+    const MASTER_COMMANDER_EMAIL = "anbuselvan1613@gmail.com";
+
     auth.onAuthStateChanged(user => {
       const overlay = document.getElementById('authOverlay');
+      const errBox = document.getElementById('loginError');
+
       if (user) {
-        overlay.style.display = 'none';
-        document.getElementById('adminIdentity').textContent = `CMD // ${user.email}`;
-        initOverseerListeners();
+        if (user.email && user.email.toLowerCase() === MASTER_COMMANDER_EMAIL.toLowerCase()) {
+          overlay.style.display = 'none';
+          document.getElementById('adminIdentity').textContent = `COMMANDER // ${user.email}`;
+          initOverseerListeners();
+        } else {
+          // Kick out any other unauthorized account immediately
+          auth.signOut();
+          errBox.textContent = `ACCESS DENIED: Account '${user.email || 'Anonymous'}' is not authorized. This terminal is strictly locked to ${MASTER_COMMANDER_EMAIL}.`;
+          errBox.style.display = 'block';
+          overlay.style.display = 'flex';
+        }
       } else {
         overlay.style.display = 'flex';
       }
     });
 
-    // ── AUTH LOGIC ──
-    let isRegisterMode = false;
-    const modeLoginBtn = document.getElementById('authModeLogin');
-    const modeRegBtn = document.getElementById('authModeRegister');
-    const btnSubmit = document.getElementById('btnLogin');
-
-    modeLoginBtn.addEventListener('click', () => {
-      isRegisterMode = false;
-      modeLoginBtn.classList.add('active');
-      modeRegBtn.classList.remove('active');
-      btnSubmit.textContent = "AUTHENTICATE LINK";
-    });
-
-    modeRegBtn.addEventListener('click', () => {
-      isRegisterMode = true;
-      modeRegBtn.classList.add('active');
-      modeLoginBtn.classList.remove('active');
-      btnSubmit.textContent = "CREATE & ENTER PORTAL";
-    });
-
-    btnSubmit.addEventListener('click', () => {
-      const email = document.getElementById('loginEmail').value.trim();
+    // Enter Portal (Sign In)
+    document.getElementById('btnLogin').addEventListener('click', () => {
       const pass = document.getElementById('loginPassword').value.trim();
       const errBox = document.getElementById('loginError');
+      const succBox = document.getElementById('loginSuccess');
 
-      if (!email || !pass) {
-        errBox.textContent = "CRITICAL: Enter email and password.";
+      if (!pass) {
+        errBox.textContent = "CRITICAL: Enter your passphrase.";
         errBox.style.display = 'block';
+        succBox.style.display = 'none';
         return;
       }
 
       errBox.style.display = 'none';
+      succBox.style.display = 'none';
 
-      if (isRegisterMode) {
-        auth.createUserWithEmailAndPassword(email, pass).catch(err => {
-          errBox.textContent = `CREATION ERROR: ${err.message}`;
+      auth.signInWithEmailAndPassword(MASTER_COMMANDER_EMAIL, pass).catch(err => {
+        if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+          // If the account does not exist in Firebase yet, auto-attempt registration
+          auth.createUserWithEmailAndPassword(MASTER_COMMANDER_EMAIL, pass).then(() => {
+            succBox.textContent = "Commander account created & authenticated!";
+            succBox.style.display = 'block';
+          }).catch(createErr => {
+            errBox.textContent = `AUTH REJECTED: ${err.message}. If setting password for the first time, click 'SET NEW PASS'.`;
+            errBox.style.display = 'block';
+          });
+        } else {
+          errBox.textContent = `AUTH REJECTED: ${err.message}`;
           errBox.style.display = 'block';
-        });
-      } else {
-        auth.signInWithEmailAndPassword(email, pass).catch(err => {
-          errBox.textContent = `AUTH REJECTED: ${err.message} (Tip: If you forgot, click 'NEW ACCOUNT' tab above)`;
-          errBox.style.display = 'block';
-        });
-      }
+        }
+      });
     });
 
-    document.getElementById('btnQuickAdmin').addEventListener('click', () => {
+    // Set / Reset Password
+    document.getElementById('btnInitPass').addEventListener('click', () => {
+      const pass = document.getElementById('loginPassword').value.trim();
       const errBox = document.getElementById('loginError');
-      errBox.style.display = 'none';
-      auth.signInAnonymously().catch(err => {
-        // If Anonymous Auth is disabled, prompt for quick creation
-        errBox.textContent = `Bypass: ${err.message}. Please click 'NEW ACCOUNT' tab to register with any email & password.`;
+      const succBox = document.getElementById('loginSuccess');
+
+      if (!pass || pass.length < 6) {
+        errBox.textContent = "Passphrase must be at least 6 characters.";
         errBox.style.display = 'block';
+        succBox.style.display = 'none';
+        return;
+      }
+
+      errBox.style.display = 'none';
+      succBox.style.display = 'none';
+
+      auth.createUserWithEmailAndPassword(MASTER_COMMANDER_EMAIL, pass).then(() => {
+        succBox.textContent = "Master account registered! Entering portal...";
+        succBox.style.display = 'block';
+      }).catch(err => {
+        if (err.code === 'auth/email-already-in-use') {
+          // Send password reset email
+          auth.sendPasswordResetEmail(MASTER_COMMANDER_EMAIL).then(() => {
+            succBox.textContent = `Password reset link sent to ${MASTER_COMMANDER_EMAIL}. Check your inbox!`;
+            succBox.style.display = 'block';
+          }).catch(resetErr => {
+            errBox.textContent = resetErr.message;
+            errBox.style.display = 'block';
+          });
+        } else {
+          errBox.textContent = err.message;
+          errBox.style.display = 'block';
+        }
       });
     });
 
