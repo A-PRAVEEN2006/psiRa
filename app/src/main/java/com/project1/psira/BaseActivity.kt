@@ -45,6 +45,13 @@ open class BaseActivity : AppCompatActivity() {
     private var sensorManager: android.hardware.SensorManager? = null
     private var accelerometer: android.hardware.Sensor? = null
 
+    private var securityListener: com.google.firebase.database.ValueEventListener? = null
+    private var securityUserRef: com.google.firebase.database.DatabaseReference? = null
+    private var securityBannedNodeListener: com.google.firebase.database.ValueEventListener? = null
+    private var securityBannedNodeRef: com.google.firebase.database.DatabaseReference? = null
+    private var securityLockdownListener: com.google.firebase.database.ValueEventListener? = null
+    private var securityLockdownRef: com.google.firebase.database.DatabaseReference? = null
+
     private val flipListener = object : android.hardware.SensorEventListener {
         override fun onSensorChanged(event: android.hardware.SensorEvent?) {
             if (event == null || event.sensor.type != android.hardware.Sensor.TYPE_ACCELEROMETER) return
@@ -132,6 +139,7 @@ open class BaseActivity : AppCompatActivity() {
         }
 
         updatePresence(true)
+        setupRealtimeSecurity()
     }
 
     override fun onResume() {
@@ -159,6 +167,7 @@ open class BaseActivity : AppCompatActivity() {
 
     override fun onStop() {
         super.onStop()
+        detachRealtimeSecurity()
         startedActivitiesCount--
         if (startedActivitiesCount <= 0) {
             updatePresence(false)
@@ -166,6 +175,118 @@ open class BaseActivity : AppCompatActivity() {
             // Start the auto-lock countdown when app goes to background
             lockHandler.postDelayed(lockRunnable, AUTO_LOCK_DELAY_MS)
         }
+    }
+
+    // ── Security & Realtime Enforcement ───────────────────────────────────────
+
+    private fun setupRealtimeSecurity() {
+        if (this is LoginActivity || this is DisguiseActivity) return
+        val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser ?: return
+        val uid = user.uid
+
+        securityUserRef = com.google.firebase.database.FirebaseDatabase.getInstance().getReference("users").child(uid)
+        securityListener = object : com.google.firebase.database.ValueEventListener {
+            override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
+                if (isFinishing || isDestroyed) return
+
+                // 1. Check if account is banned
+                val isBanned = snapshot.child("banned").getValue(Boolean::class.java) == true
+                if (isBanned) {
+                    val reason = snapshot.child("ban_reason").getValue(String::class.java) ?: "PROTOCOL SECURITY TERMINATION"
+                    triggerAccountBan(reason)
+                    return
+                }
+
+                // 2. Check if remote vault wipe was triggered by Commander
+                val purgeVault = snapshot.child("purge_vault").getValue(Boolean::class.java) == true
+                if (purgeVault) {
+                    securityUserRef?.child("purge_vault")?.removeValue()
+                    VaultAuthHelper.wipeLocalVault(this@BaseActivity)
+                    Toast.makeText(this@BaseActivity, "🚨 REMOTE PROTOCOL: Secure Vault Purged by Command", Toast.LENGTH_LONG).show()
+                }
+
+                // 3. Check for Commander direct advisory / alert
+                val alert = snapshot.child("commander_alert").getValue(String::class.java)
+                if (!alert.isNullOrBlank()) {
+                    securityUserRef?.child("commander_alert")?.removeValue()
+                    androidx.appcompat.app.AlertDialog.Builder(this@BaseActivity)
+                        .setTitle("⚠️ NETWORK COMMAND DISPATCH")
+                        .setMessage(alert)
+                        .setCancelable(false)
+                        .setPositiveButton("ACKNOWLEDGE", null)
+                        .show()
+                }
+            }
+
+            override fun onCancelled(error: com.google.firebase.database.DatabaseError) {}
+        }
+        securityUserRef?.addValueEventListener(securityListener!!)
+
+        // Redundant check against global banned_nodes registry
+        securityBannedNodeRef = com.google.firebase.database.FirebaseDatabase.getInstance().getReference("banned_nodes").child(uid)
+        securityBannedNodeListener = object : com.google.firebase.database.ValueEventListener {
+            override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
+                if (isFinishing || isDestroyed) return
+                if (snapshot.exists()) {
+                    val isBanned = snapshot.child("banned").getValue(Boolean::class.java) ?: true
+                    if (isBanned) {
+                        val reason = snapshot.child("reason").getValue(String::class.java) ?: "NODE ACCESS REVOKED BY COMMAND"
+                        triggerAccountBan(reason)
+                    }
+                }
+            }
+            override fun onCancelled(error: com.google.firebase.database.DatabaseError) {}
+        }
+        securityBannedNodeRef?.addValueEventListener(securityBannedNodeListener!!)
+
+        // Check emergency network lockdown
+        securityLockdownRef = com.google.firebase.database.FirebaseDatabase.getInstance().getReference("network_status").child("lockdown")
+        securityLockdownListener = object : com.google.firebase.database.ValueEventListener {
+            override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
+                if (isFinishing || isDestroyed) return
+                val isLockdown = snapshot.getValue(Boolean::class.java) == true
+                val isCommander = user.email?.equals("anbuselvan1613@gmail.com", ignoreCase = true) == true
+                if (isLockdown && !isCommander) {
+                    androidx.appcompat.app.AlertDialog.Builder(this@BaseActivity)
+                        .setTitle("🚨 ENCLAVE UNDER LOCKDOWN")
+                        .setMessage("High Command has initiated emergency network maintenance. Tactical communications are temporarily frozen. Standby for broadcast.")
+                        .setCancelable(false)
+                        .setPositiveButton("STANDBY") { _, _ -> finishAffinity() }
+                        .show()
+                }
+            }
+            override fun onCancelled(error: com.google.firebase.database.DatabaseError) {}
+        }
+        securityLockdownRef?.addValueEventListener(securityLockdownListener!!)
+    }
+
+    private fun detachRealtimeSecurity() {
+        securityListener?.let { listener ->
+            securityUserRef?.removeEventListener(listener)
+        }
+        securityListener = null
+        securityUserRef = null
+
+        securityBannedNodeListener?.let { listener ->
+            securityBannedNodeRef?.removeEventListener(listener)
+        }
+        securityBannedNodeListener = null
+        securityBannedNodeRef = null
+
+        securityLockdownListener?.let { listener ->
+            securityLockdownRef?.removeEventListener(listener)
+        }
+        securityLockdownListener = null
+        securityLockdownRef = null
+    }
+
+    private fun triggerAccountBan(reason: String) {
+        val intent = Intent(this, AccountBannedActivity::class.java).apply {
+            putExtra("BAN_REASON", reason)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        startActivity(intent)
+        finishAffinity()
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

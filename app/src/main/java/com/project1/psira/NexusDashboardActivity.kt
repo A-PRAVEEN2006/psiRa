@@ -32,16 +32,13 @@ class NexusDashboardActivity : BaseActivity() {
             
             val userRef = FirebaseDatabase.getInstance().getReference("users").child(currentUser.uid)
             userRef.child("banned").get().addOnSuccessListener {
-                if(it.value == true) {
-                    FirebaseAuth.getInstance().signOut()
-                    // Partial clear: Preserve identity
-                    val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
-                    val cachedId = sharedPref.getString("AGENT_ID_LOCAL", "")
-                    sharedPref.edit().clear().apply()
-                    sharedPref.edit().putString("AGENT_ID_LOCAL", cachedId).apply()
-                    
-                    startActivity(Intent(this, LoginActivity::class.java))
-                    finish()
+                if (it.value == true) {
+                    val intent = Intent(this, AccountBannedActivity::class.java).apply {
+                        putExtra("BAN_REASON", "ACCESS BLACKLISTED BY COMMAND")
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    }
+                    startActivity(intent)
+                    finishAffinity()
                 }
             }
         }

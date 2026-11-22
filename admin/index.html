@@ -525,6 +525,123 @@
       color: #000;
     }
 
+    .btn-warn {
+      background: rgba(255, 214, 0, 0.12);
+      border-color: rgba(255, 214, 0, 0.35);
+      color: var(--amber);
+    }
+    .btn-warn:hover {
+      background: var(--amber);
+      color: #000;
+    }
+
+    .btn-purge {
+      background: rgba(255, 87, 34, 0.12);
+      border-color: rgba(255, 87, 34, 0.35);
+      color: #ff7043;
+    }
+    .btn-purge:hover {
+      background: #ff5722;
+      color: #fff;
+    }
+
+    .btn-details {
+      background: rgba(0, 229, 255, 0.1);
+      border-color: rgba(0, 229, 255, 0.3);
+      color: var(--cyan);
+    }
+    .btn-details:hover {
+      background: var(--cyan);
+      color: #000;
+    }
+
+    .btn-lockdown {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 7px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-family: var(--font-mono);
+      transition: all 0.25s;
+    }
+    .btn-lockdown.secure {
+      background: rgba(0, 230, 118, 0.12);
+      border: 1px solid rgba(0, 230, 118, 0.35);
+      color: var(--emerald);
+    }
+    .btn-lockdown.active {
+      background: rgba(255, 23, 68, 0.25);
+      border: 1px solid var(--ruby);
+      color: #fff;
+      animation: pulse-red 1.5s infinite;
+      box-shadow: 0 0 15px rgba(255, 23, 68, 0.5);
+    }
+
+    @keyframes pulse-red {
+      0% { box-shadow: 0 0 0 0 rgba(255, 23, 68, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(255, 23, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 23, 68, 0); }
+    }
+
+    /* Modal Backdrop & Card */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 4, 8, 0.85);
+      backdrop-filter: blur(12px);
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-card {
+      background: #0d131f;
+      border: 1px solid var(--border-accent);
+      border-radius: 18px;
+      width: 100%;
+      max-width: 520px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 30px rgba(0,229,255,0.15);
+      overflow: hidden;
+    }
+    .modal-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border-glass);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-body {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .modal-field {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255,255,255,0.03);
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border-glass);
+    }
+    .modal-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .modal-val {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: #fff;
+    }
+
     /* ── FORM STYLES (UPDATER & BROADCASTER) ── */
     .form-grid {
       display: grid;
@@ -626,10 +743,13 @@
     <div class="brand">
       <span style="font-size: 24px;">⚡</span>
       <div class="brand-title">PSIRA <span style="font-weight: 300; opacity: 0.6;">COMMAND</span></div>
-      <div class="brand-badge">OVERSEER v3.3.1</div>
+      <div class="brand-badge">OVERSEER v3.3.2</div>
     </div>
 
     <div class="header-actions">
+      <button id="btnLockdownToggle" class="btn-lockdown secure" onclick="toggleNetworkLockdown()">
+        🛡️ NETWORK: SECURE
+      </button>
       <div class="admin-pill">
         <div class="status-dot"></div>
         <span id="adminIdentity">CONNECTED // ENCLAVE SECURE</span>
@@ -714,13 +834,12 @@
                 <th>Agent ID</th>
                 <th>Operative Name</th>
                 <th>Email / Channel</th>
-                <th>Firebase UID</th>
-                <th>Access Control</th>
+                <th style="min-width: 320px;">Tactical Command Actions</th>
               </tr>
             </thead>
             <tbody id="usersTableBody">
               <tr>
-                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 40px;">
                   Querying secure enclave nodes...
                 </td>
               </tr>
@@ -955,37 +1074,38 @@
     });
 
     // ── DATA LISTENERS ──
+    let bannedNodesRegistry = {};
+    let rawUsersSnapshot = null;
+
     function initOverseerListeners() {
-      // 1. Users Node Listener
-      db.ref('users').on('value', snapshot => {
-        allUsers = [];
-        let onlineCount = 0;
-        let bannedCount = 0;
-
-        snapshot.forEach(child => {
-          const u = child.val();
-          const uid = child.key;
-          const userObj = {
-            uid: uid,
-            name: u.name || 'Unnamed Agent',
-            agentId: u.agentId || 'N/A',
-            email: u.email || 'Encrypted Node',
-            online: !!u.online,
-            banned: !!u.banned
-          };
-          if (userObj.online) onlineCount++;
-          if (userObj.banned) bannedCount++;
-          allUsers.push(userObj);
-        });
-
-        document.getElementById('statTotalUsers').textContent = allUsers.length;
-        document.getElementById('statOnlineUsers').textContent = onlineCount;
-        document.getElementById('statBannedUsers').textContent = bannedCount;
-
-        renderUsersTable(allUsers);
+      // 1. Global Banned Nodes Listener
+      db.ref('banned_nodes').on('value', snap => {
+        bannedNodesRegistry = snap.val() || {};
+        refreshUsersDisplay();
       });
 
-      // 2. Reports Node Listener
+      // 2. Users Node Listener
+      db.ref('users').on('value', snapshot => {
+        rawUsersSnapshot = snapshot;
+        refreshUsersDisplay();
+      });
+
+      // 3. Network Lockdown Status Listener
+      db.ref('network_status/lockdown').on('value', snap => {
+        const isLockdown = snap.val() === true;
+        const btn = document.getElementById('btnLockdownToggle');
+        if (btn) {
+          if (isLockdown) {
+            btn.className = 'btn-lockdown active';
+            btn.innerHTML = '🚨 EMERGENCY LOCKDOWN ACTIVE';
+          } else {
+            btn.className = 'btn-lockdown secure';
+            btn.innerHTML = '🛡️ NETWORK: SECURE';
+          }
+        }
+      });
+
+      // 4. Reports Node Listener
       db.ref('reports').on('value', snapshot => {
         allReports = [];
         snapshot.forEach(child => {
@@ -1005,7 +1125,7 @@
         renderReportsList(allReports);
       });
 
-      // 3. App Update Node Listener
+      // 5. App Update Node Listener
       db.ref('app_update').on('value', snapshot => {
         if (snapshot.exists()) {
           const upd = snapshot.val();
@@ -1019,11 +1139,42 @@
       });
     }
 
+    function refreshUsersDisplay() {
+      if (!rawUsersSnapshot) return;
+      allUsers = [];
+      let onlineCount = 0;
+      let bannedCount = 0;
+
+      rawUsersSnapshot.forEach(child => {
+        const u = child.val();
+        const uid = child.key;
+        const isBanned = (u.banned === true) || (bannedNodesRegistry[uid] && bannedNodesRegistry[uid].banned !== false);
+        const userObj = {
+          uid: uid,
+          name: u.name || 'Unnamed Agent',
+          agentId: u.agentId || 'N/A',
+          email: u.email || 'Encrypted Channel',
+          online: !!u.online,
+          banned: isBanned,
+          banReason: u.ban_reason || (bannedNodesRegistry[uid] ? bannedNodesRegistry[uid].reason : null)
+        };
+        if (userObj.online) onlineCount++;
+        if (userObj.banned) bannedCount++;
+        allUsers.push(userObj);
+      });
+
+      document.getElementById('statTotalUsers').textContent = allUsers.length;
+      document.getElementById('statOnlineUsers').textContent = onlineCount;
+      document.getElementById('statBannedUsers').textContent = bannedCount;
+
+      renderUsersTable(allUsers);
+    }
+
     // ── RENDER USERS TABLE ──
     function renderUsersTable(users) {
       const tbody = document.getElementById('usersTableBody');
       if (users.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">No agents found matching query.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 30px;">No agents found matching query.</td></tr>`;
         return;
       }
 
@@ -1032,9 +1183,13 @@
           ? `<span class="badge-status banned">● BANNED</span>`
           : (u.online ? `<span class="badge-status online">● ONLINE</span>` : `<span class="badge-status offline">○ OFFLINE</span>`);
 
-        const actionBtn = u.banned
+        const banBtn = u.banned
           ? `<button class="btn-action btn-unban" onclick="toggleBan('${u.uid}', false)">✅ UNBAN</button>`
           : `<button class="btn-action btn-ban" onclick="toggleBan('${u.uid}', true)">🚫 BAN</button>`;
+
+        const warnBtn = `<button class="btn-action btn-warn" onclick="sendWarning('${u.uid}', '${escapeHtml(u.name)}')">⚠️ WARN</button>`;
+        const purgeBtn = `<button class="btn-action btn-purge" onclick="purgeVault('${u.uid}', '${escapeHtml(u.name)}')">💥 PURGE</button>`;
+        const detailsBtn = `<button class="btn-action btn-details" onclick="openInspector('${u.uid}')">🔍 DETAILS</button>`;
 
         return `
           <tr>
@@ -1042,8 +1197,14 @@
             <td><span class="agent-pill">#${u.agentId}</span></td>
             <td style="font-weight: 700; color: #fff;">${escapeHtml(u.name)}</td>
             <td style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">${escapeHtml(u.email)}</td>
-            <td style="font-family: var(--font-mono); font-size: 11px; opacity: 0.6;" title="${u.uid}">${u.uid.slice(0, 10)}...</td>
-            <td>${actionBtn}</td>
+            <td>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                ${banBtn}
+                ${warnBtn}
+                ${purgeBtn}
+                ${detailsBtn}
+              </div>
+            </td>
           </tr>
         `;
       }).join('');
@@ -1064,11 +1225,110 @@
     // ── BAN / UNBAN ACTION ──
     window.toggleBan = function(uid, banStatus) {
       const action = banStatus ? 'BAN' : 'UNBAN';
-      if (confirm(`Confirm ${action} for Agent Node ${uid}?`)) {
-        db.ref(`users/${uid}/banned`).setValue(banStatus)
-          .then(() => alert(`Node ${uid} status updated: ${action} active.`))
-          .catch(err => alert(`Action failed: ${err.message}`));
+      let reason = 'Protocol Security Violation';
+      if (banStatus) {
+        const input = prompt(`Enter violation reason for banning Agent Node ${uid}:`, "Protocol Security Violation");
+        if (input === null) return;
+        if (input.trim()) reason = input.trim();
       }
+
+      if (confirm(`Confirm ${action} for Agent Node ${uid}?`)) {
+        const updates = {};
+        if (banStatus) {
+          updates[`users/${uid}/banned`] = true;
+          updates[`users/${uid}/ban_reason`] = reason;
+          updates[`banned_nodes/${uid}`] = { banned: true, reason: reason, bannedAt: Date.now(), bannedBy: "Commander" };
+        } else {
+          updates[`users/${uid}/banned`] = false;
+          updates[`users/${uid}/ban_reason`] = null;
+          updates[`banned_nodes/${uid}`] = null;
+        }
+
+        db.ref().update(updates)
+          .then(() => alert(`✅ Agent Node ${uid} has been ${action}NED.`))
+          .catch(err => {
+            console.warn("Multi-path update failed, attempting individual paths:", err);
+            if (banStatus) {
+              db.ref(`users/${uid}/banned`).set(true);
+              db.ref(`users/${uid}/ban_reason`).set(reason);
+              db.ref(`banned_nodes/${uid}`).set({ banned: true, reason: reason, bannedAt: Date.now() });
+            } else {
+              db.ref(`users/${uid}/banned`).set(false);
+              db.ref(`users/${uid}/ban_reason`).remove();
+              db.ref(`banned_nodes/${uid}`).remove();
+            }
+            alert(`Node ${uid} ${action} command sent.`);
+          });
+      }
+    };
+
+    // ── COMMANDER DIRECT ADVISORY / WARNING ──
+    window.sendWarning = function(uid, name) {
+      const msg = prompt(`Enter immediate Command Dispatch for Agent ${name}:`, "Stand down immediately. Return to authorized channels.");
+      if (!msg || !msg.trim()) return;
+      db.ref(`users/${uid}/commander_alert`).set(msg.trim())
+        .then(() => alert(`⚡ Directive dispatched directly to Agent ${name}'s device screen.`))
+        .catch(err => alert(`Failed to dispatch alert: ${err.message}`));
+    };
+
+    // ── REMOTE VAULT PURGE ──
+    window.purgeVault = function(uid, name) {
+      if (confirm(`🚨 HIGH PROTOCOL ACTION:\nAre you sure you want to remotely wipe and shred all private media vault files and local keys on Agent ${name}'s device?`)) {
+        db.ref(`users/${uid}/purge_vault`).set(true)
+          .then(() => alert(`💥 Vault Purge directive armed for Agent ${name}. Upon connection, device vault will be obliterated.`))
+          .catch(err => alert(`Failed to trigger vault purge: ${err.message}`));
+      }
+    };
+
+    // ── NETWORK EMERGENCY LOCKDOWN TOGGLE ──
+    window.toggleNetworkLockdown = function() {
+      db.ref('network_status/lockdown').once('value', snap => {
+        const isCurrent = snap.val() === true;
+        const nextState = !isCurrent;
+        const promptMsg = nextState
+          ? "🚨 ACTIVATE EMERGENCY ENCLAVE LOCKDOWN?\nAll non-commander sessions will be locked down."
+          : "Lift emergency lockdown and restore normal comms?";
+        if (confirm(promptMsg)) {
+          db.ref('network_status/lockdown').set(nextState)
+            .then(() => alert(nextState ? "Enclave is now in EMERGENCY LOCKDOWN." : "Lockdown lifted."))
+            .catch(err => alert(`Failed to toggle lockdown: ${err.message}`));
+        }
+      });
+    };
+
+    // ── AGENT INSPECTOR MODAL ──
+    window.openInspector = function(uid) {
+      const user = allUsers.find(u => u.uid === uid);
+      if (!user) return;
+      document.getElementById('inspName').textContent = user.name;
+      document.getElementById('inspAgentId').textContent = '#' + user.agentId;
+      document.getElementById('inspEmail').textContent = user.email;
+      document.getElementById('inspUid').textContent = user.uid;
+      document.getElementById('inspStatus').textContent = user.online ? '🟢 ONLINE' : '○ OFFLINE';
+      document.getElementById('inspBan').textContent = user.banned ? '🚨 BLACKLISTED' + (user.banReason ? ` (${user.banReason})` : '') : '✅ AUTHORIZED';
+      
+      document.getElementById('inspBtnResetPass').onclick = function() {
+        if (!user.email || user.email.includes('Encrypted')) {
+          alert('No valid email found for this agent.');
+          return;
+        }
+        if (confirm(`Send a password reset email to ${user.email}?`)) {
+          auth.sendPasswordResetEmail(user.email)
+            .then(() => alert(`Password reset email dispatched to ${user.email}`))
+            .catch(err => alert(`Failed: ${err.message}`));
+        }
+      };
+
+      document.getElementById('inspBtnCopyUid').onclick = function() {
+        navigator.clipboard.writeText(user.uid);
+        alert('Copied UID: ' + user.uid);
+      };
+
+      document.getElementById('inspectorModal').style.display = 'flex';
+    };
+
+    window.closeInspector = function() {
+      document.getElementById('inspectorModal').style.display = 'none';
     };
 
     // ── RENDER REPORTS ──
@@ -1110,18 +1370,23 @@
 
     window.banReportedAgent = function(agentId, reportId) {
       if (confirm(`Ban Agent #${agentId} and resolve report?`)) {
-        // Find UID matching agentId
+        const reason = "Incident Report Policy Breach";
         const match = allUsers.find(u => u.agentId.toString() === agentId.toString());
         if (match) {
           db.ref(`users/${match.uid}/banned`).setValue(true);
+          db.ref(`users/${match.uid}/ban_reason`).setValue(reason);
+          db.ref(`banned_nodes/${match.uid}`).set({ banned: true, reason: reason, bannedAt: Date.now() });
         } else {
-          // If UID not found in memory, query directly
           db.ref('users').orderByChild('agentId').equalTo(agentId).once('value', snap => {
-            snap.forEach(c => db.ref(`users/${c.key}/banned`).setValue(true));
+            snap.forEach(c => {
+              db.ref(`users/${c.key}/banned`).setValue(true);
+              db.ref(`users/${c.key}/ban_reason`).setValue(reason);
+              db.ref(`banned_nodes/${c.key}`).set({ banned: true, reason: reason, bannedAt: Date.now() });
+            });
           });
         }
         db.ref(`reports/${reportId}`).remove();
-        alert(`Agent #${agentId} has been blacklisted.`);
+        alert(`Agent #${agentId} has been blacklisted and incident resolved.`);
       }
     };
 
@@ -1187,5 +1452,50 @@
       return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
   </script>
+  <!-- ── AGENT INSPECTOR MODAL ── -->
+  <div id="inspectorModal" class="modal-overlay" onclick="if(event.target===this)closeInspector()">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:22px;">👤</span>
+          <div>
+            <h3 id="inspName" style="font-size:16px; font-weight:700; color:#fff;">Agent Inspector</h3>
+            <span style="font-size:11px; color:var(--cyan); font-family:var(--font-mono);">ENCLAVE NODE DOSSIER</span>
+          </div>
+        </div>
+        <button class="btn-ghost" onclick="closeInspector()" style="padding:6px 12px; font-size:14px;">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-field">
+          <span class="modal-label">Agent ID</span>
+          <span id="inspAgentId" class="modal-val agent-pill">#0000000</span>
+        </div>
+        <div class="modal-field">
+          <span class="modal-label">Channel Email</span>
+          <span id="inspEmail" class="modal-val">user@example.com</span>
+        </div>
+        <div class="modal-field">
+          <span class="modal-label">Firebase UID</span>
+          <span id="inspUid" class="modal-val" style="font-size:11px; opacity:0.8;">---</span>
+        </div>
+        <div class="modal-field">
+          <span class="modal-label">Presence</span>
+          <span id="inspStatus" class="modal-val">🟢 ONLINE</span>
+        </div>
+        <div class="modal-field">
+          <span class="modal-label">Access State</span>
+          <span id="inspBan" class="modal-val">CLEAR</span>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px;">
+          <button id="inspBtnResetPass" class="btn-submit" style="padding:10px; font-size:12px; text-align:center;">
+            📧 SEND PASS RESET
+          </button>
+          <button id="inspBtnCopyUid" class="btn-ghost" style="padding:10px; font-size:12px; text-align:center;">
+            📋 COPY UID
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

@@ -142,15 +142,52 @@ class LoginActivity : BaseActivity() {
                     btnAction.text = "SIGN IN"
                     if (task.isSuccessful) {
                         val user = auth.currentUser
-                        sharedPref.edit().putInt("AUTO_LOGIN_COUNT", 0).apply()
-                        if (user?.displayName.isNullOrEmpty()) {
-                            showNamePopup()
-                        } else {
-                            ensureAgentId(user!!.uid) {
-                                ECDHKeyManager.initializeKeys(this)
-                                startDashboard()
+                        val uid = user?.uid ?: return@addOnCompleteListener
+                        FirebaseDatabase.getInstance().getReference("users").child(uid).child("banned").get()
+                            .addOnSuccessListener { banSnap ->
+                                if (banSnap.value == true) {
+                                    auth.signOut()
+                                    showError(tvError, "🚨 ACCESS REVOKED: This account has been blacklisted by Network Command.")
+                                } else {
+                                    FirebaseDatabase.getInstance().getReference("banned_nodes").child(uid).get()
+                                        .addOnSuccessListener { nodeSnap ->
+                                            if (nodeSnap.exists() && nodeSnap.child("banned").getValue(Boolean::class.java) != false) {
+                                                auth.signOut()
+                                                showError(tvError, "🚨 ACCESS REVOKED: This account has been blacklisted by Network Command.")
+                                            } else {
+                                                sharedPref.edit().putInt("AUTO_LOGIN_COUNT", 0).apply()
+                                                if (user.displayName.isNullOrEmpty()) {
+                                                    showNamePopup()
+                                                } else {
+                                                    ensureAgentId(uid) {
+                                                        ECDHKeyManager.initializeKeys(this)
+                                                        startDashboard()
+                                                    }
+                                                }
+                                            }
+                                        }.addOnFailureListener {
+                                            sharedPref.edit().putInt("AUTO_LOGIN_COUNT", 0).apply()
+                                            if (user.displayName.isNullOrEmpty()) {
+                                                showNamePopup()
+                                            } else {
+                                                ensureAgentId(uid) {
+                                                    ECDHKeyManager.initializeKeys(this)
+                                                    startDashboard()
+                                                }
+                                            }
+                                        }
+                                }
+                            }.addOnFailureListener {
+                                sharedPref.edit().putInt("AUTO_LOGIN_COUNT", 0).apply()
+                                if (user.displayName.isNullOrEmpty()) {
+                                    showNamePopup()
+                                } else {
+                                    ensureAgentId(uid) {
+                                        ECDHKeyManager.initializeKeys(this)
+                                        startDashboard()
+                                    }
+                                }
                             }
-                        }
                     } else {
                         val msg = when {
                             task.exception?.message?.contains("password") == true  -> "Incorrect password."

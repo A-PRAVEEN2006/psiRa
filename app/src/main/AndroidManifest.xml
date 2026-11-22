@@ -168,6 +168,11 @@
         <activity android:name=".CallActivity" android:exported="false" android:screenOrientation="portrait"/>
         <activity android:name=".CallHistoryActivity" android:exported="false" />
 
+        <activity
+            android:name="com.project1.psira.AccountBannedActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
         <receiver android:name=".NotificationReplyReceiver" android:exported="false" />
 
         <service android:name="com.project1.psira.PsiraMessagingService" android:exported="false">
