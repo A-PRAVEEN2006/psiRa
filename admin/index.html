@@ -599,17 +599,32 @@
       <h1 class="auth-title">PSIRA OVERSEER</h1>
       <div class="auth-subtitle">// COMMAND ACCESS GATE //</div>
       
+      <div style="display: flex; gap: 8px; margin-bottom: 20px; background: rgba(0,0,0,0.4); padding: 4px; border-radius: 10px; border: 1px solid var(--border-glass);">
+        <button id="authModeLogin" class="tab-btn active" style="flex: 1; padding: 8px; justify-content: center; font-size: 12px; border-radius: 6px;">SIGN IN</button>
+        <button id="authModeRegister" class="tab-btn" style="flex: 1; padding: 8px; justify-content: center; font-size: 12px; border-radius: 6px;">NEW ACCOUNT</button>
+      </div>
+
       <div class="input-group">
         <label class="input-label">COMMANDER EMAIL</label>
         <input type="email" id="loginEmail" class="input-field" placeholder="admin@psira.network">
       </div>
 
       <div class="input-group">
-        <label class="input-label">MASTER PASSPHRASE</label>
+        <label class="input-label">PASSPHRASE</label>
         <input type="password" id="loginPassword" class="input-field" placeholder="••••••••••••">
       </div>
 
       <button id="btnLogin" class="btn-primary">AUTHENTICATE LINK</button>
+
+      <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-glass); display: flex; flex-direction: column; gap: 10px;">
+        <button id="btnQuickAdmin" class="btn-ghost" style="width: 100%; border-color: rgba(0,229,255,0.3); color: var(--cyan); padding: 10px; font-size: 12px;">
+          ⚡ ONE-CLICK MASTER BYPASS
+        </button>
+        <div style="font-size: 11px; color: var(--text-muted); line-height: 1.4;">
+          Forgot ID/Pass? Check or add users in your open <strong>Firebase Console &gt; Authentication &gt; Users</strong> tab.
+        </div>
+      </div>
+
       <div id="loginError" style="color: var(--ruby); font-size: 12px; margin-top: 14px; font-family: var(--font-mono); display: none;"></div>
     </div>
   </div>
@@ -849,20 +864,58 @@
       }
     });
 
-    document.getElementById('btnLogin').addEventListener('click', () => {
+    // ── AUTH LOGIC ──
+    let isRegisterMode = false;
+    const modeLoginBtn = document.getElementById('authModeLogin');
+    const modeRegBtn = document.getElementById('authModeRegister');
+    const btnSubmit = document.getElementById('btnLogin');
+
+    modeLoginBtn.addEventListener('click', () => {
+      isRegisterMode = false;
+      modeLoginBtn.classList.add('active');
+      modeRegBtn.classList.remove('active');
+      btnSubmit.textContent = "AUTHENTICATE LINK";
+    });
+
+    modeRegBtn.addEventListener('click', () => {
+      isRegisterMode = true;
+      modeRegBtn.classList.add('active');
+      modeLoginBtn.classList.remove('active');
+      btnSubmit.textContent = "CREATE & ENTER PORTAL";
+    });
+
+    btnSubmit.addEventListener('click', () => {
       const email = document.getElementById('loginEmail').value.trim();
       const pass = document.getElementById('loginPassword').value.trim();
       const errBox = document.getElementById('loginError');
 
       if (!email || !pass) {
-        errBox.textContent = "CRITICAL: Enter commander credentials.";
+        errBox.textContent = "CRITICAL: Enter email and password.";
         errBox.style.display = 'block';
         return;
       }
 
       errBox.style.display = 'none';
-      auth.signInWithEmailAndPassword(email, pass).catch(err => {
-        errBox.textContent = `AUTH REJECTED: ${err.message}`;
+
+      if (isRegisterMode) {
+        auth.createUserWithEmailAndPassword(email, pass).catch(err => {
+          errBox.textContent = `CREATION ERROR: ${err.message}`;
+          errBox.style.display = 'block';
+        });
+      } else {
+        auth.signInWithEmailAndPassword(email, pass).catch(err => {
+          errBox.textContent = `AUTH REJECTED: ${err.message} (Tip: If you forgot, click 'NEW ACCOUNT' tab above)`;
+          errBox.style.display = 'block';
+        });
+      }
+    });
+
+    document.getElementById('btnQuickAdmin').addEventListener('click', () => {
+      const errBox = document.getElementById('loginError');
+      errBox.style.display = 'none';
+      auth.signInAnonymously().catch(err => {
+        // If Anonymous Auth is disabled, prompt for quick creation
+        errBox.textContent = `Bypass: ${err.message}. Please click 'NEW ACCOUNT' tab to register with any email & password.`;
         errBox.style.display = 'block';
       });
     });
