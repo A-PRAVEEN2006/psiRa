@@ -8,10 +8,19 @@ import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 
+/**
+ * Listens in the background for real-time signals and direct chat messages,
+ * popping up high-priority notifications (sound, vibration, heads-up) ONLY when a message is received,
+ * exactly like WhatsApp and Telegram.
+ */
 class SignalNotificationManager(private val context: Context) {
 
-    private var currentListener: ChildEventListener? = null
-    private var currentInboxRef: DatabaseReference? = null
+    private var inboxListener: ChildEventListener? = null
+    private var inboxRef: DatabaseReference? = null
+
+    private var directChatsListener: ValueEventListener? = null
+    private var directChatsRef: DatabaseReference? = null
+    private val channelListeners = mutableMapOf<String, Pair<Query, ChildEventListener>>()
 
     fun startListening() {
         NotificationHelper.createNotificationChannels(context)
@@ -20,8 +29,9 @@ class SignalNotificationManager(private val context: Context) {
             val user = auth.currentUser
             if (user != null) {
                 attachInboxListener(user.uid)
+                attachDirectChatsListener(user.uid)
             } else {
-                detachInboxListener()
+                detachAllListeners()
             }
         }
     }
@@ -31,7 +41,7 @@ class SignalNotificationManager(private val context: Context) {
 
         val ref = FirebaseDatabase.getInstance().getReference("user_inbox/$uid")
         ref.keepSynced(true)
-        currentInboxRef = ref
+        inboxRef = ref
 
         val listener = object : ChildEventListener {
             override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
@@ -45,36 +55,9 @@ class SignalNotificationManager(private val context: Context) {
                     // Remove processed signal immediately
                     snapshot.ref.removeValue()
 
-                    // If user is actively inside this chat, don't show notifications
-                    if (NotificationHelper.getActiveChat() == senderUid) {
-                        return
-                    }
-
-                    // Show in-app banner if an activity is in the foreground
-                    val foregroundActivity = BaseActivity.currentActivity
-                    if (foregroundActivity != null && !foregroundActivity.isFinishing) {
-                        Handler(Looper.getMainLooper()).post {
-                            InAppNotificationBanner.show(foregroundActivity, senderName, preview) {
-                                val intent = Intent(foregroundActivity, DirectChatActivity::class.java).apply {
-                                    putExtra("TARGET_UID", senderUid)
-                                    putExtra("TARGET_NAME", senderName)
-                                }
-                                foregroundActivity.startActivity(intent)
-                            }
-                        }
-                    }
-
-                    // Show system notification
-                    NotificationHelper.showDirectMessageNotification(
-                        context = context,
-                        senderUid = senderUid,
-                        senderName = senderName,
-                        messageText = preview,
-                        channelName = channelName,
-                        timestamp = timestamp
-                    )
+                    notifyMessageReceived(senderUid, senderName, preview, channelName, timestamp)
                 } catch (e: Exception) {
-                    Log.e("SignalNotif", "Error handling notification signal: ${e.message}")
+                    Log.e("SignalNotif", "Error in inbox signal: ${e.message}")
                 }
             }
 
@@ -87,14 +70,159 @@ class SignalNotificationManager(private val context: Context) {
         }
 
         ref.addChildEventListener(listener)
-        currentListener = listener
+        inboxListener = listener
+    }
+
+    private fun attachDirectChatsListener(myUid: String) {
+        detachDirectChatsListener()
+
+        val ref = FirebaseDatabase.getInstance().getReference("user_direct_chats/$myUid")
+        ref.keepSynced(true)
+        directChatsRef = ref
+
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val currentContactUids = snapshot.children.mapNotNull { it.key }.toSet()
+
+                // Remove channels no longer in direct chats
+                val toRemove = channelListeners.keys.filter { it !in currentContactUids }
+                for (contactUid in toRemove) {
+                    channelListeners.remove(contactUid)?.let { (query, l) ->
+                        query.removeEventListener(l)
+                    }
+                }
+
+                // Attach listener for each contact channel
+                for (contactUid in currentContactUids) {
+                    if (!channelListeners.containsKey(contactUid)) {
+                        attachChannelMessageListener(myUid, contactUid)
+                    }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.w("SignalNotif", "Direct chats listener cancelled: ${error.message}")
+            }
+        }
+
+        ref.addValueEventListener(listener)
+        directChatsListener = listener
+    }
+
+    private fun attachChannelMessageListener(myUid: String, contactUid: String) {
+        val channelName = if (myUid < contactUid) "${myUid}_$contactUid" else "${contactUid}_${myUid}"
+        val channelQuery = FirebaseDatabase.getInstance()
+            .getReference("direct_messages/$channelName")
+            .limitToLast(1)
+
+        val childListener = object : ChildEventListener {
+            override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                try {
+                    val rawMsg = snapshot.getValue(Message::class.java) ?: return
+                    val myDisplayName = FirebaseAuth.getInstance().currentUser?.displayName
+
+                    // Only notify if message is from the other party and is unread
+                    if (rawMsg.sender != myDisplayName && rawMsg.status != "read") {
+                        // Only trigger for fresh messages (received within past 2 minutes)
+                        if (System.currentTimeMillis() - rawMsg.timestamp < 120_000) {
+                            var preview = when (rawMsg.type) {
+                                "image" -> "📷 Photo"
+                                "voice" -> "🎤 Voice Note"
+                                "steg"  -> "🕵️ Hidden Image"
+                                "doc"   -> "📄 Document"
+                                else    -> {
+                                    val decrypted = try {
+                                        ECDHKeyManager.decryptFromContact(context, contactUid, rawMsg.content ?: "")
+                                    } catch (e: Exception) {
+                                        rawMsg.content ?: ""
+                                    }
+                                    try { PsiRaConverter.decode(decrypted) } catch (e: Exception) { decrypted }
+                                }
+                            }
+
+                            notifyMessageReceived(
+                                senderUid = contactUid,
+                                senderName = rawMsg.sender ?: "Agent",
+                                preview = preview,
+                                channelName = channelName,
+                                timestamp = rawMsg.timestamp
+                            )
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("SignalNotif", "Error in channel listener: ${e.message}")
+                }
+            }
+
+            override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {}
+            override fun onChildRemoved(snapshot: DataSnapshot) {}
+            override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
+            override fun onCancelled(error: DatabaseError) {}
+        }
+
+        channelQuery.addChildEventListener(childListener)
+        channelListeners[contactUid] = Pair(channelQuery, childListener)
+    }
+
+    private fun notifyMessageReceived(
+        senderUid: String,
+        senderName: String,
+        preview: String,
+        channelName: String,
+        timestamp: Long
+    ) {
+        // If user is actively inside this chat, don't show notifications
+        if (NotificationHelper.getActiveChat() == senderUid) {
+            return
+        }
+
+        // Show in-app banner if active in foreground
+        val foregroundActivity = BaseActivity.currentActivity
+        if (foregroundActivity != null && !foregroundActivity.isFinishing) {
+            Handler(Looper.getMainLooper()).post {
+                InAppNotificationBanner.show(foregroundActivity, senderName, preview) {
+                    val intent = Intent(foregroundActivity, DirectChatActivity::class.java).apply {
+                        putExtra("TARGET_UID", senderUid)
+                        putExtra("TARGET_NAME", senderName)
+                    }
+                    foregroundActivity.startActivity(intent)
+                }
+            }
+        }
+
+        // Pop up system notification (sound + vibration + heads-up banner)
+        NotificationHelper.showDirectMessageNotification(
+            context = context,
+            senderUid = senderUid,
+            senderName = senderName,
+            messageText = preview,
+            channelName = channelName,
+            timestamp = timestamp
+        )
     }
 
     private fun detachInboxListener() {
-        if (currentListener != null && currentInboxRef != null) {
-            currentInboxRef?.removeEventListener(currentListener!!)
-            currentListener = null
-            currentInboxRef = null
+        if (inboxListener != null && inboxRef != null) {
+            inboxRef?.removeEventListener(inboxListener!!)
+            inboxListener = null
+            inboxRef = null
         }
+    }
+
+    private fun detachDirectChatsListener() {
+        if (directChatsListener != null && directChatsRef != null) {
+            directChatsRef?.removeEventListener(directChatsListener!!)
+            directChatsListener = null
+            directChatsRef = null
+        }
+        for ((_, pair) in channelListeners) {
+            pair.first.removeEventListener(pair.second)
+        }
+        channelListeners.clear()
+    }
+
+    private fun detachAllListeners() {
+        detachInboxListener()
+        detachDirectChatsListener()
     }
 }

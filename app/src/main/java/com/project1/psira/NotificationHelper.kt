@@ -192,7 +192,9 @@ object NotificationHelper {
                 .setColor(Color.parseColor("#7B61FF"))
                 .setContentIntent(openPendingIntent)
                 .addAction(replyAction)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setDefaults(NotificationCompat.DEFAULT_ALL)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
 
             manager.notify(notifId, builder.build())

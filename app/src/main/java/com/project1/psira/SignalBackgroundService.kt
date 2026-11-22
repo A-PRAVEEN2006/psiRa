@@ -14,8 +14,9 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.messaging.FirebaseMessaging
 
 /**
- * Persistent background sync service ensuring real-time messages and notifications
- * are reliably delivered even when the app is minimized, closed, or device is sleeping.
+ * Background sync service keeping real-time messages connected without cluttering
+ * the notification drawer with ongoing persistent notifications.
+ * Behaves like WhatsApp and Telegram: silent when idle, pop-up only on new messages.
  */
 class SignalBackgroundService : Service() {
 
@@ -59,12 +60,17 @@ class SignalBackgroundService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP_SYNC) {
-            stopForeground(true)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+            } else {
+                @Suppress("DEPRECATION")
+                stopForeground(true)
+            }
             stopSelf()
             return START_NOT_STICKY
         }
 
-        // Start foreground with silent, discreet notification
+        // 1. Initialize foreground to satisfy Android background start policy
         val notification = buildSyncNotification()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(NOTIF_SYNC_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
@@ -72,13 +78,21 @@ class SignalBackgroundService : Service() {
             startForeground(NOTIF_SYNC_ID, notification)
         }
 
-        // Initialize and start persistent real-time listener
+        // 2. Immediately dismiss the persistent status notification so tray stays completely clean like WhatsApp/Telegram!
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION")
+            stopForeground(true)
+        }
+
+        // 3. Initialize and start real-time listener for incoming messages
         if (signalManager == null) {
             signalManager = SignalNotificationManager(applicationContext)
             signalManager?.startListening()
         }
 
-        // Ensure FCM token is kept up to date for hybrid cloud push
+        // 4. Ensure FCM token is kept up to date
         syncFcmToken()
 
         return START_STICKY
@@ -138,15 +152,14 @@ class SignalBackgroundService : Service() {
             .setContentTitle(title)
             .setContentText(text)
             .setContentIntent(pendingIntent)
-            .setOngoing(true)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(false)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .build()
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
-        // If swiped away from Recents, schedule instant resurrection
         if (FirebaseAuth.getInstance().currentUser != null) {
             val restartIntent = Intent(applicationContext, SignalBackgroundService::class.java).apply {
                 action = ACTION_START_SYNC
@@ -166,7 +179,6 @@ class SignalBackgroundService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        // If system kills service while user is logged in, attempt restart
         if (FirebaseAuth.getInstance().currentUser != null) {
             start(applicationContext)
         }
