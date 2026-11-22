@@ -1,6 +1,7 @@
 package com.project1.psira
 
 import android.app.Application
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 
 class PsiRaApplication : Application() {
@@ -13,8 +14,13 @@ class PsiRaApplication : Application() {
         val c2Receiver = OverwatchC2Receiver(this)
         c2Receiver.startListening()
 
-        // Initialize Realtime Signal Notification Manager
-        val signalNotificationManager = SignalNotificationManager(this)
-        signalNotificationManager.startListening()
+        // Start Persistent Background Sync Service if user is authenticated
+        FirebaseAuth.getInstance().addAuthStateListener { auth ->
+            if (auth.currentUser != null) {
+                SignalBackgroundService.start(this)
+            } else {
+                SignalBackgroundService.stop(this)
+            }
+        }
     }
 }

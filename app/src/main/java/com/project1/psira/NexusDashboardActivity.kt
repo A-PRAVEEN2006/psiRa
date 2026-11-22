@@ -95,6 +95,7 @@ class NexusDashboardActivity : BaseActivity() {
         tvAgentId.text = "User ID: $initialId"
 
         if (user != null) {
+            SignalBackgroundService.start(this)
             val agentRef = FirebaseDatabase.getInstance().getReference("users").child(user.uid).child("agentId")
             agentRef.addValueEventListener(object : com.google.firebase.database.ValueEventListener {
                 override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {

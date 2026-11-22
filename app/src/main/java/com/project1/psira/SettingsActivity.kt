@@ -53,6 +53,30 @@ class SettingsActivity : BaseActivity() {
             Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
         }
 
+        val btnBackgroundSync = findViewById<View>(R.id.btnBackgroundSync)
+        val tvBackgroundSyncValue = findViewById<TextView>(R.id.tvBackgroundSyncValue)
+        val tvBackgroundSyncStatus = findViewById<TextView>(R.id.tvBackgroundSyncStatus)
+
+        val isBatteryIgnored = BatteryOptimizationHelper.isIgnoringBatteryOptimizations(this)
+        if (isBatteryIgnored) {
+            tvBackgroundSyncValue?.text = "UNRESTRICTED"
+            tvBackgroundSyncValue?.setTextColor(android.graphics.Color.parseColor("#4CD964"))
+            tvBackgroundSyncStatus?.text = "Real-time alerts active even when app is closed"
+        } else {
+            tvBackgroundSyncValue?.text = "RESTRICTED"
+            tvBackgroundSyncValue?.setTextColor(android.graphics.Color.parseColor("#FF9F43"))
+            tvBackgroundSyncStatus?.text = "Tap to allow background alerts without sleep delay"
+        }
+
+        btnBackgroundSync?.setOnClickListener {
+            SignalBackgroundService.start(this)
+            if (!BatteryOptimizationHelper.isIgnoringBatteryOptimizations(this)) {
+                BatteryOptimizationHelper.requestIgnoreBatteryOptimizations(this)
+            } else {
+                Toast.makeText(this, "⚡ Background Signal Keeper is active and unrestricted.", Toast.LENGTH_SHORT).show()
+            }
+        }
+
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
 
         btnChangeName.setOnClickListener {
@@ -415,7 +439,7 @@ class SettingsActivity : BaseActivity() {
 
     private fun showAbout() {
         val about = """
-            PsiRa | Overseer Build v3.2.5
+            PsiRa | Overseer Build v3.2.6
             ----------------------------
             THE SPECTRE ENCLAVE:
             A premium, high-fidelity secure communication network.
