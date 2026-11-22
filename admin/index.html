@@ -758,6 +758,9 @@
     </div>
 
     <div class="header-actions">
+      <button id="btnRulesHelp" class="btn-ghost" style="padding: 7px 14px; font-size: 11px; font-family: var(--font-mono); color: var(--amber); border-color: rgba(255, 214, 0, 0.4); display: flex; align-items: center; gap: 6px;" onclick="openRulesModal()">
+        ⚙️ DB RULES
+      </button>
       <button id="btnLockdownToggle" class="btn-lockdown secure" onclick="toggleNetworkLockdown()">
         🛡️ NETWORK: SECURE
       </button>
@@ -1236,7 +1239,7 @@
     });
 
     // ── BAN / UNBAN ACTION ──
-    window.toggleBan = function(uid, banStatus) {
+    window.toggleBan = async function(uid, banStatus) {
       const action = banStatus ? 'BAN' : 'UNBAN';
       let reason = 'Protocol Security Violation';
       if (banStatus) {
@@ -1245,33 +1248,37 @@
         if (input.trim()) reason = input.trim();
       }
 
-      if (confirm(`Confirm ${action} for Agent Node ${uid}?`)) {
-        const updates = {};
-        if (banStatus) {
-          updates[`users/${uid}/banned`] = true;
-          updates[`users/${uid}/ban_reason`] = reason;
-          updates[`banned_nodes/${uid}`] = { banned: true, reason: reason, bannedAt: Date.now(), bannedBy: "Commander" };
-        } else {
-          updates[`users/${uid}/banned`] = false;
-          updates[`users/${uid}/ban_reason`] = null;
-          updates[`banned_nodes/${uid}`] = null;
-        }
+      if (!confirm(`Confirm ${action} for Agent Node ${uid}?`)) return;
 
-        db.ref().update(updates)
-          .then(() => alert(`✅ Agent Node ${uid} has been ${action}NED.`))
-          .catch(err => {
-            console.warn("Multi-path update failed, attempting individual paths:", err);
-            if (banStatus) {
-              db.ref(`users/${uid}/banned`).set(true);
-              db.ref(`users/${uid}/ban_reason`).set(reason);
-              db.ref(`banned_nodes/${uid}`).set({ banned: true, reason: reason, bannedAt: Date.now() });
-            } else {
-              db.ref(`users/${uid}/banned`).set(false);
-              db.ref(`users/${uid}/ban_reason`).remove();
-              db.ref(`banned_nodes/${uid}`).remove();
-            }
-            alert(`Node ${uid} ${action} command sent.`);
+      try {
+        if (banStatus) {
+          // Write to banned_nodes (primary blacklist registry)
+          await db.ref(`banned_nodes/${uid}`).set({
+            banned: true,
+            reason: reason,
+            bannedAt: Date.now(),
+            bannedBy: "Commander"
           });
+          // Also set in users/$uid
+          try {
+            await db.ref(`users/${uid}/banned`).set(true);
+            await db.ref(`users/${uid}/ban_reason`).set(reason);
+          } catch (e) {
+            console.warn("Write to users/$uid failed (banned_nodes applied):", e);
+          }
+        } else {
+          await db.ref(`banned_nodes/${uid}`).remove();
+          try {
+            await db.ref(`users/${uid}/banned`).set(false);
+            await db.ref(`users/${uid}/ban_reason`).remove();
+          } catch (e) {
+            console.warn("Write to users/$uid failed (banned_nodes removed):", e);
+          }
+        }
+        alert(`✅ Agent Node ${uid} status updated: ${action} active.`);
+      } catch (err) {
+        console.error("Ban action error:", err);
+        handleFirebaseRuleError(err);
       }
     };
 
@@ -1281,7 +1288,7 @@
       if (!msg || !msg.trim()) return;
       db.ref(`users/${uid}/commander_alert`).set(msg.trim())
         .then(() => alert(`⚡ Directive dispatched directly to Agent ${name}'s device screen.`))
-        .catch(err => alert(`Failed to dispatch alert: ${err.message}`));
+        .catch(err => handleFirebaseRuleError(err));
     };
 
     // ── REMOTE VAULT PURGE ──
@@ -1289,7 +1296,7 @@
       if (confirm(`🚨 HIGH PROTOCOL ACTION:\nAre you sure you want to remotely wipe and shred all private media vault files and local keys on Agent ${name}'s device?`)) {
         db.ref(`users/${uid}/purge_vault`).set(true)
           .then(() => alert(`💥 Vault Purge directive armed for Agent ${name}. Upon connection, device vault will be obliterated.`))
-          .catch(err => alert(`Failed to trigger vault purge: ${err.message}`));
+          .catch(err => handleFirebaseRuleError(err));
       }
     };
 
@@ -1304,7 +1311,7 @@
         if (confirm(promptMsg)) {
           db.ref('network_status/lockdown').set(nextState)
             .then(() => alert(nextState ? "Enclave is now in EMERGENCY LOCKDOWN." : "Lockdown lifted."))
-            .catch(err => alert(`Failed to toggle lockdown: ${err.message}`));
+            .catch(err => handleFirebaseRuleError(err));
         }
       });
     };
@@ -1349,7 +1356,7 @@
     };
 
     // ── PERMANENTLY REMOVE USER & DELETE ACCOUNT ──
-    window.deleteUserAccount = function(uid, name, agentId) {
+    window.deleteUserAccount = async function(uid, name, agentId) {
       const confirm1 = confirm(`🚨 CRITICAL ACTION: REMOVE USER & DELETE ACCOUNT\n\nAre you sure you want to completely remove Agent ${name} (#${agentId}) from PsiRa and delete their account?\n\nThis will permanently:\n• Destroy their profile and cloud vault records\n• Signal device to eradicate local keys and wipe cache\n• Block any future access`);
       if (!confirm1) return;
 
@@ -1359,46 +1366,55 @@
         return;
       }
 
-      // Step 1: Arm self-purge & deletion on target device
-      const updates = {};
-      updates[`users/${uid}/account_deleted`] = true;
-      updates[`users/${uid}/purge_vault`] = true;
-      updates[`users/${uid}/banned`] = true;
-      updates[`banned_nodes/${uid}`] = {
-        banned: true,
-        deleted: true,
-        reason: "Account Permanently Deleted by High Command",
-        deletedAt: Date.now(),
-        deletedBy: "Commander"
-      };
-
-      db.ref().update(updates).then(() => {
-        // Step 2: Remove profile and vault nodes after active device trigger
-        setTimeout(() => {
-          db.ref(`users/${uid}`).remove();
-          db.ref(`user_vault/${uid}`).remove();
-        }, 1500);
-
-        if (document.getElementById('inspectorModal').style.display === 'flex') {
-          closeInspector();
-        }
-        alert(`💥 Agent ${name} (#${agentId}) has been removed and account marked for deletion.`);
-      }).catch(err => {
-        console.warn("Update error, applying individual paths:", err);
-        db.ref(`users/${uid}/account_deleted`).set(true);
-        db.ref(`banned_nodes/${uid}`).set({
+      try {
+        // Step 1: Arm blacklist node so account is permanently frozen
+        await db.ref(`banned_nodes/${uid}`).set({
           banned: true,
           deleted: true,
           reason: "Account Permanently Deleted by High Command",
-          deletedAt: Date.now()
+          deletedAt: Date.now(),
+          deletedBy: "Commander"
         });
-        db.ref(`user_vault/${uid}`).remove();
-        db.ref(`users/${uid}`).remove();
+
+        // Step 2: Signal device to self-purge
+        try {
+          await db.ref(`users/${uid}/account_deleted`).set(true);
+          await db.ref(`users/${uid}/purge_vault`).set(true);
+        } catch (_) {}
+
+        // Step 3: Remove user from RTDB
+        try {
+          await db.ref(`user_vault/${uid}`).remove();
+        } catch (_) {}
+
+        await db.ref(`users/${uid}`).remove();
+
         if (document.getElementById('inspectorModal').style.display === 'flex') {
           closeInspector();
         }
-        alert(`User removal executed.`);
-      });
+        alert(`💥 Agent ${name} (#${agentId}) has been removed and account permanently eradicated.`);
+      } catch (err) {
+        console.error("Delete action error:", err);
+        handleFirebaseRuleError(err);
+      }
+    };
+
+    function handleFirebaseRuleError(err) {
+      const msg = err.message || String(err);
+      if (msg.includes("permission_denied") || msg.includes("PERMISSION_DENIED") || msg.includes("Permission denied")) {
+        alert("🚨 FIREBASE PERMISSION DENIED:\n\nFirebase Realtime Database rules blocked this admin operation.\nPlease update your Firebase Rules in Firebase Console to grant master admin access to anbuselvan1613@gmail.com.\n\nOpening the Rules Guide now...");
+        openRulesModal();
+      } else {
+        alert("Operation failed: " + msg);
+      }
+    }
+
+    window.openRulesModal = function() {
+      document.getElementById('rulesModal').style.display = 'flex';
+    };
+
+    window.closeRulesModal = function() {
+      document.getElementById('rulesModal').style.display = 'none';
     };
 
     // ── RENDER REPORTS ──
@@ -1572,5 +1588,103 @@
       </div>
     </div>
   </div>
+
+  <!-- ── FIREBASE RULES GUIDE MODAL ── -->
+  <div id="rulesModal" class="modal-overlay" onclick="if(event.target===this)closeRulesModal()">
+    <div class="modal-card" style="max-width: 620px;">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:22px;">⚙️</span>
+          <div>
+            <h3 style="font-size:16px; font-weight:700; color:#fff;">Firebase Realtime Database Rules</h3>
+            <span style="font-size:11px; color:var(--amber); font-family:var(--font-mono);">MASTER COMMAND PERMISSIONS</span>
+          </div>
+        </div>
+        <button class="btn-ghost" onclick="closeRulesModal()" style="padding:6px 12px; font-size:14px;">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13px; line-height:1.6; color:#bbb;">
+          If banning or deleting users reverts after clicking OK, your Firebase Database rules are blocking cross-user admin edits (<code style="color:var(--ruby);">PERMISSION_DENIED</code>).
+        </p>
+        <p style="font-size:13px; line-height:1.6; color:#bbb;">
+          To grant Commander (<code style="color:var(--cyan);">anbuselvan1613@gmail.com</code>) permission to ban, purge, and delete rogue nodes, paste the rules below into Firebase Console:
+        </p>
+
+        <div style="position:relative; margin-top:8px;">
+          <pre id="adminRulesCode" style="background:#070a10; border:1px solid var(--border-glass); border-radius:10px; padding:14px; font-family:var(--font-mono); font-size:11px; color:#4af6c8; max-height:220px; overflow-y:auto; line-height:1.4;">{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null && auth.token.email === 'anbuselvan1613@gmail.com'",
+    "users": {
+      ".read": "auth != null",
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'anbuselvan1613@gmail.com')"
+      }
+    },
+    "banned_nodes": {
+      ".read": "auth != null",
+      ".write": "auth != null && auth.token.email === 'anbuselvan1613@gmail.com'"
+    },
+    "network_status": {
+      ".read": "auth != null",
+      ".write": "auth != null && auth.token.email === 'anbuselvan1613@gmail.com'"
+    },
+    "app_update": {
+      ".read": "auth != null",
+      ".write": "auth != null && auth.token.email === 'anbuselvan1613@gmail.com'"
+    },
+    "reports": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "global_protocol": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "user_vault": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || auth.token.email === 'anbuselvan1613@gmail.com')",
+        ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'anbuselvan1613@gmail.com')"
+      }
+    },
+    "chats": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "messages": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "direct_messages": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    }
+  }
+}</pre>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:8px;">
+          <button id="btnCopyRules" class="btn-submit" style="flex:1; padding:12px; font-size:12px; text-align:center;">
+            📋 COPY COMMANDER RULES
+          </button>
+          <a href="https://console.firebase.google.com/project/psira-4c983/database/psira-4c983-default-rtdb/rules" target="_blank" class="btn-ghost" style="padding:12px 16px; font-size:12px; text-align:center; text-decoration:none; display:flex; align-items:center; gap:6px; color:var(--cyan); border-color:rgba(0,229,255,0.4);">
+            🔗 OPEN FIREBASE RULES ↗
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('btnCopyRules')?.addEventListener('click', () => {
+        const code = document.getElementById('adminRulesCode').innerText;
+        navigator.clipboard.writeText(code).then(() => {
+          alert("✅ Commander Database Rules copied to clipboard!\nNow paste them into Firebase Console > Realtime Database > Rules > Publish.");
+        });
+      });
+    });
+  </script>
 </body>
 </html>
