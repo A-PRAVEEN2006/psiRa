@@ -24,6 +24,7 @@ class MessageAdapter(
 ) : RecyclerView.Adapter<MessageAdapter.MessageViewHolder>() {
 
     var chatDbRef: DatabaseReference? = null
+    var onQuoteClicked: ((String?) -> Unit)? = null
 
     var isMirrored: Boolean = false
         set(value) {
@@ -50,6 +51,11 @@ class MessageAdapter(
         val ivMessageMedia: ImageView? = itemView.findViewById(R.id.ivMessageMedia)
         val tvFileName: TextView? = itemView.findViewById(R.id.tvFileName)
         val btnQuickSaveMedia: ImageButton? = itemView.findViewById(R.id.btnQuickSaveMedia)
+
+        // Quoted reply fields
+        val layoutQuotedReply: View? = itemView.findViewById(R.id.layoutQuotedReply)
+        val tvQuoteSender: TextView? = itemView.findViewById(R.id.tvQuoteSender)
+        val tvQuoteText: TextView? = itemView.findViewById(R.id.tvQuoteText)
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -140,6 +146,18 @@ class MessageAdapter(
                     tvName.visibility = View.GONE
                 }
             }
+        }
+
+        // --- QUOTED REPLY PREVIEW ---
+        if (!message.replyToText.isNullOrEmpty()) {
+            holder.layoutQuotedReply?.visibility = View.VISIBLE
+            holder.tvQuoteSender?.text = message.replyToSender ?: "Agent"
+            holder.tvQuoteText?.text = message.replyToText
+            holder.layoutQuotedReply?.setOnClickListener {
+                onQuoteClicked?.invoke(message.replyToId)
+            }
+        } else {
+            holder.layoutQuotedReply?.visibility = View.GONE
         }
 
         // --- CONTENT RENDERING ---

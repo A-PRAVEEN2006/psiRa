@@ -31,6 +31,12 @@ class ChatActivity : BaseActivity() {
     private lateinit var messageList: ArrayList<Message>
     private lateinit var recyclerView: RecyclerView
 
+    private var activeReplyMessage: Message? = null
+    private lateinit var layoutReplyPreview: android.view.View
+    private lateinit var tvReplySender: TextView
+    private lateinit var tvReplyText: TextView
+    private lateinit var btnCancelReply: ImageButton
+
     private var messageListener: ValueEventListener? = null
     private var presenceListener: ValueEventListener? = null
     private lateinit var presenceRef: DatabaseReference
@@ -109,6 +115,32 @@ class ChatActivity : BaseActivity() {
         messageList = ArrayList()
         messageAdapter = MessageAdapter(messageList)
         recyclerView.adapter = messageAdapter
+
+        // Swipe-to-reply gesture & quoted navigation
+        layoutReplyPreview = findViewById(R.id.layoutReplyPreview)
+        tvReplySender = findViewById(R.id.tvReplySender)
+        tvReplyText = findViewById(R.id.tvReplyText)
+        btnCancelReply = findViewById(R.id.btnCancelReply)
+
+        btnCancelReply.setOnClickListener {
+            clearReply()
+        }
+
+        val swipeHelper = SwipeToReplyHelper(
+            this,
+            { pos -> messageList.getOrNull(pos) },
+            { msg -> startReply(msg) }
+        )
+        androidx.recyclerview.widget.ItemTouchHelper(swipeHelper).attachToRecyclerView(recyclerView)
+
+        messageAdapter.onQuoteClicked = { targetId ->
+            if (!targetId.isNullOrEmpty()) {
+                val index = messageList.indexOfFirst { it.id == targetId }
+                if (index != -1) {
+                    recyclerView.smoothScrollToPosition(index)
+                }
+            }
+        }
 
         // 2. DATABASE CONNECTION & NOTIFICATION TUNING
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
@@ -289,11 +321,46 @@ class ChatActivity : BaseActivity() {
         }
     }
 
+    private fun startReply(message: Message) {
+        activeReplyMessage = message
+        val resolvedContent = when (message.type) {
+            "image" -> "📷 Photo"
+            "voice" -> "🎙️ Voice note"
+            "doc" -> "📄 Document"
+            "steg" -> "🕵️ Hidden Image"
+            else -> {
+                try {
+                    AESEncryption.decryptWithKey(message.content ?: "", AESEncryption.GLOBAL_GROUP_KEY)
+                } catch (e: Exception) {
+                    message.content ?: ""
+                }
+            }
+        }
+        tvReplySender.text = message.sender ?: "Agent"
+        tvReplyText.text = if (resolvedContent.length > 80) resolvedContent.take(80) + "..." else resolvedContent
+        layoutReplyPreview.visibility = android.view.View.VISIBLE
+
+        val editMessage = findViewById<EditText>(R.id.editMessage)
+        editMessage.requestFocus()
+        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+        imm?.showSoftInput(editMessage, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+    }
+
+    private fun clearReply() {
+        activeReplyMessage = null
+        layoutReplyPreview.visibility = android.view.View.GONE
+    }
+
     private fun sendMessage(content: String, type: String, isBurnable: Boolean, senderName: String, encodeCipher: Boolean = false) {
         try {
             val textToSend = if (type == "text" && encodeCipher) PsiRaConverter.encode(content) else content
             // Encrypt all payloads with group AES-256-GCM
             val encrypted = AESEncryption.encryptWithKey(textToSend, AESEncryption.GLOBAL_GROUP_KEY)
+            val replySnippet = if (activeReplyMessage != null) tvReplyText.text.toString() else null
+            val replySender = activeReplyMessage?.sender
+            val replyId = activeReplyMessage?.id
+            clearReply()
+
             val msg = Message(
                 id = null,
                 sender = senderName,
@@ -301,7 +368,10 @@ class ChatActivity : BaseActivity() {
                 isBurnable = isBurnable,
                 type = type,
                 timestamp = System.currentTimeMillis(),
-                status = "sent"
+                status = "sent",
+                replyToId = replyId,
+                replyToSender = replySender,
+                replyToText = replySnippet
             )
             db.push().setValue(msg).addOnFailureListener { e ->
                  Toast.makeText(this, "Transmission failed: ${e.message}", Toast.LENGTH_LONG).show()

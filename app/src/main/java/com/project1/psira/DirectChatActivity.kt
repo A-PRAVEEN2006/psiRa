@@ -36,6 +36,12 @@ class DirectChatActivity : BaseActivity() {
     private var targetUid: String? = null
     private var targetName: String? = null
 
+    private var activeReplyMessage: Message? = null
+    private lateinit var layoutReplyPreview: View
+    private lateinit var tvReplySender: TextView
+    private lateinit var tvReplyText: TextView
+    private lateinit var btnCancelReply: ImageButton
+
     private var mediaRecorder: MediaRecorder? = null
     private var voiceOutputFile: File? = null
     private var isRecording = false
@@ -135,6 +141,32 @@ class DirectChatActivity : BaseActivity() {
         messageList = ArrayList()
         messageAdapter = MessageAdapter(messageList, alreadyDecrypted = true)
         recyclerView.adapter = messageAdapter
+
+        // Swipe-to-reply gesture & quoted navigation
+        layoutReplyPreview = findViewById(R.id.layoutReplyPreview)
+        tvReplySender = findViewById(R.id.tvReplySender)
+        tvReplyText = findViewById(R.id.tvReplyText)
+        btnCancelReply = findViewById(R.id.btnCancelReply)
+
+        btnCancelReply.setOnClickListener {
+            clearReply()
+        }
+
+        val swipeHelper = SwipeToReplyHelper(
+            this,
+            { pos -> messageList.getOrNull(pos) },
+            { msg -> startReply(msg) }
+        )
+        androidx.recyclerview.widget.ItemTouchHelper(swipeHelper).attachToRecyclerView(recyclerView)
+
+        messageAdapter.onQuoteClicked = { targetId ->
+            if (!targetId.isNullOrEmpty()) {
+                val index = messageList.indexOfFirst { it.id == targetId }
+                if (index != -1) {
+                    recyclerView.smoothScrollToPosition(index)
+                }
+            }
+        }
 
         loadLocalCache()
 
@@ -265,7 +297,10 @@ class DirectChatActivity : BaseActivity() {
                         isBurnable = raw.isBurnable,
                         type = raw.type,
                         timestamp = if (raw.timestamp > 0) raw.timestamp else System.currentTimeMillis(),
-                        status = raw.status
+                        status = raw.status,
+                        replyToId = raw.replyToId,
+                        replyToSender = raw.replyToSender,
+                        replyToText = raw.replyToText
                     )
                     messageList.add(msg)
                 }
@@ -411,9 +446,38 @@ class DirectChatActivity : BaseActivity() {
         }.start()
     }
 
+    private fun startReply(message: Message) {
+        activeReplyMessage = message
+        val snippet = when (message.type) {
+            "image" -> "📷 Photo"
+            "voice" -> "🎙️ Voice note"
+            "doc" -> "📄 Document"
+            "steg" -> "🕵️ Hidden Image"
+            else -> message.content ?: ""
+        }
+        tvReplySender.text = message.sender ?: "Agent"
+        tvReplyText.text = if (snippet.length > 80) snippet.take(80) + "..." else snippet
+        layoutReplyPreview.visibility = View.VISIBLE
+
+        val editMessage = findViewById<EditText>(R.id.editMessage)
+        editMessage.requestFocus()
+        val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+        imm?.showSoftInput(editMessage, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+    }
+
+    private fun clearReply() {
+        activeReplyMessage = null
+        layoutReplyPreview.visibility = View.GONE
+    }
+
     private fun sendMessage(content: String, type: String, isBurnable: Boolean, senderName: String, myUid: String, encodeCipher: Boolean = false) {
         val payloadToSend = if (type == "text" && encodeCipher) PsiRaConverter.encode(content) else content
         val channelName = if (myUid < targetUid!!) "${myUid}_$targetUid" else "${targetUid}_${myUid}"
+
+        val replySnippet = if (activeReplyMessage != null) tvReplyText.text.toString() else null
+        val replySender = activeReplyMessage?.sender
+        val replyId = activeReplyMessage?.id
+        clearReply()
 
         ECDHKeyManager.encryptForContact(
             this, targetUid!!, payloadToSend,
@@ -425,7 +489,10 @@ class DirectChatActivity : BaseActivity() {
                     isBurnable = isBurnable,
                     type = type,
                     timestamp = System.currentTimeMillis(),
-                    status = "sent"
+                    status = "sent",
+                    replyToId = replyId,
+                    replyToSender = replySender,
+                    replyToText = replySnippet
                 )
                 db.push().setValue(newMsg)
                     .addOnFailureListener { e ->
@@ -444,7 +511,10 @@ class DirectChatActivity : BaseActivity() {
                     isBurnable = isBurnable,
                     type = type,
                     timestamp = System.currentTimeMillis(),
-                    status = "sent"
+                    status = "sent",
+                    replyToId = replyId,
+                    replyToSender = replySender,
+                    replyToText = replySnippet
                 )
                 db.push().setValue(newMsg)
                 registerContactLink(myUid)

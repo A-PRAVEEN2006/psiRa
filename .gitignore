@@ -4,6 +4,7 @@ gen/
 out/
 build/
 app/build/
+*.apk
 
 # Gradle files
 .gradle/

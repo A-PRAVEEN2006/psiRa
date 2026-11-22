@@ -97,6 +97,73 @@
         android:padding="8dp"
         android:clipToPadding="false"/>
 
+    <!-- Reply Preview Dock -->
+    <LinearLayout
+        android:id="@+id/layoutReplyPreview"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_reply_preview_dock"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/bottomInputBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <View
+            android:layout_width="3dp"
+            android:layout_height="32dp"
+            android:background="#00E5FF" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="↩"
+            android:textSize="18sp"
+            android:textColor="#00E5FF"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvReplySender"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Replying to Agent"
+                android:textColor="#00E5FF"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvReplyText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Original message snippet..."
+                android:textColor="#C0C0D0"
+                android:textSize="11sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btnCancelReply"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            app:tint="#8888AA"
+            android:contentDescription="Cancel Reply" />
+    </LinearLayout>
+
     <!-- Typing Indicator -->
     <TextView
         android:id="@+id/tvTypingIndicator"
@@ -110,7 +177,7 @@
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:layout_marginBottom="4dp"
-        app:layout_constraintBottom_toTopOf="@id/bottomInputBar"
+        app:layout_constraintBottom_toTopOf="@id/layoutReplyPreview"
         app:layout_constraintStart_toStartOf="parent" />
 
     <!-- Sleek Bottom Input Bar -->
