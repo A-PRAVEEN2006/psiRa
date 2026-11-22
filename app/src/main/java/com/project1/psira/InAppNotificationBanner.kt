@@ -19,9 +19,25 @@ import androidx.cardview.widget.CardView
 object InAppNotificationBanner {
 
     private const val BANNER_TAG = "psira_inapp_banner"
+    private val handler = Handler(Looper.getMainLooper())
+    private var dismissRunnable: Runnable? = null
+    private var currentMessageSignature: String? = null
+    private var lastShowTime: Long = 0L
 
     fun show(activity: Activity, title: String, message: String, onClick: () -> Unit) {
+        val now = System.currentTimeMillis()
+        val signature = "$title::$message"
+        // Prevent duplicate banner for the exact same message if shown within last 4 seconds
+        if (signature == currentMessageSignature && (now - lastShowTime) < 4000) {
+            return
+        }
+        currentMessageSignature = signature
+        lastShowTime = now
+
         val decorView = activity.window.decorView as? ViewGroup ?: return
+
+        // Cancel previous pending dismissal
+        dismissRunnable?.let { handler.removeCallbacks(it) }
 
         // Remove any existing banner
         val existing = decorView.findViewWithTag<View>(BANNER_TAG)
@@ -96,15 +112,22 @@ object InAppNotificationBanner {
             .setInterpolator(DecelerateInterpolator())
             .start()
 
-        Handler(Looper.getMainLooper()).postDelayed({
+        val runnable = Runnable {
             if (card.parent != null) {
                 card.animate()
                     .translationY(-300f)
                     .setDuration(220)
                     .setInterpolator(AccelerateInterpolator())
-                    .withEndAction { decorView.removeView(card) }
+                    .withEndAction {
+                        decorView.removeView(card)
+                        if (currentMessageSignature == signature) {
+                            currentMessageSignature = null
+                        }
+                    }
                     .start()
             }
-        }, 3600)
+        }
+        dismissRunnable = runnable
+        handler.postDelayed(runnable, 3600)
     }
 }

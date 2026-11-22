@@ -22,6 +22,36 @@ class SignalNotificationManager(private val context: Context) {
     private var directChatsRef: DatabaseReference? = null
     private val channelListeners = mutableMapOf<String, Pair<Query, ChildEventListener>>()
 
+    private val notifiedMessageIds = java.util.Collections.synchronizedSet(LinkedHashSet<String>())
+    private var lastNotifiedKey: String? = null
+    private var lastNotifiedTime: Long = 0L
+
+    private fun isDuplicate(id: String?): Boolean {
+        if (!id.isNullOrEmpty() && notifiedMessageIds.contains(id)) {
+            return true
+        }
+        val now = System.currentTimeMillis()
+        if (!id.isNullOrEmpty() && id == lastNotifiedKey && (now - lastNotifiedTime) < 3000) {
+            return true
+        }
+        return false
+    }
+
+    private fun markNotified(id: String?) {
+        if (!id.isNullOrEmpty()) {
+            if (notifiedMessageIds.size > 300) {
+                val it = notifiedMessageIds.iterator()
+                if (it.hasNext()) {
+                    it.next()
+                    it.remove()
+                }
+            }
+            notifiedMessageIds.add(id)
+        }
+        lastNotifiedKey = id
+        lastNotifiedTime = System.currentTimeMillis()
+    }
+
     fun startListening() {
         NotificationHelper.createNotificationChannels(context)
 
@@ -46,16 +76,22 @@ class SignalNotificationManager(private val context: Context) {
         val listener = object : ChildEventListener {
             override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                 try {
+                    val signalId    = snapshot.key ?: snapshot.child("id").getValue(String::class.java) ?: ""
                     val senderUid   = snapshot.child("senderUid").getValue(String::class.java) ?: return
                     val senderName  = snapshot.child("senderName").getValue(String::class.java) ?: "Agent"
                     val preview     = snapshot.child("preview").getValue(String::class.java) ?: "New encrypted transmission"
                     val channelName = snapshot.child("channelName").getValue(String::class.java) ?: ""
                     val timestamp   = snapshot.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
 
-                    // Remove processed signal immediately
+                    // Always delete processed signal immediately from inbox
                     snapshot.ref.removeValue()
 
-                    notifyMessageReceived(senderUid, senderName, preview, channelName, timestamp)
+                    if (signalId.isNotEmpty() && isDuplicate(signalId)) {
+                        return
+                    }
+                    markNotified(signalId)
+
+                    notifyMessageReceived(signalId, senderUid, senderName, preview, channelName, timestamp)
                 } catch (e: Exception) {
                     Log.e("SignalNotif", "Error in inbox signal: ${e.message}")
                 }
@@ -115,16 +151,24 @@ class SignalNotificationManager(private val context: Context) {
             .getReference("direct_messages/$channelName")
             .limitToLast(1)
 
+        val attachTimestamp = System.currentTimeMillis()
+
         val childListener = object : ChildEventListener {
             override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                 try {
+                    val msgKey = snapshot.key ?: ""
                     val rawMsg = snapshot.getValue(Message::class.java) ?: return
                     val myDisplayName = FirebaseAuth.getInstance().currentUser?.displayName
 
                     // Only notify if message is from the other party and is unread
                     if (rawMsg.sender != myDisplayName && rawMsg.status != "read") {
-                        // Only trigger for fresh messages (received within past 2 minutes)
-                        if (System.currentTimeMillis() - rawMsg.timestamp < 120_000) {
+                        // Only trigger for fresh messages received AFTER listener attached or within 15 seconds
+                        if (rawMsg.timestamp >= attachTimestamp - 15_000) {
+                            if (msgKey.isNotEmpty() && isDuplicate(msgKey)) {
+                                return
+                            }
+                            markNotified(msgKey)
+
                             var preview = when (rawMsg.type) {
                                 "image" -> "📷 Photo"
                                 "voice" -> "🎤 Voice Note"
@@ -141,6 +185,7 @@ class SignalNotificationManager(private val context: Context) {
                             }
 
                             notifyMessageReceived(
+                                messageId = msgKey,
                                 senderUid = contactUid,
                                 senderName = rawMsg.sender ?: "Agent",
                                 preview = preview,
@@ -165,6 +210,7 @@ class SignalNotificationManager(private val context: Context) {
     }
 
     private fun notifyMessageReceived(
+        messageId: String,
         senderUid: String,
         senderName: String,
         preview: String,

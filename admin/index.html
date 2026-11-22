@@ -754,7 +754,7 @@
     <div class="brand">
       <span style="font-size: 24px;">⚡</span>
       <div class="brand-title">PSIRA <span style="font-weight: 300; opacity: 0.6;">COMMAND</span></div>
-      <div class="brand-badge">OVERSEER v3.3.4</div>
+      <div class="brand-badge">OVERSEER v3.3.5</div>
     </div>
 
     <div class="header-actions">
@@ -1620,6 +1620,38 @@
       "$uid": {
         ".read": "auth != null",
         ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'anbuselvan1613@gmail.com')"
+      }
+    },
+    "user_presence": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'anbuselvan1613@gmail.com')"
+      }
+    },
+    "presence": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "calls": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "keys": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'anbuselvan1613@gmail.com')"
+      }
+    },
+    "user_inbox": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || auth.token.email === 'anbuselvan1613@gmail.com')",
+        ".write": "auth != null"
+      }
+    },
+    "user_direct_chats": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null"
       }
     },
     "banned_nodes": {
