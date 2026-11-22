@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PsiRa // Overseer Command Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Firebase SDKs (Compat for standalone browser execution) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+  <style>
+    :root {
+      --bg-dark: #07090e;
+      --bg-card: rgba(16, 23, 38, 0.75);
+      --bg-card-hover: rgba(22, 32, 54, 0.85);
+      --border-glass: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(0, 229, 255, 0.3);
+      --cyan: #00e5ff;
+      --emerald: #00e676;
+      --ruby: #ff1744;
+      --amber: #ffd600;
+      --purple: #b388ff;
+      --text-main: #f0f6fc;
+      --text-muted: #8b949e;
+      --font-sans: 'Plus Jakarta Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(0, 229, 255, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(179, 136, 255, 0.05) 0%, transparent 40%),
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── AUTH OVERLAY ── */
+    #authOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 7, 13, 0.92);
+      backdrop-filter: blur(16px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .auth-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-accent);
+      border-radius: 20px;
+      padding: 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 229, 255, 0.1);
+      text-align: center;
+    }
+
+    .auth-logo {
+      font-size: 36px;
+      margin-bottom: 8px;
+    }
+
+    .auth-title {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .auth-subtitle {
+      font-size: 12px;
+      color: var(--cyan);
+      font-family: var(--font-mono);
+      letter-spacing: 0.12em;
+      margin-bottom: 28px;
+    }
+
+    .input-group {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    .input-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .input-field {
+      width: 100%;
+      background: rgba(10, 15, 26, 0.8);
+      border: 1px solid var(--border-glass);
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: #fff;
+      font-size: 14px;
+      font-family: var(--font-mono);
+      transition: all 0.2s;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: var(--cyan);
+      box-shadow: 0 0 16px rgba(0, 229, 255, 0.25);
+    }
+
+    .btn-primary {
+      width: 100%;
+      background: linear-gradient(135deg, #00e5ff 0%, #00a8ff 100%);
+      color: #050b14;
+      font-weight: 700;
+      font-size: 14px;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.05em;
+      margin-top: 10px;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 229, 255, 0.4);
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: rgba(10, 14, 23, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-glass);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-badge {
+      background: rgba(0, 229, 255, 0.12);
+      border: 1px solid var(--border-accent);
+      color: var(--cyan);
+      font-size: 11px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      padding: 4px 10px;
+      border-radius: 6px;
+      letter-spacing: 0.1em;
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .admin-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-glass);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 10px var(--emerald);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border-glass);
+      color: var(--text-muted);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-ghost:hover {
+      border-color: var(--ruby);
+      color: var(--ruby);
+    }
+
+    /* ── MAIN LAYOUT ── */
+    main {
+      flex: 1;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    /* ── METRIC STATS GRID ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      border-radius: 16px;
+      padding: 20px;
+      backdrop-filter: blur(12px);
+      transition: all 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: transparent;
+      transition: all 0.25s;
+    }
+
+    .stat-card:hover {
+      background: var(--bg-card-hover);
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .stat-card.cyan:hover::before { background: var(--cyan); }
+    .stat-card.emerald:hover::before { background: var(--emerald); }
+    .stat-card.ruby:hover::before { background: var(--ruby); }
+    .stat-card.amber:hover::before { background: var(--amber); }
+
+    .stat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .stat-icon {
+      font-size: 20px;
+      opacity: 0.7;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      letter-spacing: -0.02em;
+    }
+
+    .stat-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    /* ── TABS NAVIGATION ── */
+    .tabs-nav {
+      display: flex;
+      gap: 12px;
+      border-bottom: 1px solid var(--border-glass);
+      margin-bottom: 24px;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      padding: 12px 20px;
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      color: #fff;
+    }
+
+    .tab-btn.active {
+      color: var(--cyan);
+    }
+
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--cyan);
+      box-shadow: 0 0 12px var(--cyan);
+    }
+
+    .tab-badge {
+      background: rgba(255, 23, 68, 0.2);
+      border: 1px solid rgba(255, 23, 68, 0.4);
+      color: var(--ruby);
+      font-size: 10px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      padding: 2px 6px;
+      border-radius: 10px;
+    }
+
+    /* ── TAB PANELS ── */
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── DATA TABLES & CARDS ── */
+    .panel-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      border-radius: 16px;
+      backdrop-filter: blur(12px);
+      overflow: hidden;
+    }
+
+    .panel-toolbar {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border-glass);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .search-input {
+      background: rgba(10, 15, 26, 0.8);
+      border: 1px solid var(--border-glass);
+      border-radius: 8px;
+      padding: 10px 16px;
+      color: #fff;
+      font-size: 13px;
+      font-family: var(--font-mono);
+      width: 280px;
+      transition: all 0.2s;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--cyan);
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    th {
+      background: rgba(12, 17, 28, 0.6);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--border-glass);
+    }
+
+    td {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border-glass);
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .agent-pill {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--cyan);
+      background: rgba(0, 229, 255, 0.08);
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(0, 229, 255, 0.2);
+    }
+
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    .badge-status.online {
+      background: rgba(0, 230, 118, 0.1);
+      color: var(--emerald);
+      border: 1px solid rgba(0, 230, 118, 0.3);
+    }
+
+    .badge-status.offline {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+      border: 1px solid var(--border-glass);
+    }
+
+    .badge-status.banned {
+      background: rgba(255, 23, 68, 0.15);
+      color: var(--ruby);
+      border: 1px solid rgba(255, 23, 68, 0.3);
+    }
+
+    .btn-action {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .btn-ban {
+      background: rgba(255, 23, 68, 0.12);
+      border-color: rgba(255, 23, 68, 0.3);
+      color: var(--ruby);
+    }
+
+    .btn-ban:hover {
+      background: var(--ruby);
+      color: #fff;
+    }
+
+    .btn-unban {
+      background: rgba(0, 230, 118, 0.12);
+      border-color: rgba(0, 230, 118, 0.3);
+      color: var(--emerald);
+    }
+
+    .btn-unban:hover {
+      background: var(--emerald);
+      color: #000;
+    }
+
+    /* ── FORM STYLES (UPDATER & BROADCASTER) ── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      padding: 24px;
+    }
+
+    .form-full {
+      grid-column: 1 / -1;
+    }
+
+    textarea.input-field {
+      resize: vertical;
+      min-height: 100px;
+      line-height: 1.5;
+    }
+
+    .btn-submit {
+      background: linear-gradient(135deg, #00e5ff 0%, #00a8ff 100%);
+      color: #050b14;
+      font-weight: 700;
+      font-size: 14px;
+      padding: 12px 28px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-submit:hover {
+      box-shadow: 0 4px 20px rgba(0, 229, 255, 0.4);
+      transform: translateY(-2px);
+    }
+
+    /* ── REPORT CARDS ── */
+    .reports-list {
+      padding: 24px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .report-card {
+      background: rgba(12, 17, 28, 0.7);
+      border: 1px solid rgba(255, 23, 68, 0.2);
+      border-radius: 12px;
+      padding: 18px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+    }
+
+    .report-evidence {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border-glass);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-top: 10px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: #bbb;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── AUTH LOGIN OVERLAY ── -->
+  <div id="authOverlay">
+    <div class="auth-card">
+      <div class="auth-logo">⚡</div>
+      <h1 class="auth-title">PSIRA OVERSEER</h1>
+      <div class="auth-subtitle">// COMMAND ACCESS GATE //</div>
+      
+      <div class="input-group">
+        <label class="input-label">COMMANDER EMAIL</label>
+        <input type="email" id="loginEmail" class="input-field" placeholder="admin@psira.network">
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">MASTER PASSPHRASE</label>
+        <input type="password" id="loginPassword" class="input-field" placeholder="••••••••••••">
+      </div>
+
+      <button id="btnLogin" class="btn-primary">AUTHENTICATE LINK</button>
+      <div id="loginError" style="color: var(--ruby); font-size: 12px; margin-top: 14px; font-family: var(--font-mono); display: none;"></div>
+    </div>
+  </div>
+
+  <!-- ── TOP NAVIGATION ── -->
+  <header>
+    <div class="brand">
+      <span style="font-size: 24px;">⚡</span>
+      <div class="brand-title">PSIRA <span style="font-weight: 300; opacity: 0.6;">COMMAND</span></div>
+      <div class="brand-badge">OVERSEER v3.3.1</div>
+    </div>
+
+    <div class="header-actions">
+      <div class="admin-pill">
+        <div class="status-dot"></div>
+        <span id="adminIdentity">CONNECTED // ENCLAVE SECURE</span>
+      </div>
+      <button id="btnLogout" class="btn-ghost">TERMINATE SESSION</button>
+    </div>
+  </header>
+
+  <!-- ── MAIN CONTENT ── -->
+  <main>
+    <!-- Live Telemetry Stats -->
+    <div class="stats-grid">
+      <div class="stat-card cyan">
+        <div class="stat-header">
+          <span class="stat-label">Total Agents</span>
+          <span class="stat-icon">👥</span>
+        </div>
+        <div class="stat-value" id="statTotalUsers">0</div>
+        <div class="stat-desc">Registered node identities</div>
+      </div>
+
+      <div class="stat-card emerald">
+        <div class="stat-header">
+          <span class="stat-label">Active Transmitters</span>
+          <span class="stat-icon">🟢</span>
+        </div>
+        <div class="stat-value" id="statOnlineUsers" style="color: var(--emerald);">0</div>
+        <div class="stat-desc">Live encrypted channels</div>
+      </div>
+
+      <div class="stat-card ruby">
+        <div class="stat-header">
+          <span class="stat-label">Blacklisted Nodes</span>
+          <span class="stat-icon">🚫</span>
+        </div>
+        <div class="stat-value" id="statBannedUsers" style="color: var(--ruby);">0</div>
+        <div class="stat-desc">Access permanently frozen</div>
+      </div>
+
+      <div class="stat-card amber">
+        <div class="stat-header">
+          <span class="stat-label">Incident Reports</span>
+          <span class="stat-icon">🚨</span>
+        </div>
+        <div class="stat-value" id="statPendingReports" style="color: var(--amber);">0</div>
+        <div class="stat-desc">Pending operative review</div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs-nav">
+      <button class="tab-btn active" data-tab="tabAgents">
+        <span>👥 Agent Directory</span>
+      </button>
+      <button class="tab-btn" data-tab="tabReports">
+        <span>🚨 Incident Reports</span>
+        <span class="tab-badge" id="reportCountBadge" style="display: none;">0</span>
+      </button>
+      <button class="tab-btn" data-tab="tabUpdater">
+        <span>🚀 App Update Manager</span>
+      </button>
+      <button class="tab-btn" data-tab="tabBroadcast">
+        <span>📢 Global Broadcast</span>
+      </button>
+    </div>
+
+    <!-- ── TAB 1: AGENT DIRECTORY ── -->
+    <div id="tabAgents" class="tab-content active">
+      <div class="panel-card">
+        <div class="panel-toolbar">
+          <input type="text" id="userSearch" class="search-input" placeholder="🔍 Search Agent ID (#1234567), Name, or UID...">
+          <div style="font-size: 12px; color: var(--text-muted); font-family: var(--font-mono);">
+            LIVE TELEMETRY SYNCED
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Agent ID</th>
+                <th>Operative Name</th>
+                <th>Email / Channel</th>
+                <th>Firebase UID</th>
+                <th>Access Control</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <tr>
+                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                  Querying secure enclave nodes...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TAB 2: INCIDENT REPORTS ── -->
+    <div id="tabReports" class="tab-content">
+      <div class="panel-card">
+        <div class="panel-toolbar">
+          <h3 style="font-size: 16px; font-weight: 700;">Tactical Field Incident Reports</h3>
+          <span style="font-size: 12px; color: var(--text-muted); font-family: var(--font-mono);">
+            Automated flag aggregation
+          </span>
+        </div>
+
+        <div id="reportsListContainer" class="reports-list">
+          <div style="text-align: center; color: var(--text-muted); padding: 40px;">
+            No pending incident reports. The enclave is tranquil.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TAB 3: APP UPDATE MANAGER ── -->
+    <div id="tabUpdater" class="tab-content">
+      <div class="panel-card">
+        <div class="panel-toolbar">
+          <h3 style="font-size: 16px; font-weight: 700;">Broadcast App Release to Network</h3>
+          <span style="font-size: 12px; color: var(--cyan); font-family: var(--font-mono);">
+            CURRENT NETWORK BUILD: <span id="currentNetworkVersion">SYNCING...</span>
+          </span>
+        </div>
+
+        <div class="form-grid">
+          <div class="input-group">
+            <label class="input-label">RELEASE VERSION NAME (e.g., 3.3.1)</label>
+            <input type="text" id="updVersionName" class="input-field" placeholder="3.3.1">
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">NUMERIC VERSION CODE (e.g., 329)</label>
+            <input type="number" id="updVersionCode" class="input-field" placeholder="329">
+          </div>
+
+          <div class="input-group form-full">
+            <label class="input-label">DIRECT APK DOWNLOAD URL</label>
+            <input type="url" id="updApkUrl" class="input-field" placeholder="https://github.com/A-PRAVEEN2006/psiRa/releases/download/v3.3.1/app-debug.apk">
+          </div>
+
+          <div class="input-group form-full">
+            <label class="input-label">CHANGELOG / RELEASE BRIEFING</label>
+            <textarea id="updChangelog" class="input-field" placeholder="• Liquid Glass UI Engine&#10;• WhatsApp/Telegram Clean Notification Tray&#10;• Encrypted Call Telemetry Timer"></textarea>
+          </div>
+
+          <div class="input-group form-full" style="display: flex; align-items: center; gap: 12px;">
+            <input type="checkbox" id="updForceUpdate" style="width: 18px; height: 18px; cursor: pointer;">
+            <label for="updForceUpdate" style="font-size: 13px; font-weight: 600; cursor: pointer;">
+              FORCE UPDATE (Blocks app usage until user updates)
+            </label>
+          </div>
+
+          <div class="form-full" style="text-align: right;">
+            <button id="btnPublishUpdate" class="btn-submit">🚀 PUSH UPDATE TO ALL DEVICES</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TAB 4: GLOBAL BROADCAST ── -->
+    <div id="tabBroadcast" class="tab-content">
+      <div class="panel-card">
+        <div class="panel-toolbar">
+          <h3 style="font-size: 16px; font-weight: 700;">Global System Protocol Transmitter</h3>
+          <span style="font-size: 12px; color: var(--amber); font-family: var(--font-mono);">
+            TRANSMITS TO ALL OPERATIVES
+          </span>
+        </div>
+
+        <div class="form-grid">
+          <div class="input-group form-full">
+            <label class="input-label">BROADCAST HEADLINE</label>
+            <input type="text" id="broadcastTitle" class="input-field" placeholder="[OVERSEER ADVISORY] System Maintenance Window">
+          </div>
+
+          <div class="input-group form-full">
+            <label class="input-label">TRANSMISSION MESSAGE BODY</label>
+            <textarea id="broadcastBody" class="input-field" placeholder="Security update v3.3.1 deployed. Re-verify quantum encryption keys."></textarea>
+          </div>
+
+          <div class="form-full" style="text-align: right;">
+            <button id="btnSendBroadcast" class="btn-submit" style="background: linear-gradient(135deg, #ffd600 0%, #ff9100 100%); color: #000;">
+              📡 BROADCAST PROTOCOL
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // ── FIREBASE INITIALIZATION ──
+    const firebaseConfig = {
+      apiKey: "AIzaSyA7Y5gWDrhZqEPFC1d0ISzOatwzr4AUKPU",
+      authDomain: "psira-4c983.firebaseapp.com",
+      databaseURL: "https://psira-4c983-default-rtdb.firebaseio.com",
+      projectId: "psira-4c983",
+      storageBucket: "psira-4c983.firebasestorage.app",
+      messagingSenderId: "963683107808",
+      appId: "1:963683107808:android:347992171c063627a0a185"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    // ── STATE ──
+    let allUsers = [];
+    let allReports = [];
+
+    // ── AUTH CHECK ──
+    auth.onAuthStateChanged(user => {
+      const overlay = document.getElementById('authOverlay');
+      if (user) {
+        overlay.style.display = 'none';
+        document.getElementById('adminIdentity').textContent = `CMD // ${user.email}`;
+        initOverseerListeners();
+      } else {
+        overlay.style.display = 'flex';
+      }
+    });
+
+    document.getElementById('btnLogin').addEventListener('click', () => {
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass = document.getElementById('loginPassword').value.trim();
+      const errBox = document.getElementById('loginError');
+
+      if (!email || !pass) {
+        errBox.textContent = "CRITICAL: Enter commander credentials.";
+        errBox.style.display = 'block';
+        return;
+      }
+
+      errBox.style.display = 'none';
+      auth.signInWithEmailAndPassword(email, pass).catch(err => {
+        errBox.textContent = `AUTH REJECTED: ${err.message}`;
+        errBox.style.display = 'block';
+      });
+    });
+
+    document.getElementById('btnLogout').addEventListener('click', () => {
+      auth.signOut();
+    });
+
+    // ── TABS SWITCHER ──
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        btn.classList.add('active');
+        const target = btn.getAttribute('data-tab');
+        document.getElementById(target).classList.add('active');
+      });
+    });
+
+    // ── DATA LISTENERS ──
+    function initOverseerListeners() {
+      // 1. Users Node Listener
+      db.ref('users').on('value', snapshot => {
+        allUsers = [];
+        let onlineCount = 0;
+        let bannedCount = 0;
+
+        snapshot.forEach(child => {
+          const u = child.val();
+          const uid = child.key;
+          const userObj = {
+            uid: uid,
+            name: u.name || 'Unnamed Agent',
+            agentId: u.agentId || 'N/A',
+            email: u.email || 'Encrypted Node',
+            online: !!u.online,
+            banned: !!u.banned
+          };
+          if (userObj.online) onlineCount++;
+          if (userObj.banned) bannedCount++;
+          allUsers.push(userObj);
+        });
+
+        document.getElementById('statTotalUsers').textContent = allUsers.length;
+        document.getElementById('statOnlineUsers').textContent = onlineCount;
+        document.getElementById('statBannedUsers').textContent = bannedCount;
+
+        renderUsersTable(allUsers);
+      });
+
+      // 2. Reports Node Listener
+      db.ref('reports').on('value', snapshot => {
+        allReports = [];
+        snapshot.forEach(child => {
+          const r = child.val();
+          allReports.push({ id: child.key, ...r });
+        });
+
+        document.getElementById('statPendingReports').textContent = allReports.length;
+        const badge = document.getElementById('reportCountBadge');
+        if (allReports.length > 0) {
+          badge.textContent = allReports.length;
+          badge.style.display = 'inline-block';
+        } else {
+          badge.style.display = 'none';
+        }
+
+        renderReportsList(allReports);
+      });
+
+      // 3. App Update Node Listener
+      db.ref('app_update').on('value', snapshot => {
+        if (snapshot.exists()) {
+          const upd = snapshot.val();
+          document.getElementById('currentNetworkVersion').textContent = `v${upd.versionName || '?.?'} (BUILD ${upd.versionCode || '0'})`;
+          document.getElementById('updVersionName').value = upd.versionName || '';
+          document.getElementById('updVersionCode').value = upd.versionCode || '';
+          document.getElementById('updApkUrl').value = upd.apkUrl || '';
+          document.getElementById('updChangelog').value = upd.changelog || '';
+          document.getElementById('updForceUpdate').checked = !!upd.forceUpdate;
+        }
+      });
+    }
+
+    // ── RENDER USERS TABLE ──
+    function renderUsersTable(users) {
+      const tbody = document.getElementById('usersTableBody');
+      if (users.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">No agents found matching query.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = users.map(u => {
+        const statusHtml = u.banned 
+          ? `<span class="badge-status banned">● BANNED</span>`
+          : (u.online ? `<span class="badge-status online">● ONLINE</span>` : `<span class="badge-status offline">○ OFFLINE</span>`);
+
+        const actionBtn = u.banned
+          ? `<button class="btn-action btn-unban" onclick="toggleBan('${u.uid}', false)">✅ UNBAN</button>`
+          : `<button class="btn-action btn-ban" onclick="toggleBan('${u.uid}', true)">🚫 BAN</button>`;
+
+        return `
+          <tr>
+            <td>${statusHtml}</td>
+            <td><span class="agent-pill">#${u.agentId}</span></td>
+            <td style="font-weight: 700; color: #fff;">${escapeHtml(u.name)}</td>
+            <td style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">${escapeHtml(u.email)}</td>
+            <td style="font-family: var(--font-mono); font-size: 11px; opacity: 0.6;" title="${u.uid}">${u.uid.slice(0, 10)}...</td>
+            <td>${actionBtn}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Search filter
+    document.getElementById('userSearch').addEventListener('input', e => {
+      const q = e.target.value.toLowerCase().trim().replace('#', '');
+      const filtered = allUsers.filter(u => 
+        u.agentId.toString().toLowerCase().includes(q) ||
+        u.name.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        u.uid.toLowerCase().includes(q)
+      );
+      renderUsersTable(filtered);
+    });
+
+    // ── BAN / UNBAN ACTION ──
+    window.toggleBan = function(uid, banStatus) {
+      const action = banStatus ? 'BAN' : 'UNBAN';
+      if (confirm(`Confirm ${action} for Agent Node ${uid}?`)) {
+        db.ref(`users/${uid}/banned`).setValue(banStatus)
+          .then(() => alert(`Node ${uid} status updated: ${action} active.`))
+          .catch(err => alert(`Action failed: ${err.message}`));
+      }
+    };
+
+    // ── RENDER REPORTS ──
+    function renderReportsList(reports) {
+      const container = document.getElementById('reportsListContainer');
+      if (reports.length === 0) {
+        container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 40px;">No pending incident reports. Enclave is peaceful.</div>`;
+        return;
+      }
+
+      container.innerHTML = reports.map(r => {
+        const timeStr = r.timestamp ? new Date(r.timestamp).toLocaleString() : 'Recent';
+        const evidenceStr = r.lastMessages ? r.lastMessages.join('<br>') : 'No context messages captured.';
+
+        return `
+          <div class="report-card">
+            <div>
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                <span class="agent-pill" style="color: var(--ruby); border-color: rgba(255,23,68,0.3);">FLAGGED: #${r.reportedUserId}</span>
+                <span style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono);">${timeStr}</span>
+              </div>
+              <div style="font-size: 14px; font-weight: 600; color: #fff;">Reason: ${escapeHtml(r.reason || 'Rule Violation')}</div>
+              <div class="report-evidence">${evidenceStr}</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <button class="btn-action btn-ban" onclick="banReportedAgent('${r.reportedUserId}', '${r.id}')">⚡ BAN AGENT</button>
+              <button class="btn-action" style="background: rgba(255,255,255,0.06); color: var(--text-muted);" onclick="dismissReport('${r.id}')">DISMISS</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.dismissReport = function(reportId) {
+      if (confirm('Dismiss this incident report?')) {
+        db.ref(`reports/${reportId}`).remove();
+      }
+    };
+
+    window.banReportedAgent = function(agentId, reportId) {
+      if (confirm(`Ban Agent #${agentId} and resolve report?`)) {
+        // Find UID matching agentId
+        const match = allUsers.find(u => u.agentId.toString() === agentId.toString());
+        if (match) {
+          db.ref(`users/${match.uid}/banned`).setValue(true);
+        } else {
+          // If UID not found in memory, query directly
+          db.ref('users').orderByChild('agentId').equalTo(agentId).once('value', snap => {
+            snap.forEach(c => db.ref(`users/${c.key}/banned`).setValue(true));
+          });
+        }
+        db.ref(`reports/${reportId}`).remove();
+        alert(`Agent #${agentId} has been blacklisted.`);
+      }
+    };
+
+    // ── PUBLISH APP UPDATE ──
+    document.getElementById('btnPublishUpdate').addEventListener('click', () => {
+      const vName = document.getElementById('updVersionName').value.trim();
+      const vCode = parseInt(document.getElementById('updVersionCode').value.trim(), 10);
+      const apkUrl = document.getElementById('updApkUrl').value.trim();
+      const changelog = document.getElementById('updChangelog').value.trim();
+      const forceUpdate = document.getElementById('updForceUpdate').checked;
+
+      if (!vName || isNaN(vCode) || !apkUrl) {
+        alert('Please fill in Version Name, Version Code, and APK URL.');
+        return;
+      }
+
+      if (confirm(`Broadcast update v${vName} (Build ${vCode}) to all PsiRa active installations?`)) {
+        db.ref('app_update').set({
+          versionName: vName,
+          versionCode: vCode,
+          apkUrl: apkUrl,
+          changelog: changelog,
+          forceUpdate: forceUpdate
+        }).then(() => {
+          alert('🚀 Update published successfully! All active apps will now detect Build ' + vCode);
+        }).catch(err => {
+          alert('Failed to publish update: ' + err.message);
+        });
+      }
+    });
+
+    // ── SEND GLOBAL BROADCAST ──
+    document.getElementById('btnSendBroadcast').addEventListener('click', () => {
+      const title = document.getElementById('broadcastTitle').value.trim();
+      const body = document.getElementById('broadcastBody').value.trim();
+
+      if (!title || !body) {
+        alert('Please enter both headline and message body.');
+        return;
+      }
+
+      if (confirm('Transmit this advisory to all connected nodes?')) {
+        const broadcastPayload = {
+          sender: "OVERSEER PROTOCOL",
+          content: `📢 [${title}]\n${body}`,
+          timestamp: Date.now(),
+          type: "text",
+          isBroadcast: true
+        };
+
+        db.ref('global_protocol').push(broadcastPayload).then(() => {
+          alert('Broadcast transmitted across the global frequency.');
+          document.getElementById('broadcastTitle').value = '';
+          document.getElementById('broadcastBody').value = '';
+        }).catch(err => {
+          alert('Broadcast transmission failed: ' + err.message);
+        });
+      }
+    });
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>
