@@ -39,8 +39,8 @@
 
     <application
         android:name="com.project1.psira.PsiRaApplication"
-        android:allowBackup="true"
-        android:usesCleartextTraffic="true"
+        android:allowBackup="false"
+        android:usesCleartextTraffic="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -51,14 +51,21 @@
             android:name="com.project1.psira.DisguiseActivity"
             android:enabled="true"
             android:exported="true"
-            android:screenOrientation="portrait" />
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="psira" android:host="open" />
+            </intent-filter>
+        </activity>
 
         <activity
             android:name="com.project1.psira.LauncherClock"
             android:enabled="true"
             android:exported="true"
             android:icon="@drawable/ic_cloak_clock"
-            android:label="Clock"
+            android:label="World Clock FX"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -71,7 +78,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@drawable/ic_cloak_calculator"
-            android:label="Calculator"
+            android:label="Scientific Calc FX"
             android:targetActivity=".DisguiseActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -84,7 +91,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@drawable/ic_cloak_notepad"
-            android:label="Diary"
+            android:label="Daily Journal Pro"
             android:targetActivity=".DisguiseActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -97,7 +104,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@drawable/ic_cloak_recorder"
-            android:label="Voice Memos"
+            android:label="Dictaphone HD"
             android:targetActivity=".DisguiseActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -110,7 +117,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@drawable/ic_cloak_calendar"
-            android:label="Day Planner"
+            android:label="Habit &amp; Day Planner"
             android:targetActivity=".DisguiseActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -123,7 +130,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@drawable/ic_cloak_weather"
-            android:label="Currency"
+            android:label="Forex &amp; Currency Monitor"
             android:targetActivity=".DisguiseActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -136,7 +143,20 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@drawable/ic_cloak_converter"
-            android:label="Converter"
+            android:label="Unit &amp; Metric Converter"
+            android:targetActivity=".DisguiseActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherGame"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_cloak_game"
+            android:label="2048 Puzzle Classic"
             android:targetActivity=".DisguiseActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -151,6 +171,7 @@
         <activity android:name=".ChatActivity" android:exported="false" android:windowSoftInputMode="adjustResize|stateHidden" />
         <activity android:name=".LearningActivity" android:exported="false" />
         <activity android:name=".SettingsActivity" android:exported="false" />
+        <activity android:name=".DecoyActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".LoginActivity" android:exported="false" />
         <activity android:name=".NexusDashboardActivity" android:exported="false" />
         <activity android:name=".GroupsActivity" android:exported="false" />
@@ -191,6 +212,15 @@
             android:name="com.project1.psira.SignalBackgroundService"
             android:foregroundServiceType="dataSync"
             android:exported="false" />
+
+        <receiver
+            android:name="com.project1.psira.SecretCodeReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SECRET_CODE" />
+                <data android:scheme="android_secret_code" android:host="77472" />
+            </intent-filter>
+        </receiver>
 
         <receiver
             android:name="com.project1.psira.BootReceiver"

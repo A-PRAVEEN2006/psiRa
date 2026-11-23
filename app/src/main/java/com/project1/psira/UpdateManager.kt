@@ -29,7 +29,13 @@ class UpdateManager(private val activity: Activity) {
         val databaseRef = FirebaseDatabase.getInstance().getReference("app_update")
         databaseRef.get().addOnSuccessListener { snapshot ->
             if (snapshot.exists()) {
-                val serverVersionCode = snapshot.child("versionCode").getValue(Long::class.java)?.toInt() ?: 0
+                val serverVersionCode = when (val v = snapshot.child("versionCode").value) {
+                    is Long -> v.toInt()
+                    is Int -> v
+                    is String -> v.toIntOrNull() ?: 0
+                    else -> 0
+                }
+                val serverVersionName = snapshot.child("versionName").getValue(String::class.java) ?: "New"
                 val apkUrl = snapshot.child("apkUrl").getValue(String::class.java) ?: ""
                 val changelog = snapshot.child("changelog").getValue(String::class.java) ?: ""
                 val forceUpdate = snapshot.child("forceUpdate").getValue(Boolean::class.java) ?: false
@@ -108,7 +114,7 @@ class UpdateManager(private val activity: Activity) {
     private fun startApkDownload(apkUrl: String) {
         val downloadManager = activity.getSystemService(Context.DOWNLOAD_SERVICE) as android.app.DownloadManager
         val request = android.app.DownloadManager.Request(Uri.parse(apkUrl)).apply {
-            setTitle("Downloading PsiRa Update")
+            setTitle("Downloading System Update")
             setDescription("Fetching latest release...")
             setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             setDestinationInExternalFilesDir(activity, Environment.DIRECTORY_DOWNLOADS, "update.apk")

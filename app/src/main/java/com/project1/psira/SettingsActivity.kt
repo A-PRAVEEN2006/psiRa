@@ -563,19 +563,20 @@ class SettingsActivity : BaseActivity() {
 
     private fun showDecoyBriefing() {
         val guide = """
-            DECOY TRIGGER LOGICS:
+            COERCION DEFENSE & DECOY LOGICS:
             
-            1. CLOCK: Set the hands exactly to your secret time.
-            2. CALCULATOR: Enter your secret equation and press [ = ].
-            3. DIARY: Type your secret password and tap 'Save'.
-            4. VOICE MEMOS: Tap the RED record button your secret number of times.
-            5. DAY PLANNER: Tap your secret date on the planner calendar.
-            6. CURRENCY: Tap the refresh icon your secret number of times.
-            7. UNIT CONVERTER: Enter your secret number and tap the convert button.
+            1. CLOCK: Master time opens Vault. 06:30 opens Decoy Notes.
+            2. CALCULATOR: Master equation opens Vault. 1234 opens Decoy Notes.
+            3. DIARY: Master word opens Vault. 'notes' opens Decoy Notes.
+            4. VOICE MEMOS: Master long presses opens Vault. 3 presses opens Decoy Notes.
+            5. DAY PLANNER: Master date opens Vault. 10-10 opens Decoy Notes.
+            6. CURRENCY: Master taps opens Vault. 3 taps opens Decoy Notes.
+            7. UNIT CONVERTER: Master number opens Vault. 50.0 opens Decoy Notes.
             
-            BYPASS LIMIT: After 10 auto-entries, the disguise will force a manual password verification.
+            PLAUSIBLE DENIABILITY:
+            If forced to unlock your phone, enter your Decoy Code instead of your Master Code. The app opens authentic, mundane Personal Notes with zero trace of messaging, contacts, or encryption keys. You can customize Decoy codes in Disguise Config.
         """.trimIndent()
-        PsiRaDialogs.showDeleteSheet(this, "DECOY BRIEFING", guide, "UNDERSTOOD") {}
+        PsiRaDialogs.showDeleteSheet(this, "DECOY DEFENSE BRIEFING", guide, "UNDERSTOOD") {}
     }
 
     private fun showThemeSelector() {

@@ -38,6 +38,8 @@ open class DisguiseActivity : BaseActivity() {
             "CALENDAR"   -> setupCalendar()
             "WEATHER"    -> setupCurrency()
             "CONVERTER"  -> setupConverter()
+            "GAME"       -> setupGame()
+            "GHOST"      -> setupCalculator()
             else         -> setupClock()
         }
     }
@@ -65,8 +67,9 @@ open class DisguiseActivity : BaseActivity() {
             return
         }
 
-        val appSecret  = StealthManager.getPass(this, id).replace("×", "*").replace("÷", "/")
-        val gateSecret = StealthManager.getGateway(this, id).replace("×", "*").replace("÷", "/")
+        val appSecret   = StealthManager.getPass(this, id).replace("×", "*").replace("÷", "/")
+        val gateSecret  = StealthManager.getGateway(this, id).replace("×", "*").replace("÷", "/")
+        val decoySecret = StealthManager.getDecoyPass(this, id).replace("×", "*").replace("÷", "/")
 
         // ── 3. Secret match ───────────────────────────────────────────────────
         when {
@@ -77,6 +80,10 @@ open class DisguiseActivity : BaseActivity() {
             normalizedInput == gateSecret -> {
                 RateLimiter.resetAttempts(this)
                 unlock(true)
+            }
+            decoySecret.isNotEmpty() && normalizedInput == decoySecret -> {
+                RateLimiter.resetAttempts(this)
+                unlockDecoy()
             }
             else -> {
                 // Only count as a failed unlock attempt if the input is intentionally short.
@@ -99,7 +106,26 @@ open class DisguiseActivity : BaseActivity() {
     private fun setupClock() {
         setContentView(R.layout.activity_cloak_clock)
         val clockView = findViewById<AnalogClockView>(R.id.analogClock)
-        clockView.onClockUnlockListener = { inputTime ->
+        val tvDigital = findViewById<TextView>(R.id.tvDigitalClock)
+        val tvDate    = findViewById<TextView>(R.id.tvClockDate)
+
+        val timeFormat = java.text.SimpleDateFormat("hh:mm:ss a", java.util.Locale.getDefault())
+        val dateFormat = java.text.SimpleDateFormat("EEEE, MMMM d", java.util.Locale.getDefault())
+
+        // ── Digital Time Display Above ───────────────────────────────
+        val clockHandler = android.os.Handler(android.os.Looper.getMainLooper())
+        val clockRunnable = object : Runnable {
+            override fun run() {
+                val now = java.util.Date()
+                tvDigital?.text = timeFormat.format(now)
+                tvDate?.text = dateFormat.format(now)
+                clockHandler.postDelayed(this, 1000)
+            }
+        }
+        clockHandler.post(clockRunnable)
+
+        // ── Analog Clock Center Tap / Hands Unlock ───────────────────
+        clockView?.onClockUnlockListener = { inputTime ->
             handleInput(inputTime, "CLOCK")
             clockView.resetToRealTime()
         }
@@ -268,22 +294,32 @@ open class DisguiseActivity : BaseActivity() {
         
         if (simplifiedTokens.isEmpty()) return 0.0
         
-        var result = 0.0
-        var currentOp = "+"
-        
-        for (token in simplifiedTokens) {
-            if (token in "+-*/") {
-                currentOp = token
+        // Pass 1: Multiplication and Division with standard operator precedence
+        val pass1 = mutableListOf<String>()
+        var j = 0
+        while (j < simplifiedTokens.size) {
+            val token = simplifiedTokens[j]
+            if (token == "*" || token == "/") {
+                val prev = pass1.removeAt(pass1.size - 1).toDoubleOrNull() ?: 0.0
+                val next = simplifiedTokens.getOrNull(j + 1)?.toDoubleOrNull() ?: 1.0
+                val eval = if (token == "*") prev * next else (if (next != 0.0) prev / next else 0.0)
+                pass1.add(eval.toString())
+                j += 2
             } else {
-                val value = token.toDoubleOrNull() ?: 0.0
-                result = when (currentOp) {
-                    "+" -> result + value
-                    "-" -> result - value
-                    "*" -> result * value
-                    "/" -> if (value != 0.0) result / value else result
-                    else -> result
-                }
+                pass1.add(token)
+                j++
             }
+        }
+
+        // Pass 2: Addition and Subtraction
+        var result = pass1.getOrNull(0)?.toDoubleOrNull() ?: 0.0
+        var k = 1
+        while (k < pass1.size) {
+            val op = pass1[k]
+            val next = pass1.getOrNull(k + 1)?.toDoubleOrNull() ?: 0.0
+            if (op == "+") result += next
+            else if (op == "-") result -= next
+            k += 2
         }
         return result
     }
@@ -672,9 +708,52 @@ open class DisguiseActivity : BaseActivity() {
     private fun setupCalendar() {
         setContentView(R.layout.activity_cloak_calendar)
         val calendar = findViewById<CalendarView>(R.id.calendarView)
-        calendar?.setOnDateChangeListener { _, year, month, dayOfMonth ->
+        val tvHeader = findViewById<TextView>(R.id.tvSelectedDateHeader)
+        val tvEvents = findViewById<TextView>(R.id.tvEventList)
+        val btnAdd   = findViewById<Button>(R.id.btnAddEvent)
+
+        val prefs = getSharedPreferences("DayPlannerPrefs", Context.MODE_PRIVATE)
+        val today = java.text.SimpleDateFormat("dd-MM", java.util.Locale.getDefault()).format(java.util.Date())
+        var activeDate = today
+
+        fun refreshDateView(dateStr: String) {
+            activeDate = dateStr
+            tvHeader?.text = "Schedule: $dateStr"
+            val saved = prefs.getString("TASKS_$dateStr", null)
+            if (saved != null) {
+                tvEvents?.text = saved
+            } else {
+                tvEvents?.text = "• 09:30 AM — Focus Work & Reviews\n• 01:00 PM — Lunch Break\n• 06:00 PM — Workout & Personal Time"
+            }
+        }
+
+        refreshDateView(today)
+
+        calendar?.setOnDateChangeListener { _, _, month, dayOfMonth ->
             val dateStr = String.format("%02d-%02d", dayOfMonth, month + 1)
+            refreshDateView(dateStr)
             handleInput(dateStr, "CALENDAR")
+        }
+
+        btnAdd?.setOnClickListener {
+            val input = EditText(this)
+            input.hint = "e.g. 03:00 PM — Team Architecture Sync"
+            input.setTextColor(android.graphics.Color.WHITE)
+
+            androidx.appcompat.app.AlertDialog.Builder(this, androidx.appcompat.R.style.Theme_AppCompat_Dialog_Alert)
+                .setTitle("Add Schedule Item ($activeDate)")
+                .setView(input)
+                .setPositiveButton("Add") { _, _ ->
+                    val text = input.text.toString().trim()
+                    if (text.isNotEmpty()) {
+                        val current = tvEvents?.text?.toString() ?: ""
+                        val updated = if (current.isEmpty()) "• $text" else "$current\n• $text"
+                        tvEvents?.text = updated
+                        prefs.edit().putString("TASKS_$activeDate", updated).apply()
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
         }
     }
 
@@ -745,16 +824,302 @@ open class DisguiseActivity : BaseActivity() {
 
     private fun setupConverter() {
         setContentView(R.layout.activity_cloak_converter)
-        val etValue = findViewById<EditText>(R.id.etInput)
-        val ivConvert = findViewById<ImageView>(R.id.ivConvert)
-        
-        ivConvert?.setOnClickListener {
-            val input = etValue?.text?.toString() ?: ""
-            handleInput(input, "CONVERTER")
-            Toast.makeText(this, "Units Converted", Toast.LENGTH_SHORT).show()
+        val etValue     = findViewById<EditText>(R.id.etInput)
+        val btnConvert  = findViewById<Button>(R.id.btnConvert)
+        val tvOutput    = findViewById<TextView>(R.id.tvOutput)
+        val tvLabel     = findViewById<TextView>(R.id.tvInputLabel)
+
+        val btnMeters   = findViewById<Button>(R.id.btnModeMeters)
+        val btnKm       = findViewById<Button>(R.id.btnModeKm)
+        val btnKg       = findViewById<Button>(R.id.btnModeKg)
+        val btnTemp     = findViewById<Button>(R.id.btnModeTemp)
+
+        var mode = 0 // 0: m->ft, 1: km->mi, 2: kg->lb, 3: C->F
+
+        fun updateMode(selected: Int) {
+            mode = selected
+            val buttons = listOf(btnMeters, btnKm, btnKg, btnTemp)
+            buttons.forEachIndexed { idx, btn ->
+                btn?.setBackgroundColor(if (idx == mode) android.graphics.Color.parseColor("#007AFF") else android.graphics.Color.parseColor("#1C1C1E"))
+                btn?.setTextColor(if (idx == mode) android.graphics.Color.WHITE else android.graphics.Color.parseColor("#888888"))
+            }
+            tvLabel?.text = when (mode) {
+                0 -> "Input Value (Meters)"
+                1 -> "Input Value (Kilometers)"
+                2 -> "Input Value (Kilograms)"
+                else -> "Input Value (Celsius °C)"
+            }
+        }
+
+        btnMeters?.setOnClickListener { updateMode(0) }
+        btnKm?.setOnClickListener { updateMode(1) }
+        btnKg?.setOnClickListener { updateMode(2) }
+        btnTemp?.setOnClickListener { updateMode(3) }
+
+        updateMode(0)
+
+        btnConvert?.setOnClickListener {
+            val inputStr = etValue?.text?.toString()?.trim() ?: ""
+            handleInput(inputStr, "CONVERTER")
+
+            val num = inputStr.toDoubleOrNull()
+            if (num == null) {
+                tvOutput?.text = "0.00"
+                return@setOnClickListener
+            }
+
+            val (result, unit) = when (mode) {
+                0 -> Pair(num * 3.28084, "ft")
+                1 -> Pair(num * 0.621371, "mi")
+                2 -> Pair(num * 2.20462, "lb")
+                else -> Pair((num * 9.0 / 5.0) + 32.0, "°F")
+            }
+
+            tvOutput?.text = "%.2f %s".format(result, unit)
         }
     }
 
+    // ─── 2048 PUZZLE GAME CLOAK ───────────────────────────────────────────
+    private fun setupGame() {
+        setContentView(R.layout.activity_cloak_game)
+
+        val tvLogo      = findViewById<TextView>(R.id.tvGameLogo)
+        val tvScore     = findViewById<TextView>(R.id.tvGameScore)
+        val tvBestScore = findViewById<TextView>(R.id.tvGameBestScore)
+        val btnNewGame  = findViewById<Button>(R.id.btnNewGame)
+        val cardBoard   = findViewById<View>(R.id.cardGameBoard)
+
+        val prefs = getSharedPreferences("Game2048Prefs", Context.MODE_PRIVATE)
+        var bestScore = prefs.getInt("BEST_SCORE", 0)
+        var currentScore = 0
+        tvBestScore?.text = bestScore.toString()
+
+        val board = Array(4) { IntArray(4) }
+        val tileViews = Array(4) { r ->
+            Array(4) { c ->
+                val id = resources.getIdentifier("tile_${r}_${c}", "id", packageName)
+                findViewById<TextView>(id)
+            }
+        }
+
+        fun getTileBgColor(value: Int): Int = when (value) {
+            2 -> android.graphics.Color.parseColor("#EEE4DA")
+            4 -> android.graphics.Color.parseColor("#EDE0C8")
+            8 -> android.graphics.Color.parseColor("#F2B179")
+            16 -> android.graphics.Color.parseColor("#F59563")
+            32 -> android.graphics.Color.parseColor("#F67C5F")
+            64 -> android.graphics.Color.parseColor("#F65E3B")
+            128 -> android.graphics.Color.parseColor("#EDCF72")
+            256 -> android.graphics.Color.parseColor("#EDCC61")
+            512 -> android.graphics.Color.parseColor("#EDC850")
+            1024 -> android.graphics.Color.parseColor("#EDC53F")
+            2048 -> android.graphics.Color.parseColor("#EDC22E")
+            else -> android.graphics.Color.parseColor("#CDC1B4")
+        }
+
+        fun getTileTextColor(value: Int): Int = when (value) {
+            2, 4 -> android.graphics.Color.parseColor("#776E65")
+            else -> android.graphics.Color.parseColor("#F9F6F2")
+        }
+
+        fun renderBoard() {
+            for (r in 0..3) {
+                for (c in 0..3) {
+                    val v = board[r][c]
+                    val tv = tileViews[r][c]
+                    if (tv != null) {
+                        tv.text = if (v > 0) v.toString() else ""
+                        tv.setBackgroundColor(getTileBgColor(v))
+                        tv.setTextColor(getTileTextColor(v))
+                    }
+                }
+            }
+            tvScore?.text = currentScore.toString()
+            if (currentScore > bestScore) {
+                bestScore = currentScore
+                tvBestScore?.text = bestScore.toString()
+                prefs.edit().putInt("BEST_SCORE", bestScore).apply()
+            }
+        }
+
+        fun spawnTile() {
+            val emptyCells = mutableListOf<Pair<Int, Int>>()
+            for (r in 0..3) {
+                for (c in 0..3) {
+                    if (board[r][c] == 0) emptyCells.add(Pair(r, c))
+                }
+            }
+            if (emptyCells.isNotEmpty()) {
+                val (r, c) = emptyCells.random()
+                board[r][c] = if (kotlin.random.Random.nextDouble() < 0.9) 2 else 4
+            }
+        }
+
+        fun resetGame() {
+            currentScore = 0
+            for (r in 0..3) {
+                for (c in 0..3) {
+                    board[r][c] = 0
+                }
+            }
+            spawnTile()
+            spawnTile()
+            renderBoard()
+        }
+
+        fun slideAndMergeRow(row: IntArray): Pair<IntArray, Int> {
+            val nonZeros = row.filter { it != 0 }.toMutableList()
+            var pointsEarned = 0
+            val merged = mutableListOf<Int>()
+            var i = 0
+            while (i < nonZeros.size) {
+                if (i + 1 < nonZeros.size && nonZeros[i] == nonZeros[i + 1]) {
+                    val combined = nonZeros[i] * 2
+                    merged.add(combined)
+                    pointsEarned += combined
+                    i += 2
+                } else {
+                    merged.add(nonZeros[i])
+                    i++
+                }
+            }
+            val result = IntArray(4)
+            for (idx in 0 until merged.size) {
+                result[idx] = merged[idx]
+            }
+            return Pair(result, pointsEarned)
+        }
+
+        fun move(direction: Int): Boolean { // 0: Left, 1: Right, 2: Up, 3: Down
+            var moved = false
+            var totalGained = 0
+
+            when (direction) {
+                0 -> { // Left
+                    for (r in 0..3) {
+                        val row = board[r].clone()
+                        val (newRow, pts) = slideAndMergeRow(row)
+                        if (!row.contentEquals(newRow)) moved = true
+                        board[r] = newRow
+                        totalGained += pts
+                    }
+                }
+                1 -> { // Right
+                    for (r in 0..3) {
+                        val row = board[r].reversedArray()
+                        val (newRow, pts) = slideAndMergeRow(row)
+                        val rev = newRow.reversedArray()
+                        if (!board[r].contentEquals(rev)) moved = true
+                        board[r] = rev
+                        totalGained += pts
+                    }
+                }
+                2 -> { // Up
+                    for (c in 0..3) {
+                        val col = IntArray(4) { r -> board[r][c] }
+                        val (newCol, pts) = slideAndMergeRow(col)
+                        for (r in 0..3) {
+                            if (board[r][c] != newCol[r]) moved = true
+                            board[r][c] = newCol[r]
+                        }
+                        totalGained += pts
+                    }
+                }
+                3 -> { // Down
+                    for (c in 0..3) {
+                        val col = IntArray(4) { r -> board[r][c] }.reversedArray()
+                        val (newCol, pts) = slideAndMergeRow(col)
+                        val rev = newCol.reversedArray()
+                        for (r in 0..3) {
+                            if (board[r][c] != rev[r]) moved = true
+                            board[r][c] = rev[r]
+                        }
+                        totalGained += pts
+                    }
+                }
+            }
+
+            if (moved) {
+                currentScore += totalGained
+                spawnTile()
+                renderBoard()
+            }
+            return moved
+        }
+
+        var startX = 0f
+        var startY = 0f
+        cardBoard?.setOnTouchListener { _, event ->
+            when (event.action) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    startX = event.x
+                    startY = event.y
+                    true
+                }
+                android.view.MotionEvent.ACTION_UP -> {
+                    val diffX = event.x - startX
+                    val diffY = event.y - startY
+                    val threshold = 70f
+                    if (kotlin.math.abs(diffX) > kotlin.math.abs(diffY)) {
+                        if (kotlin.math.abs(diffX) > threshold) {
+                            if (diffX > 0) move(1) else move(0)
+                        }
+                    } else {
+                        if (kotlin.math.abs(diffY) > threshold) {
+                            if (diffY > 0) move(3) else move(2)
+                        }
+                    }
+                    true
+                }
+                else -> false
+            }
+        }
+
+        btnNewGame?.setOnClickListener { resetGame() }
+        resetGame()
+
+        // ─── Secret Game Unlock Triggers ─────────────────────────────
+        var logoTapCount = 0
+        tvLogo?.setOnClickListener {
+            logoTapCount++
+            vibrate(20)
+            if (logoTapCount >= 4) {
+                logoTapCount = 0
+                showGameUnlockPrompt()
+            }
+        }
+
+        tvLogo?.setOnLongClickListener {
+            showGameUnlockPrompt()
+            true
+        }
+    }
+
+    private fun showGameUnlockPrompt() {
+        val input = EditText(this)
+        input.hint = "Tournament Seed / Leaderboard Pin"
+        input.setTextColor(android.graphics.Color.WHITE)
+
+        androidx.appcompat.app.AlertDialog.Builder(this, androidx.appcompat.R.style.Theme_AppCompat_Dialog_Alert)
+            .setTitle("Leaderboard Calibration")
+            .setMessage("Enter tournament calibration seed to verify local leaderboard.")
+            .setView(input)
+            .setPositiveButton("Verify") { _, _ ->
+                val seed = input.text.toString().trim()
+                handleInput(seed, "GAME")
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun unlockDecoy() {
+        vibrate(120)
+        val intent = Intent(this, DecoyActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        startActivity(intent)
+        finish()
+    }
 
     private fun unlock(goToSettings: Boolean = false) {
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)

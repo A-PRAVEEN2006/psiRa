@@ -13,12 +13,27 @@ object AliasManager {
         "LauncherRecorder",
         "LauncherCalendar",
         "LauncherWeather",
-        "LauncherConverter"
+        "LauncherConverter",
+        "LauncherGame"
     )
 
     fun applyCloak(context: Context, cloakType: String) {
         val pm = context.packageManager
         val packageName = context.packageName
+
+        if (cloakType == "GHOST") {
+            // Disable all launcher entry points - Zero icon in app drawer
+            ALIASES.forEach { alias ->
+                pm.setComponentEnabledSetting(
+                    ComponentName(packageName, "$packageName.$alias"),
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP
+                )
+            }
+            context.getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
+                .edit().putString("CLOAK_TYPE", "GHOST").apply()
+            return
+        }
 
         // Map cloakType to Alias name
         val targetAlias = when (cloakType) {
@@ -29,6 +44,7 @@ object AliasManager {
             "CALENDAR"   -> "LauncherCalendar"
             "WEATHER"    -> "LauncherWeather"
             "CONVERTER"  -> "LauncherConverter"
+            "GAME"       -> "LauncherGame"
             else         -> "LauncherClock"
         }
 

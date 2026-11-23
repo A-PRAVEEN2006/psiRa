@@ -1,21 +1,49 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# ProGuard & R8 Obfuscation Rules for PsiRa
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Hide original source file names and line numbers
+-renamesourcefileattribute SourceFile
+-keepattributes SourceFile,LineNumberTable
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Preserve annotations and generic signatures for reflection
+-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Firebase Database, Auth & Messaging reflection
+-keepattributes *Annotation*
+-dontwarn com.google.firebase.**
+-keep class com.google.firebase.** { *; }
+
+# Keep data models used with Firebase RTDB serialization
+-keepclassmembers class com.project1.psira.Message { *; }
+-keepclassmembers class com.project1.psira.Group { *; }
+-keepclassmembers class com.project1.psira.Note { *; }
+-keepclassmembers class com.project1.psira.Report { *; }
+-keepclassmembers class com.project1.psira.BluetoothMessage { *; }
+-keepclassmembers class com.project1.psira.DecoyNoteItem { *; }
+
+# Keep any fields/methods annotated with Firebase PropertyName
+-keepclassmembers class * {
+    @com.google.firebase.database.PropertyName <fields>;
+    @com.google.firebase.database.PropertyName <methods>;
+}
+
+# WebRTC JNI native bindings (critical for voice/video calls)
+-keep class org.webrtc.** { *; }
+-dontwarn org.webrtc.**
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+# Glide
+-keep public class * implements com.bumptech.glide.module.GlideModule
+-keep class * extends com.bumptech.glide.module.AppGlideModule {
+    <init>(...);
+}
+-dontwarn com.bumptech.glide.**
+
+# Media3 / ExoPlayer
+-keep class androidx.media3.** { *; }
+-dontwarn androidx.media3.**
+
+# Obfuscation optimizations
+-repackageclasses 'com.project1.psira.internal'
+-allowaccessmodification
