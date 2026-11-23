@@ -341,17 +341,20 @@ open class BaseActivity : AppCompatActivity() {
             "OLED", "OLED_STEALTH" -> setTheme(R.style.Theme_PsiRa_OledStealth)
             "MERCURY", "MERCURY_CHROME" -> setTheme(R.style.Theme_PsiRa_MercuryChrome)
             "CRIMSON", "NEON_CRIMSON" -> setTheme(R.style.Theme_PsiRa_CrimsonVoid)
+            "COSMOS", "DEEP_COSMOS" -> setTheme(R.style.Theme_PsiRa_DeepCosmos)
             else -> {
                 when (themeName) {
-                    "EMERALD"  -> setTheme(R.style.Theme_PsiRa_Emerald)
-                    "RUBY"     -> setTheme(R.style.Theme_PsiRa_Ruby)
-                    "COBALT"   -> setTheme(R.style.Theme_PsiRa_Cobalt)
-                    "OBSIDIAN" -> setTheme(R.style.Theme_PsiRa_Obsidian)
-                    "DESERT"   -> setTheme(R.style.Theme_PsiRa_Desert)
-                    "GHOST"    -> setTheme(R.style.Theme_PsiRa_Ghost)
-                    "DEEPSEA"  -> setTheme(R.style.Theme_PsiRa_DeepSea)
-                    "NOVA"     -> setTheme(R.style.Theme_PsiRa_Nova)
-                    else       -> setTheme(R.style.Theme_PsiRa_Midnight)
+                    "EMERALD"     -> setTheme(R.style.Theme_PsiRa_Emerald)
+                    "RUBY"        -> setTheme(R.style.Theme_PsiRa_Ruby)
+                    "COBALT"      -> setTheme(R.style.Theme_PsiRa_Cobalt)
+                    "OBSIDIAN"    -> setTheme(R.style.Theme_PsiRa_Obsidian)
+                    "DESERT"      -> setTheme(R.style.Theme_PsiRa_Desert)
+                    "GHOST"       -> setTheme(R.style.Theme_PsiRa_Ghost)
+                    "DEEPSEA"     -> setTheme(R.style.Theme_PsiRa_DeepSea)
+                    "NOVA"        -> setTheme(R.style.Theme_PsiRa_Nova)
+                    "COSMOS", "DEEP_COSMOS" -> setTheme(R.style.Theme_PsiRa_DeepCosmos)
+                    "CUSTOM"      -> setTheme(R.style.Theme_PsiRa_Custom)
+                    else          -> setTheme(R.style.Theme_PsiRa_Midnight)
                 }
             }
         }

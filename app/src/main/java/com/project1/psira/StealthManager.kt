@@ -84,6 +84,16 @@ object StealthManager {
             "00.0",
             "Number",
             R.drawable.ic_cloak_converter
+        ),
+        StealthLogic(
+            "GAME",
+            "Retro Arcade",
+            "Playable games (2048, Retro Snake, Space Defense). Tap the top title 4 times to unlock.",
+            "1. Play 2048, Retro Snake, or Space Defense.\n2. Tap the top arcade title 4 times to reveal the unlock prompt.",
+            "2048",
+            "7777",
+            "4 Taps / PIN",
+            R.drawable.ic_cloak_game
         )
     )
 

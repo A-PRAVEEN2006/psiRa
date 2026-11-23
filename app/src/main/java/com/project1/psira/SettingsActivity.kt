@@ -174,6 +174,10 @@ class SettingsActivity : BaseActivity() {
         btnDecoyBriefing.setOnClickListener { showDecoyBriefing() }
         btnReportAgent.setOnClickListener { showReportAgentDialog() }
         btnAbout.setOnClickListener { showAbout() }
+        btnAbout.setOnLongClickListener {
+            showDeepSpaceTelemetry()
+            true
+        }
         btnCheckUpdates.setOnClickListener {
             val updateManager = UpdateManager(this)
             updateManager.checkUpdate(isManual = true)
@@ -539,41 +543,62 @@ class SettingsActivity : BaseActivity() {
 
     private fun showAbout() {
         val about = """
-            PsiRa | Overseer Build v3.4.3
+            PsiRa | Enclave Build v3.5.0
             ----------------------------
             THE SPECTRE ENCLAVE:
-            A premium, high-fidelity secure communication network.
+            Military-grade, zero-trace end-to-end encrypted communication enclave.
             
-            7-MODULE DECOY SYSTEM:
-            Active Camouflage Disguises including functional Clock, Calculator, Diary, Voice Memos, Day Planner, Currency Rates, and Unit Converter. Each decoy operates as a legitimate utility while masking the entrance to the Spectre Enclave.
+            8-MODULE DECOY ENGINE:
+            Camouflage Disguises: Clock, Calculator, Diary, Voice Memos, Day Planner, Currency Rates, Unit Converter, and 3-Game Retro Arcade (2048, Snake, Space Defense).
             
-            SECURITY PROTOCOLS:
-            • 10-Session Logic Guard
-            • AES-256 Vector Encryption
-            • Self-Destruct 'EMP' Trigger
-            • Biometric Vault Isolation
-            • Zero-Footprint Registry
+            DEEP SPACE SCIENCE ENGINE:
+            • Sun-Earth L2 Lagrange Orbital Anchor
+            • Hydrogen Spectral Line (1420.405 MHz) Entropy
+            • Crab Pulsar PSR B0531+21 Sync Beacon
+            • Deep Space Network (DSN) Telemetry Core
             
-            PsiRa is built for those who operate in the shadows of the digital matrix.
+            SECURITY & PRIVACY:
+            • Ephemeral Server Auto-Purge (Local Encrypted Persistence)
+            • Double-Tick Realtime Delivery & Read Receipts
+            • Infinite 360° Chromatic Color Studio
+            • ECDH P-256 Multi-Era Hybrid Encryption
             
             Website: https://primextech.me
         """.trimIndent()
         PsiRaDialogs.showDeleteSheet(this, "ABOUT THIS APP", about, "CLOSE") {}
     }
 
+    private fun showDeepSpaceTelemetry() {
+        val telemetry = """
+            🌌 DEEP SPACE NETWORK & COSMIC TELEMETRY
+            ----------------------------------------
+            • Orbital Anchor: Sun-Earth L2 (James Webb Space Telescope)
+            • Distance to L2: 1,500,000 km (Nominal halo orbit)
+            • Neutral Hydrogen Line (H I): 1,420.405751 MHz (λ = 21.1 cm)
+            • Crab Pulsar (PSR B0531+21): Period 33.5028583 ms
+            • Voyager 1 Ephemeris: ~163.2 AU (~24.4 billion km)
+            • Cosmic Microwave Background (CMB): 2.72548 ± 0.00057 K
+            • Enclave Cryptographic Entropy: Cosmic background seed active
+            
+            Telemetry status: ALL SYSTEMS NOMINAL
+        """.trimIndent()
+        PsiRaDialogs.showDeleteSheet(this, "DEEP COSMOS TELEMETRY", telemetry, "TRANSMIT ACK") {}
+    }
+
     private fun showDecoyBriefing() {
         val guide = """
             DECOY TRIGGER LOGICS:
             
-            1. CLOCK: Set the hands exactly to your secret time.
+            1. CLOCK: Set the hands exactly to your secret time (or view customizable focus motto).
             2. CALCULATOR: Enter your secret equation and press [ = ].
             3. DIARY: Type your secret password and tap 'Save'.
             4. VOICE MEMOS: Tap the RED record button your secret number of times.
             5. DAY PLANNER: Tap your secret date on the planner calendar.
             6. CURRENCY: Tap the refresh icon your secret number of times.
             7. UNIT CONVERTER: Enter your secret number and tap the convert button.
+            8. RETRO ARCADE: Tap the arcade title header 4 times to unlock operator verification.
             
-            BYPASS LIMIT: After 10 auto-entries, the disguise will force a manual password verification.
+            BYPASS LIMIT: After 10 auto-entries, the disguise forces manual verification.
         """.trimIndent()
         PsiRaDialogs.showDeleteSheet(this, "DECOY BRIEFING", guide, "UNDERSTOOD") {}
     }

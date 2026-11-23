@@ -173,6 +173,7 @@ class DirectChatActivity : BaseActivity() {
                 val index = messageList.indexOfFirst { it.id == targetId }
                 if (index != -1) {
                     recyclerView.smoothScrollToPosition(index)
+                    messageAdapter.highlightMessage(targetId)
                 }
             }
         }
@@ -284,7 +285,9 @@ class DirectChatActivity : BaseActivity() {
 
         db.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                messageList.clear()
+                var listModified = false
+                val currentTime = System.currentTimeMillis()
+
                 for (postSnapshot in snapshot.children) {
                     val raw = postSnapshot.getValue(Message::class.java) ?: continue
                     val msgKey = postSnapshot.key ?: ""
@@ -294,8 +297,26 @@ class DirectChatActivity : BaseActivity() {
                         db.child(msgKey).child("status").setValue("read")
                     }
 
+                    // Ephemeral server auto-purge: If message has been read and confirmed, purge from server
+                    // The message is already stored locally on both devices
+                    if (raw.status == "read" && (currentTime - raw.timestamp > 30_000L)) {
+                        postSnapshot.ref.removeValue()
+                    } else if (raw.isBurnable && raw.status == "read" && (currentTime - raw.timestamp > 10_000L)) {
+                        postSnapshot.ref.removeValue()
+                    }
+
                     val rawContent = raw.content ?: ""
                     if (msgKey.isNotEmpty()) rawContentMap[msgKey] = rawContent
+
+                    // Check if already in local messageList
+                    val existingIndex = messageList.indexOfFirst { it.id == msgKey }
+                    if (existingIndex != -1) {
+                        if (messageList[existingIndex].status != raw.status) {
+                            messageList[existingIndex] = messageList[existingIndex].copy(status = raw.status)
+                            listModified = true
+                        }
+                        continue
+                    }
 
                     val cached = decryptedCache[msgKey]
                     val decryptedContent = if (cached != null) {
@@ -310,10 +331,18 @@ class DirectChatActivity : BaseActivity() {
                         }
                         decoded
                     }
+
+                    // Save local media file if base64 to prevent storage overhead
+                    val localContent = if (raw.type in listOf("image", "steg", "voice", "doc") && decryptedContent.startsWith("data:")) {
+                        saveMediaLocally(msgKey, decryptedContent, raw.type)
+                    } else {
+                        decryptedContent
+                    }
+
                     val msg = Message(
                         id = msgKey,
                         sender = raw.sender,
-                        content = decryptedContent,
+                        content = localContent,
                         isBurnable = raw.isBurnable,
                         type = raw.type,
                         timestamp = if (raw.timestamp > 0) raw.timestamp else System.currentTimeMillis(),
@@ -323,11 +352,15 @@ class DirectChatActivity : BaseActivity() {
                         replyToText = raw.replyToText
                     )
                     messageList.add(msg)
+                    listModified = true
                 }
-                messageAdapter.notifyDataSetChanged()
-                if (messageList.isNotEmpty()) {
-                    recyclerView.scrollToPosition(messageList.size - 1)
-                    saveLocalCache()
+
+                if (listModified) {
+                    messageAdapter.notifyDataSetChanged()
+                    if (messageList.isNotEmpty()) {
+                        recyclerView.scrollToPosition(messageList.size - 1)
+                        saveLocalCache()
+                    }
                 }
             }
             override fun onCancelled(error: DatabaseError) {}
@@ -473,7 +506,11 @@ class DirectChatActivity : BaseActivity() {
             "voice" -> "🎙️ Voice note"
             "doc" -> "📄 Document"
             "steg" -> "🕵️ Hidden Image"
-            else -> message.content ?: ""
+            else -> {
+                val raw = message.content ?: ""
+                val dec = ECDHKeyManager.decryptFromContact(this, targetUid!!, raw)
+                try { PsiRaConverter.decodeAny(dec) } catch (e: Exception) { dec }
+            }
         }
         tvReplySender.text = message.sender ?: "Agent"
         tvReplyText.text = if (snippet.length > 80) snippet.take(80) + "..." else snippet
@@ -545,6 +582,27 @@ class DirectChatActivity : BaseActivity() {
         )
     }
 
+    private fun saveMediaLocally(msgKey: String, base64Data: String, type: String): String {
+        return try {
+            val mediaDir = File(filesDir, "chat_media").apply { if (!exists()) mkdirs() }
+            val ext = when (type) {
+                "voice" -> ".m4a"
+                "image", "steg" -> ".png"
+                "doc" -> ".pdf"
+                else -> ".dat"
+            }
+            val file = File(mediaDir, "media_${msgKey}$ext")
+            if (!file.exists()) {
+                val pureBase64 = if (base64Data.contains(",")) base64Data.substringAfter(",") else base64Data
+                val bytes = android.util.Base64.decode(pureBase64, android.util.Base64.DEFAULT)
+                file.writeBytes(bytes)
+            }
+            Uri.fromFile(file).toString()
+        } catch (e: Exception) {
+            base64Data
+        }
+    }
+
     private fun registerContactLink(myUid: String) {
         FirebaseDatabase.getInstance().getReference("user_direct_chats").child(myUid).child(targetUid!!).setValue(true)
         FirebaseDatabase.getInstance().getReference("user_direct_chats").child(targetUid!!).child(myUid).setValue(true)
@@ -553,10 +611,10 @@ class DirectChatActivity : BaseActivity() {
     private fun saveLocalCache() {
         val sharedPref = getSharedPreferences("PsiRaCache_$targetUid", android.content.Context.MODE_PRIVATE)
         val sb = StringBuilder()
-        val limit = if (messageList.size > 50) messageList.size - 50 else 0
+        val limit = if (messageList.size > 80) messageList.size - 80 else 0
         for (i in limit until messageList.size) {
             val m = messageList[i]
-            sb.append("${m.sender}|${m.content}|${m.isBurnable}|${m.type}")
+            sb.append("${m.id ?: ""}|${m.sender ?: ""}|${m.content ?: ""}|${m.isBurnable}|${m.type ?: "text"}")
             if (i < messageList.size - 1) sb.append("[MSG_SEP]")
         }
         sharedPref.edit().putString("history", sb.toString()).apply()
@@ -569,7 +627,14 @@ class DirectChatActivity : BaseActivity() {
             val items = raw.split("[MSG_SEP]")
             for (item in items) {
                 val f = item.split("|")
-                if (f.size >= 4) {
+                if (f.size >= 5) {
+                    val id = if (f[0].isNotEmpty()) f[0] else null
+                    val sender = f[1]
+                    val rawContent = f[2]
+                    val dec = ECDHKeyManager.decryptFromContact(this, targetUid!!, rawContent)
+                    val decoded = try { PsiRaConverter.decodeAny(dec) } catch (e: Exception) { dec }
+                    messageList.add(Message(id, sender, decoded, f[3] == "true", f[4]))
+                } else if (f.size >= 4) {
                     val rawContent = f[1]
                     val dec = ECDHKeyManager.decryptFromContact(this, targetUid!!, rawContent)
                     val decoded = try { PsiRaConverter.decodeAny(dec) } catch (e: Exception) { dec }

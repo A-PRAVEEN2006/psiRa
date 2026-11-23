@@ -122,6 +122,9 @@ class ChatsActivity : BaseActivity() {
                     applyFilter()
                     
                     for (targetUid in newUids) {
+                        // Pre-warm ECDH key cache in background
+                        ECDHKeyManager.deriveSharedKey(this@ChatsActivity, targetUid, onReady = {}, onError = {})
+
                         // User Profile listener
                         if (!listenersMap.containsKey(targetUid)) {
                             val listener = object : ValueEventListener {
@@ -160,6 +163,9 @@ class ChatsActivity : BaseActivity() {
                                         val isFromMe = (msg.sender == myDisplayName)
                                         if (!isFromMe) {
                                             totalReceived++
+                                            if (msg.status == "sent") {
+                                                child.ref.child("status").setValue("delivered")
+                                            }
                                             if (msg.status != "read") {
                                                 unreadCount++
                                             }
@@ -182,7 +188,37 @@ class ChatsActivity : BaseActivity() {
                                             } catch (e: Exception) {
                                                 decrypted
                                             }
+
+                                            // If still ciphertext, trigger asynchronous ECDH derivation to decode
+                                            if (decoded == rawContent && rawContent.length > 20) {
+                                                ECDHKeyManager.deriveSharedKey(this@ChatsActivity, targetUid, onReady = {
+                                                    val freshDecrypted = ECDHKeyManager.decryptFromContact(this@ChatsActivity, targetUid, rawContent)
+                                                    val freshDecoded = try { PsiRaConverter.decodeAny(freshDecrypted) } catch (_: Exception) { freshDecrypted }
+                                                    if (freshDecoded != rawContent) {
+                                                        runOnUiThread {
+                                                            val updatedPreview = if (freshDecoded.length > 35) freshDecoded.substring(0, 32) + "..." else freshDecoded
+                                                            val updatedInfo = ChatPreviewInfo(
+                                                                lastMessage = updatedPreview,
+                                                                lastMessageType = lastMsg?.type ?: "text",
+                                                                timestamp = if ((lastMsg?.timestamp ?: 0L) > 0) lastMsg!!.timestamp else 0L,
+                                                                unreadCount = unreadCount,
+                                                                totalReceived = totalReceived,
+                                                                isLastFromMe = isFromMe,
+                                                                lastStatus = lastMsg?.status ?: "sent"
+                                                            )
+                                                            chatAdapter.updatePreview(targetUid, updatedInfo)
+                                                            applyFilter()
+                                                        }
+                                                    }
+                                                }, onError = {})
+                                            }
                                             previewContent = if (decoded.length > 35) decoded.substring(0, 32) + "..." else decoded
+                                        } else if (lastMsg.type == "image" || lastMsg.type == "steg") {
+                                            previewContent = "📷 Photo"
+                                        } else if (lastMsg.type == "voice") {
+                                            previewContent = "🎙️ Voice note"
+                                        } else if (lastMsg.type == "doc") {
+                                            previewContent = "📄 Document"
                                         }
 
                                         val info = ChatPreviewInfo(

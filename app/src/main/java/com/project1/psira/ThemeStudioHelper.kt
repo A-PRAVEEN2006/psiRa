@@ -34,6 +34,7 @@ object ThemeStudioHelper {
         PsiRaThemeModel("DESERT",   "Desert Amber",      "#FFD600", "Military Tactical Gold & Sand Grid"),
         PsiRaThemeModel("DEEPSEA",  "Deep Sea Oceanic",  "#00B8D4", "Submarine Stealth Oceanic Teal"),
         PsiRaThemeModel("NOVA",     "Nova Flare",        "#FF6D00", "Sunset Warning Orange & Hazard Grid"),
+        PsiRaThemeModel("COSMOS",   "Deep Cosmos (JWST)","#00E5FF", "Deep Space Telemetry & Infrared Gold (#FFB300)"),
         PsiRaThemeModel("GHOST",    "Ghost Monolith",    "#9E9E9E", "Minimalist Matte Monochrome Gray")
     )
 
@@ -50,17 +51,20 @@ object ThemeStudioHelper {
         val btnCyber = view.findViewById<Button>(R.id.btnStyleCyber)
         val btnMatte = view.findViewById<Button>(R.id.btnStyleMatte)
         val btnMercury = view.findViewById<Button>(R.id.btnStyleMercury)
+        val btnCosmic = view.findViewById<Button>(R.id.btnStyleCosmic)
 
         fun updateStyleButtons() {
-            btnGlass.setBackgroundResource(if (activeStyle == "LIQUID_GLASS" || activeStyle == "GLASS") R.drawable.bg_rounded_primary else R.drawable.bg_circle_dark)
-            btnCyber.setBackgroundResource(if (activeStyle == "CYBER") R.drawable.bg_rounded_primary else R.drawable.bg_circle_dark)
-            btnMatte.setBackgroundResource(if (activeStyle == "OLED") R.drawable.bg_rounded_primary else R.drawable.bg_circle_dark)
-            btnMercury.setBackgroundResource(if (activeStyle == "MERCURY") R.drawable.bg_rounded_primary else R.drawable.bg_circle_dark)
+            btnGlass?.setBackgroundResource(if (activeStyle == "LIQUID_GLASS" || activeStyle == "GLASS") R.drawable.bg_rounded_primary else R.drawable.bg_circle_dark)
+            btnCyber?.setBackgroundResource(if (activeStyle == "CYBER") R.drawable.bg_rounded_primary else R.drawable.bg_circle_dark)
+            btnMatte?.setBackgroundResource(if (activeStyle == "OLED") R.drawable.bg_rounded_primary else R.drawable.bg_circle_dark)
+            btnMercury?.setBackgroundResource(if (activeStyle == "MERCURY") R.drawable.bg_rounded_primary else R.drawable.bg_circle_dark)
+            btnCosmic?.setBackgroundResource(if (activeStyle == "COSMOS" || activeStyle == "DEEP_COSMOS") R.drawable.bg_rounded_primary else R.drawable.bg_circle_dark)
 
-            btnGlass.setTextColor(if (activeStyle == "LIQUID_GLASS" || activeStyle == "GLASS") Color.WHITE else Color.GRAY)
-            btnCyber.setTextColor(if (activeStyle == "CYBER") Color.WHITE else Color.GRAY)
-            btnMatte.setTextColor(if (activeStyle == "OLED") Color.WHITE else Color.GRAY)
-            btnMercury.setTextColor(if (activeStyle == "MERCURY") Color.WHITE else Color.GRAY)
+            btnGlass?.setTextColor(if (activeStyle == "LIQUID_GLASS" || activeStyle == "GLASS") Color.WHITE else Color.GRAY)
+            btnCyber?.setTextColor(if (activeStyle == "CYBER") Color.WHITE else Color.GRAY)
+            btnMatte?.setTextColor(if (activeStyle == "OLED") Color.WHITE else Color.GRAY)
+            btnMercury?.setTextColor(if (activeStyle == "MERCURY") Color.WHITE else Color.GRAY)
+            btnCosmic?.setTextColor(if (activeStyle == "COSMOS" || activeStyle == "DEEP_COSMOS") Color.WHITE else Color.GRAY)
         }
         updateStyleButtons()
 
@@ -74,17 +78,28 @@ object ThemeStudioHelper {
             activity.recreate()
         }
 
-        btnGlass.setOnClickListener {
-            applyStyleAndRecreate("LIQUID_GLASS", "Liquid Glass")
-        }
-        btnCyber.setOnClickListener {
-            applyStyleAndRecreate("CYBER", "Tactical Cyber")
-        }
-        btnMatte.setOnClickListener {
-            applyStyleAndRecreate("OLED", "OLED Stealth")
-        }
-        btnMercury.setOnClickListener {
-            applyStyleAndRecreate("MERCURY", "Mercury Chrome")
+        btnGlass?.setOnClickListener { applyStyleAndRecreate("LIQUID_GLASS", "Liquid Glass") }
+        btnCyber?.setOnClickListener { applyStyleAndRecreate("CYBER", "Tactical Cyber") }
+        btnMatte?.setOnClickListener { applyStyleAndRecreate("OLED", "OLED Stealth") }
+        btnMercury?.setOnClickListener { applyStyleAndRecreate("MERCURY", "Mercury Chrome") }
+        btnCosmic?.setOnClickListener { applyStyleAndRecreate("COSMOS", "Deep Cosmos") }
+
+        // Custom Color Wheel Button Setup
+        val customHex = prefs.getString("CUSTOM_ACCENT_HEX", "#00E5FF") ?: "#00E5FF"
+        val viewDot = view.findViewById<View>(R.id.viewCustomColorDot)
+        val tvCustomSub = view.findViewById<TextView>(R.id.tvCustomColorSub)
+        try {
+            val dotColor = Color.parseColor(customHex)
+            val shape = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(dotColor)
+            }
+            viewDot?.background = shape
+            tvCustomSub?.text = "Current: $customHex • Tap for infinite 360° wheel"
+        } catch (_: Exception) {}
+
+        view.findViewById<View>(R.id.btnOpenColorWheel)?.setOnClickListener {
+            showColorWheelStudio(activity, onThemeChanged, dialog)
         }
 
         val rv = view.findViewById<RecyclerView>(R.id.rvThemes)
@@ -108,6 +123,106 @@ object ThemeStudioHelper {
         }
 
         dialog.show()
+    }
+
+    fun showColorWheelStudio(activity: Activity, onThemeChanged: () -> Unit, parentDialog: BottomSheetDialog? = null) {
+        val wheelDialog = BottomSheetDialog(activity, R.style.CustomBottomSheetDialog)
+        val view = LayoutInflater.from(activity).inflate(R.layout.dialog_color_wheel, null)
+        wheelDialog.setContentView(view)
+
+        val prefs = activity.getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
+        val savedHex = prefs.getString("CUSTOM_ACCENT_HEX", "#00E5FF") ?: "#00E5FF"
+
+        val colorWheelView = view.findViewById<ColorWheelView>(R.id.colorWheelView)
+        val viewPreview = view.findViewById<View>(R.id.viewColorPreview)
+        val tvHex = view.findViewById<TextView>(R.id.tvColorHex)
+        val tvRgb = view.findViewById<TextView>(R.id.tvColorRgb)
+        val seekBrightness = view.findViewById<android.widget.SeekBar>(R.id.seekBrightness)
+        val etManualHex = view.findViewById<android.widget.EditText>(R.id.etManualHex)
+        val btnApplyManualHex = view.findViewById<Button>(R.id.btnApplyManualHex)
+        val btnApplyCustom = view.findViewById<Button>(R.id.btnApplyCustomColor)
+
+        fun updateColorDisplay(color: Int, hex: String) {
+            val r = Color.red(color)
+            val g = Color.green(color)
+            val b = Color.blue(color)
+            tvHex?.text = hex
+            tvRgb?.text = "RGB($r, $g, $b)"
+            val previewShape = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(color)
+            }
+            viewPreview?.background = previewShape
+        }
+
+        var currentSelectedColor = Color.parseColor("#00E5FF")
+        try {
+            currentSelectedColor = Color.parseColor(savedHex)
+        } catch (_: Exception) {}
+
+        colorWheelView.setColor(currentSelectedColor)
+        updateColorDisplay(currentSelectedColor, savedHex)
+
+        colorWheelView.onColorChangedListener = { color, hex ->
+            currentSelectedColor = color
+            updateColorDisplay(color, hex)
+        }
+
+        seekBrightness?.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: android.widget.SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    colorWheelView.currentBrightness = progress / 100f
+                }
+            }
+            override fun onStartTrackingTouch(seekBar: android.widget.SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: android.widget.SeekBar?) {}
+        })
+
+        // Space Science Preset Buttons
+        fun setPreset(hexStr: String) {
+            try {
+                val c = Color.parseColor(hexStr)
+                currentSelectedColor = c
+                colorWheelView.setColor(c)
+                updateColorDisplay(c, hexStr)
+            } catch (_: Exception) {}
+        }
+
+        view.findViewById<Button>(R.id.btnPresetPulsar)?.setOnClickListener { setPreset("#00E5FF") }
+        view.findViewById<Button>(R.id.btnPresetJwst)?.setOnClickListener { setPreset("#FFB300") }
+        view.findViewById<Button>(R.id.btnPresetNebula)?.setOnClickListener { setPreset("#7C4DFF") }
+        view.findViewById<Button>(R.id.btnPresetSupernova)?.setOnClickListener { setPreset("#FF6D00") }
+        view.findViewById<Button>(R.id.btnPresetAurora)?.setOnClickListener { setPreset("#00E676") }
+        view.findViewById<Button>(R.id.btnPresetMars)?.setOnClickListener { setPreset("#FF1744") }
+
+        btnApplyManualHex?.setOnClickListener {
+            var raw = etManualHex?.text?.toString()?.trim() ?: ""
+            if (!raw.startsWith("#")) raw = "#$raw"
+            try {
+                val parsed = Color.parseColor(raw)
+                currentSelectedColor = parsed
+                colorWheelView.setColor(parsed)
+                updateColorDisplay(parsed, raw)
+            } catch (_: Exception) {
+                Toast.makeText(activity, "Invalid Hex Color (e.g. #00E5FF)", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        btnApplyCustom?.setOnClickListener {
+            val hex = String.format("#%06X", (0xFFFFFF and currentSelectedColor))
+            prefs.edit {
+                putString("CUSTOM_ACCENT_HEX", hex)
+                putString("APP_THEME", "CUSTOM")
+                putBoolean("IS_DARK_MODE", true)
+            }
+            Toast.makeText(activity, "Custom accent activated: $hex", Toast.LENGTH_SHORT).show()
+            onThemeChanged()
+            wheelDialog.dismiss()
+            parentDialog?.dismiss()
+            activity.recreate()
+        }
+
+        wheelDialog.show()
     }
 
     private class ThemeAdapter(

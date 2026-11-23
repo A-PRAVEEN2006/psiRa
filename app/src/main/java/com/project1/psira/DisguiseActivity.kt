@@ -2,6 +2,7 @@ package com.project1.psira
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -38,6 +39,7 @@ open class DisguiseActivity : BaseActivity() {
             "CALENDAR"   -> setupCalendar()
             "WEATHER"    -> setupCurrency()
             "CONVERTER"  -> setupConverter()
+            "GAME"       -> setupGameCloak()
             else         -> setupClock()
         }
     }
@@ -102,6 +104,36 @@ open class DisguiseActivity : BaseActivity() {
         clockView.onClockUnlockListener = { inputTime ->
             handleInput(inputTime, "CLOCK")
             clockView.resetToRealTime()
+        }
+
+        val tvFocusMotto = findViewById<TextView>(R.id.tvFocusMotto)
+        val layoutMotto = findViewById<View>(R.id.layoutMotto)
+        val prefs = getSharedPreferences("ClockCloakPrefs", Context.MODE_PRIVATE)
+        val currentMotto = prefs.getString("FOCUS_MOTTO", "CONCENTRATE") ?: "CONCENTRATE"
+        tvFocusMotto?.text = currentMotto
+
+        layoutMotto?.setOnClickListener {
+            val input = EditText(this).apply {
+                setText(tvFocusMotto?.text?.toString() ?: "")
+                setSelection(text.length)
+                setTextColor(Color.WHITE)
+                hint = "Enter focus phrase (e.g. CONCENTRATE)"
+                setHintTextColor(Color.GRAY)
+            }
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Personal Focus Motto")
+                .setMessage("Display a customized mindset phrase on your clock:")
+                .setView(input)
+                .setPositiveButton("Save") { _, _ ->
+                    val newMotto = input.text.toString().trim()
+                    if (newMotto.isNotEmpty()) {
+                        tvFocusMotto?.text = newMotto
+                        prefs.edit().putString("FOCUS_MOTTO", newMotto).apply()
+                        Toast.makeText(this, "Motto updated", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
         }
     }
 
@@ -753,6 +785,281 @@ open class DisguiseActivity : BaseActivity() {
             handleInput(input, "CONVERTER")
             Toast.makeText(this, "Units Converted", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun setupGameCloak() {
+        setContentView(R.layout.activity_cloak_game)
+
+        val layoutArcadeTitle = findViewById<View>(R.id.layoutArcadeTitle)
+        val tvGameScore = findViewById<TextView>(R.id.tvGameScore)
+        val tvGameHighScore = findViewById<TextView>(R.id.tvGameHighScore)
+
+        val btnTab2048 = findViewById<Button>(R.id.btnTab2048)
+        val btnTabSnake = findViewById<Button>(R.id.btnTabSnake)
+        val btnTabSpace = findViewById<Button>(R.id.btnTabSpace)
+
+        val container2048 = findViewById<View>(R.id.container2048)
+        val containerSnake = findViewById<View>(R.id.containerSnake)
+        val containerSpace = findViewById<View>(R.id.containerSpace)
+
+        val snakeGameView = findViewById<SnakeGameView>(R.id.snakeGameView)
+        val spaceGameView = findViewById<SpaceGameView>(R.id.spaceGameView)
+
+        val gamePrefs = getSharedPreferences("ArcadeGamePrefs", Context.MODE_PRIVATE)
+        var highScore = gamePrefs.getInt("HIGH_SCORE", 0)
+        tvGameHighScore?.text = "BEST: $highScore"
+
+        fun updateScore(newScore: Int) {
+            tvGameScore?.text = "SCORE: $newScore"
+            if (newScore > highScore) {
+                highScore = newScore
+                tvGameHighScore?.text = "BEST: $highScore"
+                gamePrefs.edit().putInt("HIGH_SCORE", highScore).apply()
+            }
+        }
+
+        // Covert 4-Tap Bypass Key
+        var tapCount = 0
+        var lastTapTime = 0L
+        layoutArcadeTitle?.setOnClickListener {
+            val now = System.currentTimeMillis()
+            if (now - lastTapTime < 1000) {
+                tapCount++
+            } else {
+                tapCount = 1
+            }
+            lastTapTime = now
+
+            if (tapCount >= 4) {
+                tapCount = 0
+                vibrate(40)
+                val input = EditText(this).apply {
+                    hint = "Passcode"
+                    setTextColor(android.graphics.Color.WHITE)
+                    setHintTextColor(android.graphics.Color.GRAY)
+                    inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+                }
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("🕹️ Operator Verification")
+                    .setMessage("Enter terminal bypass key:")
+                    .setView(input)
+                    .setPositiveButton("Verify") { _, _ ->
+                        handleInput(input.text.toString().trim(), "GAME")
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .show()
+            }
+        }
+
+        // Tabs Switching
+        fun selectTab(selected: Int) {
+            container2048?.visibility = if (selected == 0) View.VISIBLE else View.GONE
+            containerSnake?.visibility = if (selected == 1) View.VISIBLE else View.GONE
+            containerSpace?.visibility = if (selected == 2) View.VISIBLE else View.GONE
+
+            btnTab2048?.setTextColor(if (selected == 0) android.graphics.Color.WHITE else android.graphics.Color.parseColor("#8B949E"))
+            btnTabSnake?.setTextColor(if (selected == 1) android.graphics.Color.WHITE else android.graphics.Color.parseColor("#8B949E"))
+            btnTabSpace?.setTextColor(if (selected == 2) android.graphics.Color.WHITE else android.graphics.Color.parseColor("#8B949E"))
+
+            if (selected == 1) {
+                snakeGameView?.start()
+                spaceGameView?.pause()
+            } else if (selected == 2) {
+                spaceGameView?.start()
+                snakeGameView?.pause()
+            } else {
+                snakeGameView?.pause()
+                spaceGameView?.pause()
+            }
+        }
+
+        btnTab2048?.setOnClickListener { selectTab(0) }
+        btnTabSnake?.setOnClickListener { selectTab(1) }
+        btnTabSpace?.setOnClickListener { selectTab(2) }
+
+        // 1. 2048 Logic
+        val grid2048 = findViewById<GridLayout>(R.id.grid2048)
+        val btnReset2048 = findViewById<Button>(R.id.btnReset2048)
+        val board = Array(4) { IntArray(4) }
+        val cellViews = Array(4) { arrayOfNulls<TextView>(4) }
+        var score2048 = 0
+
+        fun getTileBgColor(v: Int): Int = when (v) {
+            2 -> android.graphics.Color.parseColor("#EEE4DA")
+            4 -> android.graphics.Color.parseColor("#EDE0C8")
+            8 -> android.graphics.Color.parseColor("#F2B179")
+            16 -> android.graphics.Color.parseColor("#F59563")
+            32 -> android.graphics.Color.parseColor("#F67C5F")
+            64 -> android.graphics.Color.parseColor("#F65E3B")
+            128 -> android.graphics.Color.parseColor("#EDCF72")
+            256 -> android.graphics.Color.parseColor("#EDCC61")
+            512 -> android.graphics.Color.parseColor("#EDC850")
+            1024 -> android.graphics.Color.parseColor("#EDC53F")
+            2048 -> android.graphics.Color.parseColor("#00E5FF")
+            else -> if (v > 2048) android.graphics.Color.parseColor("#76FF03") else android.graphics.Color.parseColor("#1E293B")
+        }
+
+        fun getTileTextColor(v: Int): Int = when {
+            v <= 4 -> android.graphics.Color.parseColor("#776E65")
+            v >= 2048 -> android.graphics.Color.BLACK
+            else -> android.graphics.Color.parseColor("#F9F6F2")
+        }
+
+        fun render2048() {
+            for (r in 0..3) {
+                for (c in 0..3) {
+                    val tv = cellViews[r][c] ?: continue
+                    val v = board[r][c]
+                    tv.text = if (v > 0) v.toString() else ""
+                    val bg = android.graphics.drawable.GradientDrawable().apply {
+                        cornerRadius = 12f
+                        setColor(getTileBgColor(v))
+                    }
+                    tv.background = bg
+                    tv.setTextColor(getTileTextColor(v))
+                }
+            }
+            updateScore(score2048)
+        }
+
+        fun spawn2048Tile() {
+            val empty = mutableListOf<Pair<Int, Int>>()
+            for (r in 0..3) {
+                for (c in 0..3) {
+                    if (board[r][c] == 0) empty.add(Pair(r, c))
+                }
+            }
+            if (empty.isNotEmpty()) {
+                val (r, c) = empty.random()
+                board[r][c] = if (kotlin.random.Random.nextFloat() < 0.9f) 2 else 4
+            }
+        }
+
+        fun reset2048() {
+            for (r in 0..3) for (c in 0..3) board[r][c] = 0
+            score2048 = 0
+            spawn2048Tile()
+            spawn2048Tile()
+            render2048()
+        }
+
+        grid2048?.removeAllViews()
+        val cellSize = (resources.displayMetrics.density * 64).toInt()
+        val cellMargin = (resources.displayMetrics.density * 4).toInt()
+        for (r in 0..3) {
+            for (c in 0..3) {
+                val tv = TextView(this).apply {
+                    layoutParams = GridLayout.LayoutParams().apply {
+                        width = cellSize
+                        height = cellSize
+                        setMargins(cellMargin, cellMargin, cellMargin, cellMargin)
+                    }
+                    gravity = android.view.Gravity.CENTER
+                    textSize = 18f
+                    setTypeface(typeface, android.graphics.Typeface.BOLD)
+                }
+                cellViews[r][c] = tv
+                grid2048?.addView(tv)
+            }
+        }
+        reset2048()
+        btnReset2048?.setOnClickListener { reset2048() }
+
+        fun slideRow(row: IntArray): Boolean {
+            var changed = false
+            val nonZero = row.filter { it != 0 }.toMutableList()
+            var i = 0
+            while (i < nonZero.size - 1) {
+                if (nonZero[i] == nonZero[i + 1]) {
+                    nonZero[i] *= 2
+                    score2048 += nonZero[i]
+                    nonZero.removeAt(i + 1)
+                    changed = true
+                }
+                i++
+            }
+            val newRow = IntArray(4)
+            for (idx in nonZero.indices) {
+                newRow[idx] = nonZero[idx]
+            }
+            if (!newRow.contentEquals(row)) changed = true
+            for (idx in 0..3) row[idx] = newRow[idx]
+            return changed
+        }
+
+        fun rotate() {
+            val rotated = Array(4) { IntArray(4) }
+            for (r in 0..3) for (c in 0..3) rotated[c][3 - r] = board[r][c]
+            for (r in 0..3) for (c in 0..3) board[r][c] = rotated[r][c]
+        }
+
+        fun move2048(dir: Int) {
+            var moved = false
+            when (dir) {
+                0 -> {
+                    for (r in 0..3) if (slideRow(board[r])) moved = true
+                }
+                1 -> {
+                    rotate(); rotate(); rotate()
+                    for (r in 0..3) if (slideRow(board[r])) moved = true
+                    rotate()
+                }
+                2 -> {
+                    rotate(); rotate()
+                    for (r in 0..3) if (slideRow(board[r])) moved = true
+                    rotate(); rotate()
+                }
+                3 -> {
+                    rotate()
+                    for (r in 0..3) if (slideRow(board[r])) moved = true
+                    rotate(); rotate(); rotate()
+                }
+            }
+            if (moved) {
+                spawn2048Tile()
+                render2048()
+            }
+        }
+
+        var startX2048 = 0f
+        var startY2048 = 0f
+        grid2048?.setOnTouchListener { _, event ->
+            when (event.action) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    startX2048 = event.x
+                    startY2048 = event.y
+                    true
+                }
+                android.view.MotionEvent.ACTION_UP -> {
+                    val dx = event.x - startX2048
+                    val dy = event.y - startY2048
+                    if (Math.abs(dx) > 50 || Math.abs(dy) > 50) {
+                        if (Math.abs(dx) > Math.abs(dy)) {
+                            if (dx > 0) move2048(2) else move2048(0)
+                        } else {
+                            if (dy > 0) move2048(3) else move2048(1)
+                        }
+                    }
+                    true
+                }
+                else -> false
+            }
+        }
+
+        // 2. Snake Wiring
+        snakeGameView?.onScoreChanged = { s -> updateScore(s) }
+        findViewById<Button>(R.id.btnSnakeUp)?.setOnClickListener { snakeGameView?.changeDirection(SnakeGameView.Direction.UP) }
+        findViewById<Button>(R.id.btnSnakeDown)?.setOnClickListener { snakeGameView?.changeDirection(SnakeGameView.Direction.DOWN) }
+        findViewById<Button>(R.id.btnSnakeLeft)?.setOnClickListener { snakeGameView?.changeDirection(SnakeGameView.Direction.LEFT) }
+        findViewById<Button>(R.id.btnSnakeRight)?.setOnClickListener { snakeGameView?.changeDirection(SnakeGameView.Direction.RIGHT) }
+
+        // 3. Space Defense Wiring
+        spaceGameView?.onScoreChanged = { s -> updateScore(s) }
+        findViewById<Button>(R.id.btnSpaceLeft)?.setOnClickListener { spaceGameView?.moveLeft() }
+        findViewById<Button>(R.id.btnSpaceRight)?.setOnClickListener { spaceGameView?.moveRight() }
+        findViewById<Button>(R.id.btnSpaceFire)?.setOnClickListener { spaceGameView?.fire() }
+
+        selectTab(0)
     }
 
 

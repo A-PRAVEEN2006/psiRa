@@ -13,7 +13,8 @@ object AliasManager {
         "LauncherRecorder",
         "LauncherCalendar",
         "LauncherWeather",
-        "LauncherConverter"
+        "LauncherConverter",
+        "LauncherGame"
     )
 
     fun applyCloak(context: Context, cloakType: String) {
@@ -29,6 +30,7 @@ object AliasManager {
             "CALENDAR"   -> "LauncherCalendar"
             "WEATHER"    -> "LauncherWeather"
             "CONVERTER"  -> "LauncherConverter"
+            "GAME"       -> "LauncherGame"
             else         -> "LauncherClock"
         }
 

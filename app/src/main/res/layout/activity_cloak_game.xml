@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#070A12"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="28dp"
+    android:paddingBottom="16dp">
+
+    <!-- ARCADE HEADER (TAP 4X TO COVERTLY UNLOCK) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_quoted_reply"
+        android:padding="12dp">
+
+        <LinearLayout
+            android:id="@+id/layoutArcadeTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:id="@+id/tvArcadeTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🕹️ RETRO ARCADE"
+                android:textColor="#00E5FF"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.1" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Offline Entertainment Enclave"
+                android:textColor="#6E7681"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="end">
+
+            <TextView
+                android:id="@+id/tvGameScore"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="SCORE: 0"
+                android:textColor="#00E676"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvGameHighScore"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="BEST: 0"
+                android:textColor="#8B949E"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- GAME SELECTOR TABS -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="12dp"
+        android:weightSum="3">
+
+        <Button
+            android:id="@+id/btnTab2048"
+            android:layout_width="0dp"
+            android:layout_height="38dp"
+            android:layout_weight="1"
+            android:text="2048"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/bg_rounded_primary"
+            android:layout_marginEnd="4dp" />
+
+        <Button
+            android:id="@+id/btnTabSnake"
+            android:layout_width="0dp"
+            android:layout_height="38dp"
+            android:layout_weight="1"
+            android:text="SNAKE"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="#8B949E"
+            android:background="@drawable/bg_circle_dark"
+            android:layout_marginEnd="4dp" />
+
+        <Button
+            android:id="@+id/btnTabSpace"
+            android:layout_width="0dp"
+            android:layout_height="38dp"
+            android:layout_weight="1"
+            android:text="SPACE"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="#8B949E"
+            android:background="@drawable/bg_circle_dark" />
+    </LinearLayout>
+
+    <!-- GAME CONTAINERS (SWITCHED BY TABS) -->
+    <FrameLayout
+        android:id="@+id/frameGameContent"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <!-- 1. 2048 GAME CONTAINER -->
+        <LinearLayout
+            android:id="@+id/container2048"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="visible">
+
+            <GridLayout
+                android:id="@+id/grid2048"
+                android:layout_width="300dp"
+                android:layout_height="300dp"
+                android:rowCount="4"
+                android:columnCount="4"
+                android:background="#151C2C"
+                android:padding="6dp"
+                android:layout_gravity="center" />
+
+            <Button
+                android:id="@+id/btnReset2048"
+                android:layout_width="wrap_content"
+                android:layout_height="38dp"
+                android:layout_marginTop="16dp"
+                android:text="🔄 New Game"
+                android:textSize="12sp"
+                android:background="@drawable/bg_rounded_primary"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
+
+        <!-- 2. RETRO SNAKE GAME CONTAINER -->
+        <LinearLayout
+            android:id="@+id/containerSnake"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="gone">
+
+            <com.project1.psira.SnakeGameView
+                android:id="@+id/snakeGameView"
+                android:layout_width="280dp"
+                android:layout_height="280dp"
+                android:background="#111827"
+                android:layout_gravity="center" />
+
+            <!-- ON SCREEN D-PAD -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_marginTop="12dp">
+
+                <Button
+                    android:id="@+id/btnSnakeUp"
+                    android:layout_width="54dp"
+                    android:layout_height="44dp"
+                    android:text="▲"
+                    android:textColor="#FFFFFF"
+                    android:background="@drawable/bg_circle_dark" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btnSnakeLeft"
+                        android:layout_width="54dp"
+                        android:layout_height="44dp"
+                        android:text="◀"
+                        android:textColor="#FFFFFF"
+                        android:background="@drawable/bg_circle_dark"
+                        android:layout_marginEnd="28dp" />
+
+                    <Button
+                        android:id="@+id/btnSnakeRight"
+                        android:layout_width="54dp"
+                        android:layout_height="44dp"
+                        android:text="▶"
+                        android:textColor="#FFFFFF"
+                        android:background="@drawable/bg_circle_dark" />
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/btnSnakeDown"
+                    android:layout_width="54dp"
+                    android:layout_height="44dp"
+                    android:text="▼"
+                    android:textColor="#FFFFFF"
+                    android:background="@drawable/bg_circle_dark" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 3. SPACE DEFENSE GAME CONTAINER -->
+        <LinearLayout
+            android:id="@+id/containerSpace"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="gone">
+
+            <com.project1.psira.SpaceGameView
+                android:id="@+id/spaceGameView"
+                android:layout_width="300dp"
+                android:layout_height="320dp"
+                android:background="#050811"
+                android:layout_gravity="center" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="12dp">
+
+                <Button
+                    android:id="@+id/btnSpaceLeft"
+                    android:layout_width="70dp"
+                    android:layout_height="44dp"
+                    android:text="◀ LEFT"
+                    android:textColor="#FFFFFF"
+                    android:background="@drawable/bg_circle_dark"
+                    android:layout_marginEnd="12dp" />
+
+                <Button
+                    android:id="@+id/btnSpaceFire"
+                    android:layout_width="100dp"
+                    android:layout_height="44dp"
+                    android:text="⚡ FIRE"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:background="@drawable/bg_rounded_primary"
+                    android:layout_marginEnd="12dp" />
+
+                <Button
+                    android:id="@+id/btnSpaceRight"
+                    android:layout_width="70dp"
+                    android:layout_height="44dp"
+                    android:text="RIGHT ▶"
+                    android:textColor="#FFFFFF"
+                    android:background="@drawable/bg_circle_dark" />
+            </LinearLayout>
+        </LinearLayout>
+
+    </FrameLayout>
+
+</LinearLayout>

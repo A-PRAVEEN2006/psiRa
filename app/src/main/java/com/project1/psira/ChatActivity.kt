@@ -138,6 +138,7 @@ class ChatActivity : BaseActivity() {
                 val index = messageList.indexOfFirst { it.id == targetId }
                 if (index != -1) {
                     recyclerView.smoothScrollToPosition(index)
+                    messageAdapter.highlightMessage(targetId)
                 }
             }
         }

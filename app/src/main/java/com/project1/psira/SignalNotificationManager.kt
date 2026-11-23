@@ -162,6 +162,10 @@ class SignalNotificationManager(private val context: Context) {
 
                     // Only notify if message is from the other party and is unread
                     if (rawMsg.sender != myDisplayName && rawMsg.status != "read") {
+                        // Mark as delivered on server so sender gets double-tick (✓✓)
+                        if (rawMsg.status == "sent") {
+                            snapshot.ref.child("status").setValue("delivered")
+                        }
                         // Only trigger for fresh messages received AFTER listener attached or within 15 seconds
                         if (rawMsg.timestamp >= attachTimestamp - 15_000) {
                             if (msgKey.isNotEmpty() && isDuplicate(msgKey)) {
@@ -180,7 +184,7 @@ class SignalNotificationManager(private val context: Context) {
                                     } catch (e: Exception) {
                                         rawMsg.content ?: ""
                                     }
-                                    try { PsiRaConverter.decode(decrypted) } catch (e: Exception) { decrypted }
+                                    try { PsiRaConverter.decodeAny(decrypted) } catch (e: Exception) { decrypted }
                                 }
                             }
 

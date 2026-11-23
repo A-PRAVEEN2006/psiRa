@@ -32,6 +32,28 @@ class MessageAdapter(
             notifyDataSetChanged()
         }
 
+    var highlightedMessageId: String? = null
+        private set
+
+    fun highlightMessage(messageId: String) {
+        val oldId = highlightedMessageId
+        highlightedMessageId = messageId
+        if (oldId != null) {
+            val oldPos = messageList.indexOfFirst { it.id == oldId }
+            if (oldPos != -1) notifyItemChanged(oldPos)
+        }
+        val newPos = messageList.indexOfFirst { it.id == messageId }
+        if (newPos != -1) {
+            notifyItemChanged(newPos)
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                if (highlightedMessageId == messageId) {
+                    highlightedMessageId = null
+                    notifyItemChanged(newPos)
+                }
+            }, 1800)
+        }
+    }
+
     private val VIEW_TYPE_SENT_TEXT = 1
     private val VIEW_TYPE_RECEIVED_TEXT = 2
     private val VIEW_TYPE_SENT_VOICE = 3
@@ -106,6 +128,20 @@ class MessageAdapter(
             try { PsiRaConverter.decodeAny(rawResolved) } catch (_: Exception) { rawResolved }
         } else {
             rawResolved
+        }
+
+        // --- FLASH HIGHLIGHT (Target of quoted reply jump) ---
+        if (!message.id.isNullOrEmpty() && message.id == highlightedMessageId) {
+            holder.itemView.setBackgroundColor(Color.parseColor("#3300E5FF"))
+            val anim = android.view.animation.AlphaAnimation(0.35f, 1.0f).apply {
+                duration = 300
+                repeatCount = 3
+                repeatMode = android.view.animation.Animation.REVERSE
+            }
+            holder.itemView.startAnimation(anim)
+        } else {
+            holder.itemView.setBackgroundColor(Color.TRANSPARENT)
+            holder.itemView.clearAnimation()
         }
 
         // --- DATE HEADER LOGIC (WhatsApp-style group by day) ---

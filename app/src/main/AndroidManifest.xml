@@ -144,6 +144,19 @@
             </intent-filter>
         </activity-alias>
 
+        <activity-alias
+            android:name=".LauncherGame"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_cloak_game"
+            android:label="Retro Arcade"
+            android:targetActivity=".DisguiseActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
 
 
         <activity android:name=".SplashActivity" android:exported="false" />

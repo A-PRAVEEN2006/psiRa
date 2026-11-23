@@ -82,7 +82,8 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
 
             <Button
                 android:id="@+id/btnStyleMatte"
@@ -106,6 +107,67 @@
                 android:textColor="#AAAAAA"
                 android:background="@drawable/bg_circle_dark" />
         </LinearLayout>
+
+        <Button
+            android:id="@+id/btnStyleCosmic"
+            android:layout_width="match_parent"
+            android:layout_height="46dp"
+            android:text="🌌 Deep Cosmos (Space Science Telemetry)"
+            android:textSize="12sp"
+            android:textColor="#AAAAAA"
+            android:background="@drawable/bg_circle_dark" />
+    </LinearLayout>
+
+    <!-- Custom Infinite Color Studio Button -->
+    <LinearLayout
+        android:id="@+id/btnOpenColorWheel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_quoted_reply"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp"
+        android:clickable="true"
+        android:focusable="true">
+
+        <View
+            android:id="@+id/viewCustomColorDot"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/bg_circle_dark" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🎨 Custom Color Wheel Studio"
+                android:textColor="#00E5FF"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvCustomColorSub"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Infinite 360° chromatic wheel &amp; space shades"
+                android:textColor="#8B949E"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CUSTOMIZE ▶"
+            android:textColor="#00E5FF"
+            android:textSize="11sp"
+            android:textStyle="bold" />
     </LinearLayout>
 
     <!-- Section 2: Color Palette -->

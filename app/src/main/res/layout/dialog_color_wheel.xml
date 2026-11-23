@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#0E131F"
+    android:padding="20dp">
+
+    <!-- Handle -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:background="#2D3748"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🎨 INFINITE COLOR STUDIO"
+        android:textColor="#00E5FF"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.06" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Infinite spectrum shades &amp; deep space chromatic themes"
+        android:textColor="#8B949E"
+        android:textSize="12sp"
+        android:layout_marginBottom="16dp" />
+
+    <!-- PREVIEW & HEX DISPLAY -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_quoted_reply"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp">
+
+        <View
+            android:id="@+id/viewColorPreview"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/bg_circle_dark" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="14dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvColorHex"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="#00E5FF"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvColorRgb"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="RGB(0, 229, 255)"
+                android:textColor="#8B949E"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <EditText
+            android:id="@+id/etManualHex"
+            android:layout_width="90dp"
+            android:layout_height="38dp"
+            android:background="@drawable/bg_circle_dark"
+            android:hint="#HEX"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#4B5563"
+            android:textSize="12sp"
+            android:gravity="center"
+            android:maxLength="7"
+            android:inputType="textCapCharacters" />
+
+        <Button
+            android:id="@+id/btnApplyManualHex"
+            android:layout_width="wrap_content"
+            android:layout_height="38dp"
+            android:text="SET"
+            android:textSize="11sp"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/bg_rounded_primary"
+            android:layout_marginStart="6dp" />
+    </LinearLayout>
+
+    <!-- COLOR WHEEL -->
+    <com.project1.psira.ColorWheelView
+        android:id="@+id/colorWheelView"
+        android:layout_width="220dp"
+        android:layout_height="220dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="16dp" />
+
+    <!-- BRIGHTNESS / SHADE SLIDER -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="SHADE BRIGHTNESS &amp; DENSITY"
+        android:textColor="#00E5FF"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.08"
+        android:layout_marginBottom="6dp" />
+
+    <SeekBar
+        android:id="@+id/seekBrightness"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:progress="100"
+        android:progressTint="#00E5FF"
+        android:thumbTint="#FFFFFF"
+        android:layout_marginBottom="16dp" />
+
+    <!-- SPACE SCIENCE PRESETS -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="CELESTIAL &amp; SPACE SCIENCE PRESETS"
+        android:textColor="#00E5FF"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.08"
+        android:layout_marginBottom="8dp" />
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:layout_marginBottom="18dp">
+
+        <LinearLayout
+            android:id="@+id/layoutSpacePresets"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnPresetPulsar"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="🌌 Pulsar Cyan"
+                android:textSize="11sp"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/bg_circle_dark"
+                android:layout_marginEnd="6dp" />
+
+            <Button
+                android:id="@+id/btnPresetJwst"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="🛰️ JWST Gold"
+                android:textSize="11sp"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/bg_circle_dark"
+                android:layout_marginEnd="6dp" />
+
+            <Button
+                android:id="@+id/btnPresetNebula"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="🔭 Nebula Violet"
+                android:textSize="11sp"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/bg_circle_dark"
+                android:layout_marginEnd="6dp" />
+
+            <Button
+                android:id="@+id/btnPresetSupernova"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="💥 Supernova"
+                android:textSize="11sp"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/bg_circle_dark"
+                android:layout_marginEnd="6dp" />
+
+            <Button
+                android:id="@+id/btnPresetAurora"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="🌠 Aurora Green"
+                android:textSize="11sp"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/bg_circle_dark"
+                android:layout_marginEnd="6dp" />
+
+            <Button
+                android:id="@+id/btnPresetMars"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="🩸 Mars Crimson"
+                android:textSize="11sp"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/bg_circle_dark" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- APPLY BUTTON -->
+    <Button
+        android:id="@+id/btnApplyCustomColor"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:text="ACTIVATE CUSTOM ACCENT"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:background="@drawable/bg_rounded_primary" />
+
+</LinearLayout>

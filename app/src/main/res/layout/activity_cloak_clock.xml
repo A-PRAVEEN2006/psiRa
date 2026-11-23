@@ -1,15 +1,116 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000000">
+    android:orientation="vertical"
+    android:background="#0A0E17"
+    android:gravity="center_horizontal"
+    android:paddingStart="24dp"
+    android:paddingEnd="24dp"
+    android:paddingTop="36dp"
+    android:paddingBottom="24dp">
 
-    <com.project1.psira.AnalogClockView
-        android:id="@+id/analogClock"
-        android:layout_width="320dp"
-        android:layout_height="320dp"
-        android:layout_centerInParent="true" />
+    <!-- DIGITAL TIME HEADER -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="@drawable/bg_quoted_reply"
+        android:paddingTop="18dp"
+        android:paddingBottom="18dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp">
 
+        <TextClock
+            android:id="@+id/digitalClockTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:format12Hour="hh:mm:ss a"
+            android:format24Hour="HH:mm:ss"
+            android:textColor="#00E5FF"
+            android:textSize="36sp"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.05"
+            android:shadowColor="#8000E5FF"
+            android:shadowDx="0"
+            android:shadowDy="0"
+            android:shadowRadius="12" />
 
+        <TextClock
+            android:id="@+id/digitalClockDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:format12Hour="EEEE, MMMM d, yyyy"
+            android:format24Hour="EEEE, d MMMM yyyy"
+            android:textColor="#8B949E"
+            android:textSize="13sp"
+            android:letterSpacing="0.08"
+            android:textAllCaps="true"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
 
-</RelativeLayout>
+    <!-- ANALOG DIAL CLOCK -->
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_gravity="center">
+
+        <com.project1.psira.AnalogClockView
+            android:id="@+id/analogClock"
+            android:layout_width="290dp"
+            android:layout_height="290dp"
+            android:layout_gravity="center" />
+    </FrameLayout>
+
+    <!-- USER FOCUS MOTTO & CUSTOM PHRASE -->
+    <LinearLayout
+        android:id="@+id/layoutMotto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="@drawable/bg_quoted_reply"
+        android:paddingTop="14dp"
+        android:paddingBottom="14dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:clickable="true"
+        android:focusable="true">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tvFocusMotto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CONCENTRATE"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.2"
+                android:textAllCaps="true" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=" ✏️"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tap to edit personal motto • Rotate hands to set time"
+            android:textColor="#6E7681"
+            android:textSize="11sp"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+
+</LinearLayout>
