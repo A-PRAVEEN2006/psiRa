@@ -70,13 +70,19 @@ class DirectChatActivity : BaseActivity() {
         targetUid = intent.getStringExtra("TARGET_UID")
         targetName = intent.getStringExtra("TARGET_NAME")
 
-        if (targetUid == null) {
+        if (targetUid.isNullOrEmpty()) {
             Toast.makeText(this, "⚠ Secure link corrupted. Re-establish contact.", Toast.LENGTH_LONG).show()
             finish()
             return
         }
 
-        val myUid = FirebaseAuth.getInstance().currentUser!!.uid
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        if (currentUser == null) {
+            Toast.makeText(this, "⚠ Session expired. Please log in again.", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
+        val myUid = currentUser.uid
         val sharedPrefNick = getSharedPreferences("PsiRaNicknames", android.content.Context.MODE_PRIVATE)
         val personalNickname = sharedPrefNick.getString(targetUid, null)
         val displayName = personalNickname ?: targetName ?: "Unknown Agent"
@@ -431,7 +437,7 @@ class DirectChatActivity : BaseActivity() {
 
                 runOnUiThread {
                     progressDialog.dismiss()
-                    val myUid = FirebaseAuth.getInstance().currentUser!!.uid
+                    val myUid = FirebaseAuth.getInstance().currentUser?.uid ?: return@runOnUiThread
                     val senderName = FirebaseAuth.getInstance().currentUser?.displayName ?: "Unknown Agent"
                     sendMessage(base64String, "steg", false, senderName, myUid, false)
                     Toast.makeText(this@DirectChatActivity, "🕵️ Stego carrier transmitted!", Toast.LENGTH_SHORT).show()
@@ -709,7 +715,7 @@ class DirectChatActivity : BaseActivity() {
 
                 runOnUiThread {
                     progressDialog.dismiss()
-                    val myUid = FirebaseAuth.getInstance().currentUser!!.uid
+                    val myUid = FirebaseAuth.getInstance().currentUser?.uid ?: return@runOnUiThread
                     val user = FirebaseAuth.getInstance().currentUser
                     val senderName = user?.displayName ?: "Unknown Agent"
                     sendMessage(base64String, type, false, senderName, myUid, false)

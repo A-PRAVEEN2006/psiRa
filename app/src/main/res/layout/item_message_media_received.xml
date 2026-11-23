@@ -53,7 +53,8 @@
                 <View
                     android:id="@+id/viewQuoteAccent"
                     android:layout_width="3dp"
-                    android:layout_height="match_parent"
+                    android:layout_height="32dp"
+                    android:layout_gravity="center_vertical"
                     android:background="#A78BFA" />
 
                 <LinearLayout
