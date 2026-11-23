@@ -49,6 +49,9 @@ class DirectChatActivity : BaseActivity() {
     private var presenceRef: DatabaseReference? = null
     private var targetPresenceListener: ValueEventListener? = null
 
+    private val decryptedCache = HashMap<String, String>()
+    private val rawContentMap = HashMap<String, String>()
+
     private val pickMediaLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri != null) {
             val type = if (contentResolver.getType(uri)?.startsWith("image/") == true) "image" else "doc"
@@ -275,7 +278,8 @@ class DirectChatActivity : BaseActivity() {
             }
         }
 
-        val decryptedCache = HashMap<String, String>()
+        decryptedCache.clear()
+        rawContentMap.clear()
         val myDisplayName = FirebaseAuth.getInstance().currentUser?.displayName
 
         db.addValueEventListener(object : ValueEventListener {
@@ -291,11 +295,20 @@ class DirectChatActivity : BaseActivity() {
                     }
 
                     val rawContent = raw.content ?: ""
-                    val decryptedContent = decryptedCache.getOrPut(msgKey) {
+                    if (msgKey.isNotEmpty()) rawContentMap[msgKey] = rawContent
+
+                    val cached = decryptedCache[msgKey]
+                    val decryptedContent = if (cached != null) {
+                        cached
+                    } else {
                         val dec = ECDHKeyManager.decryptFromContact(
                             this@DirectChatActivity, targetUid!!, rawContent
                         )
-                        try { PsiRaConverter.decodeAny(dec) } catch (_: Exception) { dec }
+                        val decoded = try { PsiRaConverter.decodeAny(dec) } catch (e: Exception) { dec }
+                        if (decoded != rawContent) {
+                            decryptedCache[msgKey] = decoded
+                        }
+                        decoded
                     }
                     val msg = Message(
                         id = msgKey,
@@ -557,7 +570,10 @@ class DirectChatActivity : BaseActivity() {
             for (item in items) {
                 val f = item.split("|")
                 if (f.size >= 4) {
-                    messageList.add(Message(null, f[0], f[1], f[2] == "true", f[3]))
+                    val rawContent = f[1]
+                    val dec = ECDHKeyManager.decryptFromContact(this, targetUid!!, rawContent)
+                    val decoded = try { PsiRaConverter.decodeAny(dec) } catch (e: Exception) { dec }
+                    messageList.add(Message(null, f[0], decoded, f[2] == "true", f[3]))
                 }
             }
             messageAdapter.notifyDataSetChanged()
@@ -736,17 +752,20 @@ class DirectChatActivity : BaseActivity() {
         var updated = false
         for (i in 0 until messageList.size) {
             val msg = messageList[i]
-            if (msg.type == "text") {
-                val decrypted = ECDHKeyManager.decryptFromContact(this, target, msg.content ?: "")
-                val decoded = try { PsiRaConverter.decodeAny(decrypted) } catch (_: Exception) { decrypted }
-                if (decoded != msg.content) {
-                    messageList[i] = msg.copy(content = decoded)
-                    updated = true
+            val originalRaw = rawContentMap[msg.id] ?: msg.content ?: ""
+            val decrypted = ECDHKeyManager.decryptFromContact(this, target, originalRaw)
+            val decoded = try { PsiRaConverter.decodeAny(decrypted) } catch (_: Exception) { decrypted }
+            if (decoded != msg.content) {
+                if (!msg.id.isNullOrEmpty()) {
+                    decryptedCache[msg.id!!] = decoded
                 }
+                messageList[i] = msg.copy(content = decoded)
+                updated = true
             }
         }
         if (updated) {
             messageAdapter.notifyDataSetChanged()
+            saveLocalCache()
         }
     }
 }

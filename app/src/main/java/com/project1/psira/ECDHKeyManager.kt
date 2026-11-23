@@ -40,9 +40,30 @@ object ECDHKeyManager {
         "PsiRa_SharedNet__32ByteSecureKey".toByteArray(Charsets.UTF_8),
         "AES"
     )
+    private val SHARED_FALLBACK_KEY_V1 = javax.crypto.spec.SecretKeySpec(
+        "PsiRa_SharedNet_32ByteSecureKey!".toByteArray(Charsets.UTF_8),
+        "AES"
+    )
 
     // Cache stores Pair(theirPublicKeyB64, derivedSecretKey)
     private val sharedKeyCache = HashMap<String, Pair<String, SecretKey>>()
+
+    /** Instant local lookup for derived shared key from memory or persistent SharedPreferences */
+    fun getOrLoadSharedKey(context: Context, contactUid: String): SecretKey? {
+        sharedKeyCache[contactUid]?.let { return it.second }
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val savedKeyB64 = prefs.getString("derived_key_$contactUid", null)
+        val savedPubB64 = prefs.getString("derived_pub_$contactUid", null)
+        if (savedKeyB64 != null && savedPubB64 != null) {
+            try {
+                val keyBytes = Base64.decode(savedKeyB64, Base64.NO_WRAP)
+                val key = SecretKeySpec(keyBytes, "AES")
+                sharedKeyCache[contactUid] = Pair(savedPubB64, key)
+                return key
+            } catch (_: Exception) {}
+        }
+        return null
+    }
 
     // ── Key Pair Lifecycle ────────────────────────────────────────────────────
 
@@ -109,25 +130,46 @@ object ECDHKeyManager {
         onReady: (SecretKey) -> Unit,
         onError: (String) -> Unit
     ) {
+        val cachedKey = getOrLoadSharedKey(context, contactUid)
+        if (cachedKey != null) {
+            onReady(cachedKey)
+        }
+
         fetchContactPublicKey(contactUid) { theirPubB64 ->
             if (theirPubB64 == null) {
-                onError("Contact has no E2EE key. Ask them to open the app once.")
+                if (cachedKey == null) {
+                    onError("Contact has no E2EE key. Ask them to open the app once.")
+                }
                 return@fetchContactPublicKey
             }
             
             val cached = sharedKeyCache[contactUid]
             if (cached != null && cached.first == theirPubB64) {
-                onReady(cached.second)
+                if (cachedKey == null) onReady(cached.second)
                 return@fetchContactPublicKey
             }
 
-            try {
-                val key = computeSharedKey(context, theirPubB64)
-                sharedKeyCache[contactUid] = Pair(theirPubB64, key)
-                onReady(key)
-            } catch (e: Exception) {
-                onError("Key derivation failed: ${e.message}")
-            }
+            // Perform ECDH key computation in background thread so UI doesn't stutter
+            Thread {
+                try {
+                    val key = computeSharedKey(context, theirPubB64)
+                    sharedKeyCache[contactUid] = Pair(theirPubB64, key)
+                    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                    prefs.edit()
+                        .putString("derived_key_$contactUid", Base64.encodeToString(key.encoded, Base64.NO_WRAP))
+                        .putString("derived_pub_$contactUid", theirPubB64)
+                        .apply()
+                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                        onReady(key)
+                    }
+                } catch (e: Exception) {
+                    if (cachedKey == null) {
+                        android.os.Handler(android.os.Looper.getMainLooper()).post {
+                            onError("Key derivation failed: ${e.message}")
+                        }
+                    }
+                }
+            }.start()
         }
     }
 
@@ -161,8 +203,8 @@ object ECDHKeyManager {
     ): String {
         if (ciphertext.isEmpty()) return ""
 
-        // 1. Try ECDH-derived key first (best security)
-        val ecdhKey = sharedKeyCache[contactUid]?.second
+        // 1. Try ECDH-derived key first (memory or local persistent cache)
+        val ecdhKey = getOrLoadSharedKey(context, contactUid)
         if (ecdhKey != null) {
             try {
                 val res = AESEncryption.decryptWithKey(ciphertext, ecdhKey)
@@ -172,7 +214,7 @@ object ECDHKeyManager {
             } catch (_: Exception) {}
         }
 
-        // 2. Try shared static fallback key (cross-device, when ECDH not yet ready)
+        // 2. Try shared static fallback key (v2 32-byte)
         try {
             val res = AESEncryption.decryptWithKey(ciphertext, SHARED_FALLBACK_KEY)
             if (res.isNotEmpty() && res != ciphertext) {
@@ -180,7 +222,15 @@ object ECDHKeyManager {
             }
         } catch (_: Exception) {}
 
-        // 3. Try global group key (in case message was routed or encrypted with global key)
+        // 3. Try shared static fallback key (v1 legacy)
+        try {
+            val res = AESEncryption.decryptWithKey(ciphertext, SHARED_FALLBACK_KEY_V1)
+            if (res.isNotEmpty() && res != ciphertext) {
+                return try { PsiRaConverter.decodeAny(res) } catch (_: Exception) { res }
+            }
+        } catch (_: Exception) {}
+
+        // 4. Try global group key (in case message was routed or encrypted with global key)
         try {
             val res = AESEncryption.decryptWithKey(ciphertext, AESEncryption.GLOBAL_GROUP_KEY)
             if (res.isNotEmpty() && res != ciphertext) {
@@ -188,7 +238,7 @@ object ECDHKeyManager {
             }
         } catch (_: Exception) {}
 
-        // 4. Try AESEncryption.decrypt (AndroidKeyStore / legacy CBC)
+        // 5. Try AESEncryption.decrypt (AndroidKeyStore / legacy CBC)
         try {
             val res = AESEncryption.decrypt(ciphertext)
             if (res.isNotEmpty() && res != ciphertext) {
@@ -196,7 +246,7 @@ object ECDHKeyManager {
             }
         } catch (_: Exception) {}
 
-        // 5. Try legacy static CBC key directly
+        // 6. Try legacy static CBC key directly
         try {
             val res = legacyDecrypt(ciphertext)
             if (res.isNotEmpty() && res != ciphertext) {
@@ -204,7 +254,7 @@ object ECDHKeyManager {
             }
         } catch (_: Exception) {}
 
-        // 6. Last resort: check if message is plaintext in PsiRa cipher (e.g. unencrypted old era)
+        // 7. Last resort: check if message is plaintext in PsiRa cipher (e.g. unencrypted old era)
         return try { PsiRaConverter.decodeAny(ciphertext) } catch (_: Exception) { ciphertext }
     }
 
