@@ -1,51 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:background="#0A0A0E"
-    android:padding="24dp">
+    android:background="#000000">
 
-    <!-- Digital Time Display (Above) -->
-    <TextView
-        android:id="@+id/tvClockDate"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Monday, November 23"
-        android:textColor="#8E8E93"
-        android:textSize="14sp"
-        android:letterSpacing="0.05"
-        android:layout_marginBottom="4dp" />
-
-    <TextView
-        android:id="@+id/tvDigitalClock"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="10:45:00 AM"
-        android:textColor="#FFFFFF"
-        android:textSize="36sp"
-        android:textStyle="bold"
-        android:letterSpacing="0.02"
-        android:layout_marginBottom="28dp" />
-
-    <!-- Analog Clock Face (Center) -->
     <com.project1.psira.AnalogClockView
         android:id="@+id/analogClock"
-        android:layout_width="300dp"
-        android:layout_height="300dp"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="36dp" />
+        android:layout_width="320dp"
+        android:layout_height="320dp"
+        android:layout_centerInParent="true" />
 
-    <!-- Word (Below) -->
-    <TextView
-        android:id="@+id/tvConcentrateWord"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="CONCENTRATE"
-        android:textColor="#FF9500"
-        android:textSize="22sp"
-        android:textStyle="bold"
-        android:letterSpacing="0.3" />
 
-</LinearLayout>
+
+</RelativeLayout>

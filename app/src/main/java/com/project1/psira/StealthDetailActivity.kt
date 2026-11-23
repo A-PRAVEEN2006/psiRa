@@ -21,7 +21,6 @@ class StealthDetailActivity : BaseActivity() {
         findViewById<TextView>(R.id.tvGuide).text = logic.guide
 
         val btnSetPass = findViewById<Button>(R.id.btnSetPasscode)
-        val btnSetDecoy = findViewById<Button>(R.id.btnSetDecoy)
         val btnSetGate = findViewById<Button>(R.id.btnSetGateway)
         val btnBack = findViewById<Button>(R.id.btnBack)
 
@@ -44,21 +43,6 @@ class StealthDetailActivity : BaseActivity() {
                         }
                     }
                     Toast.makeText(this, "Unlock code saved.", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-
-        btnSetDecoy.setOnClickListener {
-            val input = EditText(this)
-            input.hint = "Example: ${logic.hint}"
-            input.setText(StealthManager.getDecoyPass(this, id))
-            input.setTextColor(android.graphics.Color.WHITE)
-
-            PsiRaDialogs.showDeleteSheet(this, "SET DECOY CODE", "Enter the decoy code to open innocent Decoy Notes (use when coerced to unlock).", "SAVE", input) {
-                val value = input.text.toString().trim()
-                if (value.isNotEmpty()) {
-                    StealthManager.setDecoyPass(this, id, value)
-                    Toast.makeText(this, "Decoy defense code saved.", Toast.LENGTH_SHORT).show()
                 }
             }
         }

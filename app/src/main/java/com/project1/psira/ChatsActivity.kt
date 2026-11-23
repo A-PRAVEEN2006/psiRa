@@ -178,7 +178,7 @@ class ChatsActivity : BaseActivity() {
                                                 rawContent
                                             }
                                             val decoded = try {
-                                                PsiRaConverter.decode(decrypted)
+                                                PsiRaConverter.decodeAny(decrypted)
                                             } catch (e: Exception) {
                                                 decrypted
                                             }

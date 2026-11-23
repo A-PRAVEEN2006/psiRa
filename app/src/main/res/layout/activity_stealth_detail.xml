@@ -83,21 +83,9 @@
             android:id="@+id/btnSetPasscode"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:text="CHANGE VAULT BYPASS (REAL)"
+            android:text="CHANGE VAULT BYPASS"
             android:backgroundTint="#1C1C1E"
             android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:layout_marginBottom="16dp"
-            android:gravity="start|center_vertical"
-            android:paddingStart="24dp"/>
-
-        <Button
-            android:id="@+id/btnSetDecoy"
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:text="CHANGE DECOY CODE (COERCION DEFENSE)"
-            android:backgroundTint="#1C1C1E"
-            android:textColor="#FF9500"
             android:textSize="16sp"
             android:layout_marginBottom="16dp"
             android:gravity="start|center_vertical"

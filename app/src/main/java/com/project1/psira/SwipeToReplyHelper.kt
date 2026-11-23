@@ -19,11 +19,7 @@ class SwipeToReplyHelper(
     private val onReply: (Message) -> Unit
 ) : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
 
-    private val replyIcon: Drawable? = try {
-        AppCompatResources.getDrawable(context, R.drawable.ic_reply_arrow)
-    } catch (_: Exception) {
-        null
-    }
+    private val replyIcon: Drawable? = AppCompatResources.getDrawable(context, android.R.drawable.ic_menu_revert)
     private val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
     }

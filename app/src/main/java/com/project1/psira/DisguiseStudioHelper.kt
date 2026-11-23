@@ -33,12 +33,7 @@ object DisguiseStudioHelper {
 
         val adapter = DisguiseAdapter(activity, StealthManager.LOGICS, currentCloak) { selectedLogic ->
             AliasManager.applyCloak(activity, selectedLogic.id)
-            val msg = if (selectedLogic.id == "GHOST") {
-                "👻 Ghost Mode Active: All icons hidden from home screen. Dial *#*#77472#*#* or open psira://open in browser to launch."
-            } else {
-                "🎭 Disguise switched to: ${selectedLogic.name}. Home screen icon will update."
-            }
-            Toast.makeText(activity, msg, Toast.LENGTH_LONG).show()
+            Toast.makeText(activity, "🎭 Disguise switched to: ${selectedLogic.name}. Home screen icon will update.", Toast.LENGTH_LONG).show()
             onDisguiseChanged()
             dialog.dismiss()
         }

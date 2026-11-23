@@ -88,11 +88,24 @@ class MessageAdapter(
         val context = holder.itemView.context
         val message = messageList[position]
 
-        val resolvedContent = if (alreadyDecrypted) {
+        val rawResolved = if (alreadyDecrypted) {
             message.content ?: ""
         } else {
-            try { AESEncryption.decryptWithKey(message.content ?: "", AESEncryption.GLOBAL_GROUP_KEY) }
-            catch (e: Exception) { message.content ?: "" }
+            try { 
+                AESEncryption.decryptWithKey(message.content ?: "", AESEncryption.GLOBAL_GROUP_KEY) 
+            } catch (e: Exception) {
+                try {
+                    AESEncryption.decrypt(message.content ?: "")
+                } catch (e2: Exception) {
+                    message.content ?: ""
+                }
+            }
+        }
+
+        val resolvedContent = if (message.type == "text") {
+            try { PsiRaConverter.decodeAny(rawResolved) } catch (_: Exception) { rawResolved }
+        } else {
+            rawResolved
         }
 
         // --- DATE HEADER LOGIC (WhatsApp-style group by day) ---

@@ -1,70 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#121212">
+    android:orientation="vertical"
+    android:background="#FFFFFF">
 
-    <LinearLayout
+    <TextView
+        android:id="@+id/tvMonth"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:text="Day Planner"
+        android:textSize="24sp"
+        android:textColor="#000000"
+        android:gravity="center"
+        android:padding="16dp"
+        android:background="#F5F5F5" />
 
-        <TextView
-            android:id="@+id/tvMonth"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Habit &amp; Day Planner"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:textColor="#FFFFFF"
-            android:layout_marginBottom="12dp" />
+    <CalendarView
+        android:id="@+id/calendarView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+    
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:text="No events scheduled for today."
+        android:textColor="#666666" />
 
-        <CalendarView
-            android:id="@+id/calendarView"
-            android:layout_width="match_parent"
-            android:layout_height="320dp"
-            android:theme="@style/ThemeOverlay.AppCompat.Dark"
-            android:background="#1E1E1E"
-            android:layout_marginBottom="16dp" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="8dp">
-
-            <TextView
-                android:id="@+id/tvSelectedDateHeader"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Schedule for Selected Date"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="#8E8E93" />
-
-            <Button
-                android:id="@+id/btnAddEvent"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="+ Add Task"
-                android:textSize="12sp"
-                android:backgroundTint="#007AFF"
-                android:textColor="#FFFFFF" />
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/tvEventList"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#1E1E1E"
-            android:padding="16dp"
-            android:lineSpacingExtra="6dp"
-            android:textColor="#E0E0E0"
-            android:textSize="14sp"
-            android:text="• 09:30 AM — Morning Standup &amp; Email Sync\n• 01:00 PM — Lunch &amp; Walk\n• 05:30 PM — Workout &amp; Stretching" />
-
-    </LinearLayout>
-</ScrollView>
+</LinearLayout>

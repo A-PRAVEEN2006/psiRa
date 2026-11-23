@@ -1,17 +1,27 @@
-# ProGuard & R8 Obfuscation Rules for PsiRa
+# Add project specific ProGuard rules here.
+# You can control the set of applied configuration files using the
+# proguardFiles setting in build.gradle.
+#
+# For more details, see
+#   http://developer.android.com/guide/developing/tools/proguard.html
 
-# Hide original source file names and line numbers
--renamesourcefileattribute SourceFile
--keepattributes SourceFile,LineNumberTable
+# If your project uses WebView with JS, uncomment the following
+# and specify the fully qualified class name to the JavaScript interface
+# class:
+#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
+#   public *;
+#}
 
-# Preserve annotations and generic signatures for reflection
--keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
+# Uncomment this to preserve the line number information for
+# debugging stack traces.
+#-keepattributes SourceFile,LineNumberTable
 
-# Firebase Database, Auth & Messaging reflection
+# Preserve Firebase data models and reflection mapping
 -keepattributes *Annotation*
--dontwarn com.google.firebase.**
--keep class com.google.firebase.** { *; }
-
-# Keep all PsiRa application classes & models intact
+-keepattributes Signature
+-keepclassmembers class * {
+    @com.google.firebase.database.IgnoreExtraProperties *;
+    @com.google.firebase.database.PropertyName *;
+}
 -keep class com.project1.psira.** { *; }
--keepclassmembers class com.project1.psira.** { *; }
+-keep class com.google.firebase.** { *; }

@@ -128,13 +128,17 @@ object AESEncryption {
      * Decrypts a value produced by [encryptWithKey].
      */
     fun decryptWithKey(value: String, key: javax.crypto.SecretKey): String {
-        val combined   = Base64.decode(value, Base64.NO_WRAP)
-        val iv         = combined.sliceArray(0 until IV_SIZE)
-        val ciphertext = combined.sliceArray(IV_SIZE until combined.size)
-        val spec       = GCMParameterSpec(GCM_TAG_LEN, iv)
-        val cipher     = Cipher.getInstance(ALGO)
-        cipher.init(Cipher.DECRYPT_MODE, key, spec)
-        return String(cipher.doFinal(ciphertext), Charsets.UTF_8)
+        return try {
+            val combined   = Base64.decode(value, Base64.NO_WRAP)
+            val iv         = combined.sliceArray(0 until IV_SIZE)
+            val ciphertext = combined.sliceArray(IV_SIZE until combined.size)
+            val spec       = GCMParameterSpec(GCM_TAG_LEN, iv)
+            val cipher     = Cipher.getInstance(ALGO)
+            cipher.init(Cipher.DECRYPT_MODE, key, spec)
+            String(cipher.doFinal(ciphertext), Charsets.UTF_8)
+        } catch (e: Exception) {
+            legacyDecrypt(value)
+        }
     }
 
     // ── Legacy Compatibility ──────────────────────────────────────────────────

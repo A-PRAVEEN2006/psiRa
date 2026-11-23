@@ -153,31 +153,71 @@ object ECDHKeyManager {
         })
     }
 
-    /** Decrypts [ciphertext] using the ECDH-derived key for [contactUid]. */
+    /** Decrypts [ciphertext] using the ECDH-derived key for [contactUid], with extensive era fallbacks. */
     fun decryptFromContact(
         context: Context,
         contactUid: String,
         ciphertext: String
     ): String {
+        if (ciphertext.isEmpty()) return ""
+
         // 1. Try ECDH-derived key first (best security)
         val ecdhKey = sharedKeyCache[contactUid]?.second
         if (ecdhKey != null) {
-            try { return AESEncryption.decryptWithKey(ciphertext, ecdhKey) } catch (_: Exception) {}
+            try {
+                val res = AESEncryption.decryptWithKey(ciphertext, ecdhKey)
+                if (res.isNotEmpty() && res != ciphertext) {
+                    return try { PsiRaConverter.decodeAny(res) } catch (_: Exception) { res }
+                }
+            } catch (_: Exception) {}
         }
 
         // 2. Try shared static fallback key (cross-device, when ECDH not yet ready)
-        try { return AESEncryption.decryptWithKey(ciphertext, SHARED_FALLBACK_KEY) } catch (_: Exception) {}
+        try {
+            val res = AESEncryption.decryptWithKey(ciphertext, SHARED_FALLBACK_KEY)
+            if (res.isNotEmpty() && res != ciphertext) {
+                return try { PsiRaConverter.decodeAny(res) } catch (_: Exception) { res }
+            }
+        } catch (_: Exception) {}
 
-        // 3. Try legacy static CBC key (very old messages from before Keystore upgrade)
-        return try { legacyDecrypt(ciphertext) } catch (_: Exception) { ciphertext }
+        // 3. Try global group key (in case message was routed or encrypted with global key)
+        try {
+            val res = AESEncryption.decryptWithKey(ciphertext, AESEncryption.GLOBAL_GROUP_KEY)
+            if (res.isNotEmpty() && res != ciphertext) {
+                return try { PsiRaConverter.decodeAny(res) } catch (_: Exception) { res }
+            }
+        } catch (_: Exception) {}
+
+        // 4. Try AESEncryption.decrypt (AndroidKeyStore / legacy CBC)
+        try {
+            val res = AESEncryption.decrypt(ciphertext)
+            if (res.isNotEmpty() && res != ciphertext) {
+                return try { PsiRaConverter.decodeAny(res) } catch (_: Exception) { res }
+            }
+        } catch (_: Exception) {}
+
+        // 5. Try legacy static CBC key directly
+        try {
+            val res = legacyDecrypt(ciphertext)
+            if (res.isNotEmpty() && res != ciphertext) {
+                return try { PsiRaConverter.decodeAny(res) } catch (_: Exception) { res }
+            }
+        } catch (_: Exception) {}
+
+        // 6. Last resort: check if message is plaintext in PsiRa cipher (e.g. unencrypted old era)
+        return try { PsiRaConverter.decodeAny(ciphertext) } catch (_: Exception) { ciphertext }
     }
 
     private fun legacyDecrypt(ciphertext: String): String {
-        val legacyKey = javax.crypto.spec.SecretKeySpec("PSIRA_SECRET_KEY".toByteArray(), "AES")
-        val legacyIv  = javax.crypto.spec.IvParameterSpec("PSIRA_SECURE__IV".toByteArray())
-        val cipher    = javax.crypto.Cipher.getInstance("AES/CBC/PKCS5Padding")
-        cipher.init(javax.crypto.Cipher.DECRYPT_MODE, legacyKey, legacyIv)
-        return String(cipher.doFinal(android.util.Base64.decode(ciphertext, android.util.Base64.DEFAULT)))
+        return try {
+            val legacyKey = javax.crypto.spec.SecretKeySpec("PSIRA_SECRET_KEY".toByteArray(), "AES")
+            val legacyIv  = javax.crypto.spec.IvParameterSpec("PSIRA_SECURE__IV".toByteArray())
+            val cipher    = javax.crypto.Cipher.getInstance("AES/CBC/PKCS5Padding")
+            cipher.init(javax.crypto.Cipher.DECRYPT_MODE, legacyKey, legacyIv)
+            String(cipher.doFinal(android.util.Base64.decode(ciphertext, android.util.Base64.DEFAULT)))
+        } catch (e: Exception) {
+            ciphertext
+        }
     }
 
     // ── Internal ──────────────────────────────────────────────────────────────

@@ -114,7 +114,7 @@ class UpdateManager(private val activity: Activity) {
     private fun startApkDownload(apkUrl: String) {
         val downloadManager = activity.getSystemService(Context.DOWNLOAD_SERVICE) as android.app.DownloadManager
         val request = android.app.DownloadManager.Request(Uri.parse(apkUrl)).apply {
-            setTitle("Downloading System Update")
+            setTitle("Downloading PsiRa Update")
             setDescription("Fetching latest release...")
             setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             setDestinationInExternalFilesDir(activity, Environment.DIRECTORY_DOWNLOADS, "update.apk")

@@ -292,9 +292,10 @@ class DirectChatActivity : BaseActivity() {
 
                     val rawContent = raw.content ?: ""
                     val decryptedContent = decryptedCache.getOrPut(msgKey) {
-                        ECDHKeyManager.decryptFromContact(
+                        val dec = ECDHKeyManager.decryptFromContact(
                             this@DirectChatActivity, targetUid!!, rawContent
                         )
+                        try { PsiRaConverter.decodeAny(dec) } catch (_: Exception) { dec }
                     }
                     val msg = Message(
                         id = msgKey,
@@ -737,8 +738,9 @@ class DirectChatActivity : BaseActivity() {
             val msg = messageList[i]
             if (msg.type == "text") {
                 val decrypted = ECDHKeyManager.decryptFromContact(this, target, msg.content ?: "")
-                if (decrypted != msg.content) {
-                    messageList[i] = msg.copy(content = decrypted)
+                val decoded = try { PsiRaConverter.decodeAny(decrypted) } catch (_: Exception) { decrypted }
+                if (decoded != msg.content) {
+                    messageList[i] = msg.copy(content = decoded)
                     updated = true
                 }
             }
