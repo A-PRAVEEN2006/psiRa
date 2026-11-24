@@ -543,7 +543,7 @@ class SettingsActivity : BaseActivity() {
 
     private fun showAbout() {
         val about = """
-            PsiRa | Enclave Build v3.5.0
+            PsiRa | Enclave Build v3.5.1
             ----------------------------
             THE SPECTRE ENCLAVE:
             Military-grade, zero-trace end-to-end encrypted communication enclave.

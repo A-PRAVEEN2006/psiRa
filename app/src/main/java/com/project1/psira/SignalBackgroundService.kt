@@ -70,35 +70,25 @@ class SignalBackgroundService : Service() {
             return START_NOT_STICKY
         }
 
-        // 1. Initialize foreground to satisfy Android background start policy
+        // 1. Maintain silent low-priority foreground notification to keep background sync alive
         val notification = buildSyncNotification()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(NOTIF_SYNC_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
-        } else {
-            startForeground(NOTIF_SYNC_ID, notification)
-        }
-
-        // 2. Immediately dismiss the persistent status notification so tray stays completely clean like WhatsApp/Telegram!
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            stopForeground(STOP_FOREGROUND_REMOVE)
-        } else {
-            @Suppress("DEPRECATION")
-            stopForeground(true)
-        }
         try {
-            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            manager.cancel(NOTIF_SYNC_ID)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(NOTIF_SYNC_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+            } else {
+                startForeground(NOTIF_SYNC_ID, notification)
+            }
         } catch (e: Exception) {
-            Log.w("SignalSync", "Failed to cancel sync notification: ${e.message}")
+            Log.w("SignalSync", "Failed to startForeground: ${e.message}")
         }
 
-        // 3. Initialize and start real-time listener for incoming messages
+        // 2. Initialize and start real-time listener for incoming messages
         if (signalManager == null) {
             signalManager = SignalNotificationManager(applicationContext)
             signalManager?.startListening()
         }
 
-        // 4. Ensure FCM token is kept up to date
+        // 3. Ensure FCM token is kept up to date
         syncFcmToken()
 
         return START_STICKY
@@ -158,7 +148,8 @@ class SignalBackgroundService : Service() {
             .setContentTitle(title)
             .setContentText(text)
             .setContentIntent(pendingIntent)
-            .setOngoing(false)
+            .setOngoing(true)
+            .setSilent(true)
             .setPriority(NotificationCompat.PRIORITY_MIN)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .build()
@@ -166,27 +157,13 @@ class SignalBackgroundService : Service() {
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
-        if (FirebaseAuth.getInstance().currentUser != null) {
-            val restartIntent = Intent(applicationContext, SignalBackgroundService::class.java).apply {
-                action = ACTION_START_SYNC
-            }
-            val restartPendingIntent = PendingIntent.getService(
-                applicationContext, 101, restartIntent,
-                PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
-            )
-            val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            alarmManager.set(
-                AlarmManager.ELAPSED_REALTIME,
-                SystemClock.elapsedRealtime() + 1000,
-                restartPendingIntent
-            )
-        }
+        // Clean lifecycle without scheduling illegal background alarms on Android 12+
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        if (FirebaseAuth.getInstance().currentUser != null) {
-            start(applicationContext)
-        }
+        try {
+            signalManager = null
+        } catch (_: Exception) {}
     }
 }

@@ -228,14 +228,20 @@ class SignalNotificationManager(private val context: Context) {
 
         // Show in-app banner if active in foreground
         val foregroundActivity = BaseActivity.currentActivity
-        if (foregroundActivity != null && !foregroundActivity.isFinishing) {
+        if (foregroundActivity != null && !foregroundActivity.isFinishing && !foregroundActivity.isDestroyed) {
             Handler(Looper.getMainLooper()).post {
-                InAppNotificationBanner.show(foregroundActivity, senderName, preview) {
-                    val intent = Intent(foregroundActivity, DirectChatActivity::class.java).apply {
-                        putExtra("TARGET_UID", senderUid)
-                        putExtra("TARGET_NAME", senderName)
+                try {
+                    if (foregroundActivity != null && !foregroundActivity.isFinishing && !foregroundActivity.isDestroyed) {
+                        InAppNotificationBanner.show(foregroundActivity, senderName, preview) {
+                            val intent = Intent(foregroundActivity, DirectChatActivity::class.java).apply {
+                                putExtra("TARGET_UID", senderUid)
+                                putExtra("TARGET_NAME", senderName)
+                            }
+                            foregroundActivity.startActivity(intent)
+                        }
                     }
-                    foregroundActivity.startActivity(intent)
+                } catch (e: Exception) {
+                    Log.w("SignalNotif", "Banner display error: ${e.message}")
                 }
             }
         }

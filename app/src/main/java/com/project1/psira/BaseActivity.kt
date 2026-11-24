@@ -118,18 +118,27 @@ open class BaseActivity : AppCompatActivity() {
         // Cancel any pending lock when coming back to foreground
         lockHandler.removeCallbacks(lockRunnable)
 
-        // If the app was locked while in background, force re-authentication
+        // If the app was locked while in background, force re-authentication or disguise
         if (isAppLocked && this !is LoginActivity && this !is DisguiseActivity) {
             isAppLocked = false
-            startActivity(Intent(this, LoginActivity::class.java).apply {
+            val isCamouflage = NotificationHelper.isCamouflageEnabled(this)
+            val destination = if (isCamouflage) DisguiseActivity::class.java else LoginActivity::class.java
+            startActivity(Intent(this, destination).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             })
+            finish()
             return
         }
 
-        // Ensure E2EE keys exist for this device (idempotent — safe to call every time)
+        // Ensure E2EE keys exist for this device (asynchronously offloaded to prevent ANR)
         if (com.google.firebase.auth.FirebaseAuth.getInstance().currentUser != null) {
-            ECDHKeyManager.initializeKeys(this)
+            Thread {
+                try {
+                    ECDHKeyManager.initializeKeys(this)
+                } catch (e: Exception) {
+                    android.util.Log.w("BaseActivity", "Key initialization background error: ${e.message}")
+                }
+            }.start()
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -172,7 +181,8 @@ open class BaseActivity : AppCompatActivity() {
         if (startedActivitiesCount <= 0) {
             updatePresence(false)
             startedActivitiesCount = 0
-            // Start the auto-lock countdown when app goes to background
+            // Clear and start the auto-lock countdown when app goes to background
+            lockHandler.removeCallbacks(lockRunnable)
             lockHandler.postDelayed(lockRunnable, AUTO_LOCK_DELAY_MS)
         }
     }
