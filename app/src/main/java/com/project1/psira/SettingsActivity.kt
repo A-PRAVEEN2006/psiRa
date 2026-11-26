@@ -554,16 +554,38 @@ class SettingsActivity : BaseActivity() {
 
         // 6. Theme Badge
         val theme = sharedPref.getString("APP_THEME", "MIDNIGHT") ?: "MIDNIGHT"
-        tvThemeActiveValue?.text = theme
+        val customHex = sharedPref.getString("CUSTOM_ACCENT_HEX", "#FFB300") ?: "#FFB300"
+        tvThemeActiveValue?.text = if (theme.equals("CUSTOM", ignoreCase = true)) "CUSTOM ($customHex)" else theme
 
         // 7. UI Style Badge
         val uiStyle = sharedPref.getString("UI_STYLE", "LIQUID_GLASS") ?: "LIQUID_GLASS"
         tvUiStyleActiveValue?.text = uiStyle.replace("_", " ")
+
+        // 8. Apply dynamic accent color to Settings badges & section headers
+        val accentColor = DynamicThemeEngine.getAccentColor(this)
+        tvThemeActiveValue?.setTextColor(accentColor)
+        tvUiStyleActiveValue?.setTextColor(accentColor)
+        tvCloakActiveValue?.setTextColor(accentColor)
+        tvLogicConfigValue?.setTextColor(accentColor)
+        applyAccentToSettingsHeaders(accentColor)
+    }
+
+    private fun applyAccentToSettingsHeaders(accentColor: Int) {
+        val root = findViewById<android.view.ViewGroup>(android.R.id.content)?.getChildAt(0) ?: return
+        val headers = setOf("PROFILE", "PRIVACY & DISGUISE", "APPEARANCE", "NETWORK & SECURITY", "DANGER ZONE", "INFO")
+        fun walk(v: View) {
+            if (v is TextView && v.text?.toString() in headers) {
+                v.setTextColor(accentColor)
+            } else if (v is android.view.ViewGroup) {
+                for (i in 0 until v.childCount) walk(v.getChildAt(i))
+            }
+        }
+        walk(root)
     }
 
     private fun showAbout() {
         val about = """
-            PsiRa | Enclave Build v3.5.3
+            PsiRa | Enclave Build v3.5.4
             ----------------------------
             THE SPECTRE ENCLAVE:
             Military-grade, zero-trace end-to-end encrypted communication enclave.

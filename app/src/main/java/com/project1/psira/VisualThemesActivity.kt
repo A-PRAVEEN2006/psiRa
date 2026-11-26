@@ -154,6 +154,11 @@ class VisualThemesActivity : BaseActivity() {
             applyUiStyle("MERCURY", "Mercury Chrome")
         }
         cardStyleCosmos.setOnClickListener {
+            activeTheme = "COSMOS"
+            getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE).edit {
+                putString("APP_THEME", "COSMOS")
+                putBoolean("IS_DARK_MODE", true)
+            }
             applyUiStyle("COSMOS", "Deep Cosmos (Space Science Telemetry)")
         }
 
@@ -261,6 +266,33 @@ class VisualThemesActivity : BaseActivity() {
         cardThemeCobalt.setBackgroundResource(if (rbThemeCobalt.isChecked) R.drawable.bg_card_visual_style_selected else R.drawable.bg_card_visual_style)
         cardThemeObsidian.setBackgroundResource(if (rbThemeObsidian.isChecked) R.drawable.bg_card_visual_style_selected else R.drawable.bg_card_visual_style)
         cardThemeDesert.setBackgroundResource(if (rbThemeDesert.isChecked) R.drawable.bg_card_visual_style_selected else R.drawable.bg_card_visual_style)
+
+        // 4. Live-apply DynamicThemeEngine colors, background, typography & accent glow to this screen
+        val palette = DynamicThemeEngine.getPalette(this)
+        try {
+            window.statusBarColor = palette.backgroundColor
+            window.navigationBarColor = palette.backgroundColor
+            val rootView = findViewById<android.view.ViewGroup>(android.R.id.content)?.getChildAt(0)
+            if (rootView != null) {
+                if (palette.bgStyle == "COSMOS_NEBULA" && palette.uiStyle != "OLED" && palette.uiStyle != "OLED_STEALTH") {
+                    val topGlow = DynamicThemeEngine.blendColors(palette.backgroundColor, palette.accentColor, 0.22f)
+                    rootView.background = GradientDrawable(
+                        GradientDrawable.Orientation.TOP_BOTTOM,
+                        intArrayOf(topGlow, palette.backgroundColor, palette.backgroundColor)
+                    )
+                } else {
+                    rootView.setBackgroundColor(palette.backgroundColor)
+                }
+            }
+            // Tint Live Preview pill with active accent
+            findViewById<View>(R.id.btnLivePreview)?.background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = 40f
+                setColor(Color.argb(36, Color.red(palette.accentColor), Color.green(palette.accentColor), Color.blue(palette.accentColor)))
+                setStroke(2, palette.accentColor)
+            }
+        } catch (_: Exception) {}
+        DynamicThemeEngine.applyToActivity(this)
     }
 
     private fun highlightTab(selectedTab: LinearLayout) {
@@ -334,6 +366,7 @@ class VisualThemesActivity : BaseActivity() {
                     }
                     1 -> {
                         prefs.edit { putBoolean("CYBER_GLOW_ENABLED", !isGlow) }
+                        refreshUI()
                         Toast.makeText(this, "Cyber Glow: ${if (!isGlow) "HIGH GLOW" else "SUBTLE"}", Toast.LENGTH_SHORT).show()
                     }
                 }
@@ -356,6 +389,7 @@ class VisualThemesActivity : BaseActivity() {
             .setSingleChoiceItems(fonts, selectedIndex) { d, which ->
                 val chosen = values[which]
                 prefs.edit { putString("APP_FONT_STYLE", chosen) }
+                refreshUI()
                 Toast.makeText(this, "Typography updated: ${fonts[which]}", Toast.LENGTH_SHORT).show()
                 d.dismiss()
             }
@@ -377,6 +411,7 @@ class VisualThemesActivity : BaseActivity() {
             .setSingleChoiceItems(bgs, selectedIndex) { d, which ->
                 val chosen = values[which]
                 prefs.edit { putString("APP_BACKGROUND_STYLE", chosen) }
+                refreshUI()
                 Toast.makeText(this, "Background updated: ${bgs[which]}", Toast.LENGTH_SHORT).show()
                 d.dismiss()
             }
