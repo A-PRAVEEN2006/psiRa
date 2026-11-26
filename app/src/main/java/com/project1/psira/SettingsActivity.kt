@@ -146,10 +146,10 @@ class SettingsActivity : BaseActivity() {
         btnDoubleLayer.setOnClickListener { toggleDoubleLayer() }
         btnScreenshotControl?.setOnClickListener { toggleScreenshotControl() }
         btnThemeSelection.setOnClickListener { 
-            ThemeStudioHelper.showStudio(this) { updateSettingBadges() }
+            startActivity(Intent(this, VisualThemesActivity::class.java))
         }
         btnUiStyleSelection?.setOnClickListener {
-            ThemeStudioHelper.showStudio(this) { updateSettingBadges() }
+            startActivity(Intent(this, VisualThemesActivity::class.java))
         }
 
         btnToggleTor.setOnClickListener {
@@ -563,7 +563,7 @@ class SettingsActivity : BaseActivity() {
 
     private fun showAbout() {
         val about = """
-            PsiRa | Enclave Build v3.5.2
+            PsiRa | Enclave Build v3.5.3
             ----------------------------
             THE SPECTRE ENCLAVE:
             Military-grade, zero-trace end-to-end encrypted communication enclave.

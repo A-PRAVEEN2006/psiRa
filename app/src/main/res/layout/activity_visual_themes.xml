@@ -1,0 +1,1041 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#070913">
+
+    <!-- Top App Bar -->
+    <LinearLayout
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="36dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="12dp">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_centerVertical="true"
+                android:background="@drawable/bg_circle_dark"
+                android:src="@android:drawable/ic_menu_revert"
+                app:tint="#FFFFFF"
+                android:contentDescription="Back" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🎨 "
+                    android:textSize="20sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="VISUAL THEMES &amp; UI STYLES"
+                    android:textColor="#FFFFFF"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.04" />
+            </LinearLayout>
+
+            <ImageButton
+                android:id="@+id/btnSettingsGear"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="@drawable/bg_circle_dark"
+                android:src="@android:drawable/ic_menu_manage"
+                app:tint="#FFFFFF"
+                android:contentDescription="Settings" />
+        </RelativeLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="Choose your tactical accent color and visual presentation style below."
+            android:textColor="#9EADC8"
+            android:textSize="12sp" />
+
+        <View
+            android:layout_width="60dp"
+            android:layout_height="3dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_tab_active_pill" />
+    </LinearLayout>
+
+    <!-- Scrollable Content -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/nestedScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/topBar"
+        android:clipToPadding="false"
+        android:paddingBottom="100dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
+
+            <!-- Section 1 Header: UI DESIGN STYLE -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="12dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="⛶ "
+                        android:textColor="#00E5FF"
+                        android:textSize="16sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="UI DESIGN STYLE"
+                        android:textColor="#FFFFFF"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.08" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/btnLivePreview"
+                    android:layout_width="wrap_content"
+                    android:layout_height="34dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/bg_live_preview_btn"
+                    android:gravity="center"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="👁 Live Preview"
+                        android:textColor="#00E5FF"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </RelativeLayout>
+
+            <!-- 2-Column Grid: Styles Row 1 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:weightSum="2">
+
+                <!-- Liquid Glass Card -->
+                <RelativeLayout
+                    android:id="@+id/cardStyleGlass"
+                    android:layout_width="0dp"
+                    android:layout_height="96dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/bg_card_visual_style_selected"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:id="@+id/iconGlass"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:text="🪟"
+                        android:gravity="center"
+                        android:textSize="20sp" />
+
+                    <TextView
+                        android:id="@+id/badgeStyleGlass"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_alignParentEnd="true"
+                        android:background="@drawable/bg_circle_green"
+                        android:text="✓"
+                        android:gravity="center"
+                        android:textColor="#000000"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvGlassTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/iconGlass"
+                        android:layout_marginTop="6dp"
+                        android:text="Liquid Glass"
+                        android:textColor="#FFFFFF"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/tvGlassTitle"
+                        android:text="Modern • Glassmorphism"
+                        android:textColor="#00E5FF"
+                        android:textSize="10sp" />
+                </RelativeLayout>
+
+                <!-- Tactical Cyber Card -->
+                <RelativeLayout
+                    android:id="@+id/cardStyleCyber"
+                    android:layout_width="0dp"
+                    android:layout_height="96dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/bg_card_visual_style"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:id="@+id/iconCyber"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:text="🎯"
+                        android:gravity="center"
+                        android:textSize="20sp" />
+
+                    <TextView
+                        android:id="@+id/badgeStyleCyber"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_alignParentEnd="true"
+                        android:background="@drawable/bg_circle_green"
+                        android:text="✓"
+                        android:gravity="center"
+                        android:textColor="#000000"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/tvCyberTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/iconCyber"
+                        android:layout_marginTop="6dp"
+                        android:text="Tactical Cyber"
+                        android:textColor="#FFFFFF"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/tvCyberTitle"
+                        android:text="Hacker • HUD • Military"
+                        android:textColor="#00E676"
+                        android:textSize="10sp" />
+                </RelativeLayout>
+            </LinearLayout>
+
+            <!-- 2-Column Grid: Styles Row 2 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal"
+                android:weightSum="2">
+
+                <!-- OLED Stealth Card -->
+                <RelativeLayout
+                    android:id="@+id/cardStyleOled"
+                    android:layout_width="0dp"
+                    android:layout_height="96dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/bg_card_visual_style"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:id="@+id/iconOled"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:text="🌑"
+                        android:gravity="center"
+                        android:textSize="20sp" />
+
+                    <TextView
+                        android:id="@+id/badgeStyleOled"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_alignParentEnd="true"
+                        android:background="@drawable/bg_circle_green"
+                        android:text="✓"
+                        android:gravity="center"
+                        android:textColor="#000000"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/tvOledTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/iconOled"
+                        android:layout_marginTop="6dp"
+                        android:text="OLED Stealth"
+                        android:textColor="#FFFFFF"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/tvOledTitle"
+                        android:text="Pure Black • Minimal • OLED"
+                        android:textColor="#B0BEC5"
+                        android:textSize="10sp" />
+                </RelativeLayout>
+
+                <!-- Mercury Chrome Card -->
+                <RelativeLayout
+                    android:id="@+id/cardStyleMercury"
+                    android:layout_width="0dp"
+                    android:layout_height="96dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/bg_card_visual_style"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:id="@+id/iconMercury"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:text="🪞"
+                        android:gravity="center"
+                        android:textSize="20sp" />
+
+                    <TextView
+                        android:id="@+id/badgeStyleMercury"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_alignParentEnd="true"
+                        android:background="@drawable/bg_circle_green"
+                        android:text="✓"
+                        android:gravity="center"
+                        android:textColor="#000000"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/tvMercuryTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/iconMercury"
+                        android:layout_marginTop="6dp"
+                        android:text="Mercury Chrome"
+                        android:textColor="#FFFFFF"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/tvMercuryTitle"
+                        android:text="Futuristic • Metallic • Clean"
+                        android:textColor="#ECEFF1"
+                        android:textSize="10sp" />
+                </RelativeLayout>
+            </LinearLayout>
+
+            <!-- Full Width Card: Deep Cosmos (Space Science Telemetry) -->
+            <RelativeLayout
+                android:id="@+id/cardStyleCosmos"
+                android:layout_width="match_parent"
+                android:layout_height="78dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_card_cosmos"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="14dp">
+
+                <TextView
+                    android:id="@+id/iconCosmos"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:text="🚀"
+                    android:gravity="center"
+                    android:textSize="24sp" />
+
+                <TextView
+                    android:id="@+id/badgeStyleCosmos"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_alignParentEnd="true"
+                    android:background="@drawable/bg_circle_green"
+                    android:text="✓"
+                    android:gravity="center"
+                    android:textColor="#000000"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_toEndOf="@id/iconCosmos"
+                    android:layout_centerVertical="true"
+                    android:orientation="vertical"
+                    android:paddingStart="12dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Deep Cosmos (Space Science Telemetry)"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Space • Telemetry • Sci-Fi"
+                        android:textColor="#B388FF"
+                        android:textSize="11sp" />
+                </LinearLayout>
+            </RelativeLayout>
+
+            <!-- Full Width Card: Custom Color Wheel Studio -->
+            <RelativeLayout
+                android:id="@+id/cardCustomColorWheel"
+                android:layout_width="match_parent"
+                android:layout_height="84dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_card_color_wheel"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="12dp">
+
+                <TextView
+                    android:id="@+id/iconWheel"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_centerVertical="true"
+                    android:text="🌈"
+                    android:gravity="center"
+                    android:textSize="26sp" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_toEndOf="@id/iconWheel"
+                    android:layout_toStartOf="@+id/btnCustomizeWheel"
+                    android:layout_centerVertical="true"
+                    android:orientation="vertical"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🎨 Custom Color Wheel Studio"
+                        android:textColor="#FFFFFF"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="2dp">
+
+                        <View
+                            android:id="@+id/viewCustomColorDot"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:background="@drawable/bg_circle_green" />
+
+                        <TextView
+                            android:id="@+id/tvCustomColorHex"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Current: #FFB300"
+                            android:textColor="#FFD54F"
+                            android:textSize="11sp"
+                            android:paddingStart="6dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tap to open an infinite 360° color wheel"
+                        android:textColor="#8899A6"
+                        android:textSize="10sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/btnCustomizeWheel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/bg_card_color_wheel"
+                    android:gravity="center"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:text="Customize →"
+                    android:textColor="#FFB300"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </RelativeLayout>
+
+            <!-- Section 2 Header: ACCENT COLOR PALETTE -->
+            <RelativeLayout
+                android:id="@+id/headerAccentPalette"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="12dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="💧 "
+                        android:textColor="#B388FF"
+                        android:textSize="16sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ACCENT COLOR PALETTE"
+                        android:textColor="#FFFFFF"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.08" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:text="⛶"
+                    android:textColor="#607D8B"
+                    android:textSize="16sp" />
+            </RelativeLayout>
+
+            <!-- Palette Item 1: Midnight Amethyst -->
+            <RelativeLayout
+                android:id="@+id/cardThemeMidnight"
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/bg_card_visual_style_selected"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp">
+
+                <View
+                    android:id="@+id/orbMidnight"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/bg_orb_midnight" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_toEndOf="@id/orbMidnight"
+                    android:layout_toStartOf="@+id/rbThemeMidnight"
+                    android:layout_centerVertical="true"
+                    android:orientation="vertical"
+                    android:paddingStart="14dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Midnight Amethyst"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="#B388FF • Royal Cryptography &amp; Purple Glow"
+                        android:textColor="#B388FF"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <RadioButton
+                    android:id="@+id/rbThemeMidnight"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:checked="true"
+                    android:clickable="false" />
+            </RelativeLayout>
+
+            <!-- Palette Item 2: Emerald Shadow -->
+            <RelativeLayout
+                android:id="@+id/cardThemeEmerald"
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/bg_card_visual_style"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp">
+
+                <View
+                    android:id="@+id/orbEmerald"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/bg_orb_emerald" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_toEndOf="@id/orbEmerald"
+                    android:layout_toStartOf="@+id/rbThemeEmerald"
+                    android:layout_centerVertical="true"
+                    android:orientation="vertical"
+                    android:paddingStart="14dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Emerald Shadow"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="#00E676 • Matrix Cyber Green &amp; Tactical HUD"
+                        android:textColor="#00E676"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <RadioButton
+                    android:id="@+id/rbThemeEmerald"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:checked="false"
+                    android:clickable="false" />
+            </RelativeLayout>
+
+            <!-- Palette Item 3: Ruby Protocol -->
+            <RelativeLayout
+                android:id="@+id/cardThemeRuby"
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/bg_card_visual_style"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp">
+
+                <View
+                    android:id="@+id/orbRuby"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/bg_orb_ruby" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_toEndOf="@id/orbRuby"
+                    android:layout_toStartOf="@+id/rbThemeRuby"
+                    android:layout_centerVertical="true"
+                    android:orientation="vertical"
+                    android:paddingStart="14dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Ruby Protocol"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="#FF1744 • High-Threat Red Alert &amp; Warning Glow"
+                        android:textColor="#FF1744"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <RadioButton
+                    android:id="@+id/rbThemeRuby"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:checked="false"
+                    android:clickable="false" />
+            </RelativeLayout>
+
+            <!-- Palette Item 4: Cobalt Sky -->
+            <RelativeLayout
+                android:id="@+id/cardThemeCobalt"
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/bg_card_visual_style"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp">
+
+                <View
+                    android:id="@+id/orbCobalt"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/bg_orb_cobalt" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_toEndOf="@id/orbCobalt"
+                    android:layout_toStartOf="@+id/rbThemeCobalt"
+                    android:layout_centerVertical="true"
+                    android:orientation="vertical"
+                    android:paddingStart="14dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Cobalt Sky"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="#2979FF • Deep-Sea Navy &amp; Cyber Defense Blue"
+                        android:textColor="#2979FF"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <RadioButton
+                    android:id="@+id/rbThemeCobalt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:checked="false"
+                    android:clickable="false" />
+            </RelativeLayout>
+
+            <!-- Palette Item 5: Obsidian Cyan -->
+            <RelativeLayout
+                android:id="@+id/cardThemeObsidian"
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/bg_card_visual_style"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp">
+
+                <View
+                    android:id="@+id/orbObsidian"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/bg_orb_obsidian" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_toEndOf="@id/orbObsidian"
+                    android:layout_toStartOf="@+id/rbThemeObsidian"
+                    android:layout_centerVertical="true"
+                    android:orientation="vertical"
+                    android:paddingStart="14dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Obsidian Cyan"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="#00FFFF • High-Contrast Pure Neon Cyan"
+                        android:textColor="#00FFFF"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <RadioButton
+                    android:id="@+id/rbThemeObsidian"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:checked="false"
+                    android:clickable="false" />
+            </RelativeLayout>
+
+            <!-- Palette Item 6: Desert Amber -->
+            <RelativeLayout
+                android:id="@+id/cardThemeDesert"
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/bg_card_visual_style"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp">
+
+                <View
+                    android:id="@+id/orbDesert"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/bg_orb_desert" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_toEndOf="@id/orbDesert"
+                    android:layout_toStartOf="@+id/rbThemeDesert"
+                    android:layout_centerVertical="true"
+                    android:orientation="vertical"
+                    android:paddingStart="14dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Desert Amber"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="#FFD600 • Military Tactical Gold &amp; Sand Grid"
+                        android:textColor="#FFD600"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <RadioButton
+                    android:id="@+id/rbThemeDesert"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:checked="false"
+                    android:clickable="false" />
+            </RelativeLayout>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Floating Bottom Navigation Bar -->
+    <LinearLayout
+        android:id="@+id/bottomFloatingBar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_bottom_nav_pill"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:weightSum="5">
+
+        <!-- Tab Themes (Active) -->
+        <LinearLayout
+            android:id="@+id/tabThemes"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_tab_active_pill"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:id="@+id/iconTabThemes"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="✨"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/tvTabThemes"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Themes"
+                android:textColor="#B388FF"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Tab Colors -->
+        <LinearLayout
+            android:id="@+id/tabColors"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🎨"
+                android:textSize="14sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Colors"
+                android:textColor="#8899A6"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <!-- Tab Effects -->
+        <LinearLayout
+            android:id="@+id/tabEffects"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🎛"
+                android:textSize="14sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Effects"
+                android:textColor="#8899A6"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <!-- Tab Typography -->
+        <LinearLayout
+            android:id="@+id/tabTypography"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Aa"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Typography"
+                android:textColor="#8899A6"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <!-- Tab Backgrounds -->
+        <LinearLayout
+            android:id="@+id/tabBackgrounds"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🖼"
+                android:textSize="14sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Backgrounds"
+                android:textColor="#8899A6"
+                android:textSize="10sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+</RelativeLayout>
