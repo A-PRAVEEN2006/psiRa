@@ -94,8 +94,8 @@ open class BaseActivity : AppCompatActivity() {
             )
         }
 
-        // Prevent screenshots and screen recording on all screens
-        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+        // Apply screenshot security based on user preference
+        ScreenSecurityHelper.apply(this)
 
         // Root detection — warn if device is rooted
         if (isDeviceRooted()) {
@@ -154,6 +154,7 @@ open class BaseActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         currentActivity = this
+        ScreenSecurityHelper.apply(this)
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
         val currentThemeName = sharedPref.getString("APP_THEME", "MIDNIGHT") ?: "MIDNIGHT"
         val currentUiStyle = sharedPref.getString("UI_STYLE", "LIQUID_GLASS") ?: "LIQUID_GLASS"

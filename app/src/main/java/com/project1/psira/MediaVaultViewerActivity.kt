@@ -34,10 +34,7 @@ class MediaVaultViewerActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.setFlags(
-            android.view.WindowManager.LayoutParams.FLAG_SECURE,
-            android.view.WindowManager.LayoutParams.FLAG_SECURE
-        )
+        ScreenSecurityHelper.apply(this)
         setContentView(R.layout.activity_media_vault_viewer)
 
         val itemId       = intent.getStringExtra(EXTRA_ITEM_ID) ?: return finish()

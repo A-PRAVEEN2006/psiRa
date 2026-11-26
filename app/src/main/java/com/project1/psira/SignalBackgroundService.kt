@@ -70,7 +70,7 @@ class SignalBackgroundService : Service() {
             return START_NOT_STICKY
         }
 
-        // 1. Maintain silent low-priority foreground notification to keep background sync alive
+        // 1. Initialize foreground to satisfy Android start requirements
         val notification = buildSyncNotification()
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -82,13 +82,27 @@ class SignalBackgroundService : Service() {
             Log.w("SignalSync", "Failed to startForeground: ${e.message}")
         }
 
-        // 2. Initialize and start real-time listener for incoming messages
+        // 2. Immediately hide notification so status bar and notification tray stay completely clean
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+            } else {
+                @Suppress("DEPRECATION")
+                stopForeground(true)
+            }
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.cancel(NOTIF_SYNC_ID)
+        } catch (e: Exception) {
+            Log.w("SignalSync", "Failed to cancel sync notification: ${e.message}")
+        }
+
+        // 3. Initialize and start real-time listener for incoming messages
         if (signalManager == null) {
             signalManager = SignalNotificationManager(applicationContext)
             signalManager?.startListening()
         }
 
-        // 3. Ensure FCM token is kept up to date
+        // 4. Ensure FCM token is kept up to date
         syncFcmToken()
 
         return START_STICKY
@@ -116,12 +130,13 @@ class SignalBackgroundService : Service() {
             val channel = NotificationChannel(
                 CHANNEL_SYNC_ID,
                 "PsiRa Background Node",
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_MIN
             ).apply {
                 description = "Keeps secure encrypted transmissions connected in the background"
                 setShowBadge(false)
                 setSound(null, null)
                 enableVibration(false)
+                lockscreenVisibility = Notification.VISIBILITY_SECRET
             }
             manager.createNotificationChannel(channel)
         }

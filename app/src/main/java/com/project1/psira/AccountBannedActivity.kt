@@ -11,7 +11,7 @@ class AccountBannedActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE, android.view.WindowManager.LayoutParams.FLAG_SECURE)
+        ScreenSecurityHelper.apply(this)
         setContentView(R.layout.activity_banned)
 
         val reason = intent.getStringExtra("BAN_REASON") ?: "PROTOCOL VIOLATION"

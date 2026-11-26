@@ -21,7 +21,7 @@ class NoteEditorActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE, android.view.WindowManager.LayoutParams.FLAG_SECURE)
+        ScreenSecurityHelper.apply(this)
         setContentView(R.layout.activity_note_editor)
 
         editTitle = findViewById(R.id.editNoteTitle)

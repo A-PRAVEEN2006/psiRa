@@ -13,7 +13,7 @@ class SplashActivity : AppCompatActivity() {
             finish()
             return
         }
-        window.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE, android.view.WindowManager.LayoutParams.FLAG_SECURE)
+        ScreenSecurityHelper.apply(this)
 
         // Ensure Dark Mode is restored before any UI renders
         val sharedPref = getSharedPreferences("PsiRaPrefs", android.content.Context.MODE_PRIVATE)

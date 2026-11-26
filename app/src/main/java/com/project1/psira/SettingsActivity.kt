@@ -19,10 +19,11 @@ class SettingsActivity : BaseActivity() {
     private var tvDoubleLayerValue: TextView? = null
     private var tvThemeActiveValue: TextView? = null
     private var tvUiStyleActiveValue: TextView? = null
+    private var tvScreenshotValue: TextView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE, android.view.WindowManager.LayoutParams.FLAG_SECURE)
+        ScreenSecurityHelper.apply(this)
         setContentView(R.layout.activity_settings)
 
         val btnChangeName     = findViewById<View>(R.id.btnChangeName)
@@ -31,6 +32,7 @@ class SettingsActivity : BaseActivity() {
         val btnLogicConfig    = findViewById<View>(R.id.btnLogicConfig)
         val btnPanicCode      = findViewById<View>(R.id.btnPanicCode)
         val btnDoubleLayer    = findViewById<View>(R.id.btnDoubleLayer)
+        val btnScreenshotControl = findViewById<View>(R.id.btnScreenshotControl)
         val btnThemeSelection = findViewById<View>(R.id.btnThemeSelection)
         val btnUiStyleSelection = findViewById<View>(R.id.btnUiStyleSelection)
         val btnToggleTor      = findViewById<View>(R.id.btnToggleTor)
@@ -49,6 +51,7 @@ class SettingsActivity : BaseActivity() {
         tvLogicConfigValue = findViewById(R.id.tvLogicConfigValue)
         tvPanicCodeValue = findViewById(R.id.tvPanicCodeValue)
         tvDoubleLayerValue = findViewById(R.id.tvDoubleLayerValue)
+        tvScreenshotValue = findViewById(R.id.tvScreenshotValue)
         tvThemeActiveValue = findViewById(R.id.tvThemeActiveValue)
         tvUiStyleActiveValue = findViewById(R.id.tvUiStyleActiveValue)
 
@@ -141,6 +144,7 @@ class SettingsActivity : BaseActivity() {
         }
         btnPanicCode.setOnClickListener { showPanicCodeEditor() }
         btnDoubleLayer.setOnClickListener { toggleDoubleLayer() }
+        btnScreenshotControl?.setOnClickListener { toggleScreenshotControl() }
         btnThemeSelection.setOnClickListener { 
             ThemeStudioHelper.showStudio(this) { updateSettingBadges() }
         }
@@ -402,6 +406,17 @@ class SettingsActivity : BaseActivity() {
         val current = sharedPref.getBoolean("DOUBLE_LAYER", false)
         sharedPref.edit { putBoolean("DOUBLE_LAYER", !current) }
         Toast.makeText(this, "Double Layer Logic: ${if (!current) "Armed" else "Standby"}", Toast.LENGTH_SHORT).show()
+        updateSettingBadges()
+    }
+
+    private fun toggleScreenshotControl() {
+        val current = ScreenSecurityHelper.isScreenshotsAllowed(this)
+        val newState = !current
+        ScreenSecurityHelper.setScreenshotsAllowed(this, newState)
+        ScreenSecurityHelper.apply(this)
+        updateSettingBadges()
+        val msg = if (newState) "📸 Screenshots & Screen Recording Allowed" else "🔒 Screenshots Blocked (Security Active)"
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
     }
 
     private fun wipeCache() {
@@ -532,18 +547,23 @@ class SettingsActivity : BaseActivity() {
         tvDoubleLayerValue?.text = if (doubleLayer) "ACTIVE" else "OFF"
         tvDoubleLayerValue?.setTextColor(if (doubleLayer) android.graphics.Color.parseColor("#4CD964") else android.graphics.Color.parseColor("#808080"))
 
-        // 5. Theme Badge
+        // 5. Screenshot Controller Badge
+        val allowScreenshots = ScreenSecurityHelper.isScreenshotsAllowed(this)
+        tvScreenshotValue?.text = if (allowScreenshots) "ALLOWED" else "BLOCKED"
+        tvScreenshotValue?.setTextColor(if (allowScreenshots) android.graphics.Color.parseColor("#4CD964") else android.graphics.Color.parseColor("#FF3B30"))
+
+        // 6. Theme Badge
         val theme = sharedPref.getString("APP_THEME", "MIDNIGHT") ?: "MIDNIGHT"
         tvThemeActiveValue?.text = theme
 
-        // 6. UI Style Badge
+        // 7. UI Style Badge
         val uiStyle = sharedPref.getString("UI_STYLE", "LIQUID_GLASS") ?: "LIQUID_GLASS"
         tvUiStyleActiveValue?.text = uiStyle.replace("_", " ")
     }
 
     private fun showAbout() {
         val about = """
-            PsiRa | Enclave Build v3.5.1
+            PsiRa | Enclave Build v3.5.2
             ----------------------------
             THE SPECTRE ENCLAVE:
             Military-grade, zero-trace end-to-end encrypted communication enclave.

@@ -53,7 +53,7 @@ class GroupsActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+        ScreenSecurityHelper.apply(this)
         setContentView(R.layout.activity_groups)
 
         db = FirebaseDatabase.getInstance()

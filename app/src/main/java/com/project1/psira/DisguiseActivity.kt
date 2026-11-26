@@ -24,7 +24,7 @@ open class DisguiseActivity : BaseActivity() {
             return
         }
         
-        window.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE, android.view.WindowManager.LayoutParams.FLAG_SECURE)
+        ScreenSecurityHelper.apply(this)
 
         val sharedPref = getSharedPreferences("PsiRaPrefs", Context.MODE_PRIVATE)
         val isDark = sharedPref.getBoolean("IS_DARK_MODE", true)
